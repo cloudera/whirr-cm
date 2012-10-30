@@ -22,14 +22,12 @@ import static org.jclouds.scriptbuilder.domain.Statements.call;
 
 import java.io.IOException;
 
+import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.service.ClusterActionEvent;
-import org.apache.whirr.service.FirewallManager.Rule;
 
-public class CmNodeHandler extends BaseHandler {
+public class CmAgentHandler extends CmNodeHandler {
 
-  public static final String ROLE = "cmnode";
-
-  private static final String PROPERTY_PORTS = "cmnode.ports";
+  public static final String ROLE = "cmagent";
 
   @Override
   public String getRole() {
@@ -39,16 +37,23 @@ public class CmNodeHandler extends BaseHandler {
   @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException {
     super.beforeBootstrap(event);
-    addStatement(event, call("install_cm"));
+    addStatement(event, call("install_cm_agent"));
   }
 
   @Override
   protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeConfigure(event);
-    for (Object port : getConfiguration(event.getClusterSpec()).getList(PROPERTY_PORTS)) {
-      if (port != null && !"".equals(port))
-        event.getFirewallManager().addRule(
-          Rule.create().destination(role(ROLE)).port(Integer.parseInt(port.toString())));
+    Instance cmServer = null;
+    try {
+      cmServer = event.getCluster().getInstanceMatching(role(CmServerHandler.ROLE));
+    } catch (Exception exception) {
+    }
+    if (cmServer != null) {
+      addStatement(
+        event,
+        call("configure_cm_agent", "-h", event.getCluster().getInstanceMatching(role(CmServerHandler.ROLE))
+          .getPublicHostName(), "-p",
+          getConfiguration(event.getClusterSpec()).getString(CmServerHandler.PROPERTY_PORT_COMMS)));
     }
   }
 

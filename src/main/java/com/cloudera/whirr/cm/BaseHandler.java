@@ -17,39 +17,31 @@
  */
 package com.cloudera.whirr.cm;
 
-import static org.apache.whirr.RolePredicates.role;
 import static org.jclouds.scriptbuilder.domain.Statements.call;
 
 import java.io.IOException;
 
+import org.apache.commons.configuration.Configuration;
+import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.service.ClusterActionEvent;
-import org.apache.whirr.service.FirewallManager.Rule;
+import org.apache.whirr.service.ClusterActionHandlerSupport;
 
-public class CmNodeHandler extends BaseHandler {
+public abstract class BaseHandler extends ClusterActionHandlerSupport {
 
-  public static final String ROLE = "cmnode";
+  protected final static String CONFIG_IMPORT_PATH = "functions/cmf/";
 
-  private static final String PROPERTY_PORTS = "cmnode.ports";
+  private final static String PROPERTIES_FILE = "whirr-cm-default.properties";
 
-  @Override
-  public String getRole() {
-    return ROLE;
+  protected Configuration getConfiguration(ClusterSpec spec) throws IOException {
+    return getConfiguration(spec, PROPERTIES_FILE);
   }
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException {
-    super.beforeBootstrap(event);
-    addStatement(event, call("install_cm"));
-  }
-
-  @Override
-  protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
-    super.beforeConfigure(event);
-    for (Object port : getConfiguration(event.getClusterSpec()).getList(PROPERTY_PORTS)) {
-      if (port != null && !"".equals(port))
-        event.getFirewallManager().addRule(
-          Rule.create().destination(role(ROLE)).port(Integer.parseInt(port.toString())));
-    }
+    addStatement(event, call("configure_hostnames"));
+    addStatement(event, call("retry_helpers"));
+    addStatement(event, call(getInstallFunction(getConfiguration(event.getClusterSpec()), "java", "install_openjdk")));
+    addStatement(event, call("install_cdh_hadoop"));
   }
 
 }

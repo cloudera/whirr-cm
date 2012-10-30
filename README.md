@@ -27,11 +27,18 @@ export AWS_ACCESS_KEY_ID=...
 export AWS_SECRET_ACCESS_KEY=...
 ```
 
-### Download and install Whirr:
+### Install Whirr:
+
+Install CDH repositotries, eg for CDH4:
+
+https://ccp.cloudera.com/display/CDH4DOC/CDH4+Installation#CDH4Installation-InstallingCDH4
+
+then install the whirr package and create some environment variables, eg for RHEL/CentOS:
+
 ```bash
-curl -O http://www.apache.org/dist/whirr/whirr-0.7.1/whirr-0.7.1.tar.gz
-tar zxf whirr-0.7.1.tar.gz
-export PATH=$PATH:$(pwd)/whirr-0.7.1/bin
+yum install whirr
+export WHIRR_HOME=/usr/lib/whirr
+export PATH=$WHIRR_HOME/bin:$PATH
 ```
 
 ### Create a password-less SSH keypair for Whirr to use:
@@ -42,16 +49,37 @@ ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa_cm
 
 ## Install the Whirr Cloudera Manager Service Plugin
 
-Download the Whirr CM plugin into the lib directory of your Whirr installation.
+Download the Whirr CM plugun source, build and install into the lib directory of your Whirr installation.
 
 ```bash
-$(cd whirr-0.7.1/lib && curl -LO https://github.com/downloads/tomwhite/whirr-cm/whirr-cm-1.1.jar)
+git clone https://github.com/cloudera/whirr-cm.git
+cd whirr-cm
+mvn clean install -Dmaven.test.skip=true
+cp -rvf target/whirr-cm-*.jar $WHIRR_HOME/lib
 ```
 
 ## Get your whirr-cm configuration
 
+A sample Whirr EC2 CM config is available here: 
+
 ```bash
-curl -O https://raw.github.com/tomwhite/whirr-cm/master/cm-ec2.properties
+curl -O https://raw.github.com/cloudera/whirr-cm/master/cm-ec2.properties
+```
+
+If you would like to upload a CM License as part of the instalation (Cloudera can provide this if you do not
+have one), place the license in a file "cm-license.txt" on the whirr classpath (eg in $WHIRR_HOME/conf), eg
+
+```bash
+mv -v eval_acme_20120925_cloudera_enterprise_license.txt $WHIRR_HOME/conf/cm-license.txt
+```
+
+If you would like to upload a CM Configuration as part of the instalation, place the config in a file called
+"cm-config.json" on the whirr classpath (eg in $WHIRR_HOME/conf). The format of this file should match the JSON
+as downloaded from the CM UI, eg
+
+```bash
+curl -O https://raw.github.com/cloudera/whirr-cm/master/cm-config.json
+mv -v cm-config.json $WHIRR_HOME/conf/cm-config.json
 ```
 
 ## Launch a Cloudera Manager Cluster
