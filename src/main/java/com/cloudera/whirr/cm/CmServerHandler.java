@@ -66,6 +66,7 @@ public class CmServerHandler extends BaseHandler {
 
   public static final String LICENSE_FILE = "cm-license.txt";
   public static final String CONFIG_FILE = "cm-config.json";
+  public static final String AUTO_VARIABLE = "whirr.env.cmauto";
 
   public static final String PROPERTY_PORTS = "cmserver.ports";
   public static final String PROPERTY_PORT_WEB = "cmserver.port.web";
@@ -138,15 +139,18 @@ public class CmServerHandler extends BaseHandler {
         System.out.println(instance.getPublicHostName());
       }
     }
-    
-    System.out.println("Starting services...");
-    try {
-      startServices(event.getCluster().getInstanceMatching(role(ROLE)).getPublicHostName());
-    } catch (Exception ex) {
-      System.out.println("Failed to start services using CM API");
-      ex.printStackTrace(System.out);
+
+    if (event.getClusterSpec().getConfiguration().getBoolean(AUTO_VARIABLE, true)) {
+      System.out.println();
+      System.out.println("Starting services...");
+      try {
+        startServices(event.getCluster().getInstanceMatching(role(ROLE)).getPublicHostName());
+      } catch (Exception ex) {
+        System.out.println("Failed to start services using CM API");
+        ex.printStackTrace(System.out);
+      }
     }
-    
+
     System.out.println();
     System.out.println("User:");
     System.out.println(event.getClusterSpec().getClusterUser());

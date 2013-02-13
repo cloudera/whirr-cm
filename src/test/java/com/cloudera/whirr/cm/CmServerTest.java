@@ -40,9 +40,9 @@ public class CmServerTest extends BaseCmTest {
   @Override
   protected Predicate<CharSequence> bootstrapPredicate() {
     return and(
-      containsPattern("configure_hostnames"),
-      and(containsPattern("install_cdh_hadoop"),
-        and(containsPattern("install_cm"), containsPattern("install_cm_server"))));
+        containsPattern("configure_hostnames"),
+        and(containsPattern("install_cdh_hadoop"),
+            and(containsPattern("install_cm"), containsPattern("install_cm_server"))));
   }
 
   @Override
@@ -53,19 +53,27 @@ public class CmServerTest extends BaseCmTest {
   @Test
   public void testNodes() throws Exception {
     Assert.assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
-      "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE))));
+        "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE, "whirr.env.cmauto", "false"))));
   }
 
   @Test
   public void testAgents() throws Exception {
     Assert.assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
-      "1 " + CmServerHandler.ROLE + ",2 " + CmAgentHandler.ROLE))));
+        "1 " + CmServerHandler.ROLE + ",2 " + CmAgentHandler.ROLE, "whirr.env.cmauto", "false"))));
   }
 
   @Test
   public void testNodesAndAgents() throws Exception {
     Assert.assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
-      "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE + ",2 " + CmAgentHandler.ROLE))));
+        "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE + ",2 " + CmAgentHandler.ROLE, "whirr.env.cmauto",
+        "false"))));
+  }
+
+  @Test
+  public void testNodesAndAgentsAuto() throws Exception {
+    Assert.assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
+        "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE + ",2 " + CmAgentHandler.ROLE, "whirr.env.cmauto",
+        "true"))));
   }
 
 }
