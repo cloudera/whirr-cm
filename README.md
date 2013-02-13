@@ -73,15 +73,6 @@ have one), place the license in a file "cm-license.txt" on the whirr classpath (
 mv -v eval_acme_20120925_cloudera_enterprise_license.txt $WHIRR_HOME/conf/cm-license.txt
 ```
 
-If you would like to upload a CM Configuration as part of the instalation, place the config in a file called
-"cm-config.json" on the whirr classpath (eg in $WHIRR_HOME/conf). The format of this file should match the JSON
-as downloaded from the CM UI, eg
-
-```bash
-curl -O https://raw.github.com/cloudera/whirr-cm/master/cm-config.json
-mv -v cm-config.json $WHIRR_HOME/conf/cm-config.json
-```
-
 ## Launch a Cloudera Manager Cluster
 
 The following command will start a cluster with 5 Hadoop nodes. To change this

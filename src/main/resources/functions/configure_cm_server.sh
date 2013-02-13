@@ -30,12 +30,9 @@ function wait_cm_server() {
 function configure_cm_server() {
     service cloudera-scm-server start
 	  if wait_cm_server; then
-			if [ -f /tmp/cm-config.json ]; then
-			  curl -u admin:admin -X PUT -H 'Content-Type:application/json' -d "$(cat /tmp/cm-config.json)" http://localhost:7180/api/v1/cm/config
-			fi      
-      if [ ! -z "${CONFIGURE_KERBEROS_DONE+xxx}" ] && [ ! -z "${KERBEROS_REALM+xxx}" ]; then
-        sed -i -e "s/EXAMPLE\.COM/$KERBEROS_REALM_REGEX/" /var/kerberos/krb5kdc/kadm5.acl
-        cat >> run_addpinc <<END
+    	if [ ! -z "${CONFIGURE_KERBEROS_DONE+xxx}" ] && [ ! -z "${KERBEROS_REALM+xxx}" ]; then
+          sed -i -e "s/EXAMPLE\.COM/$KERBEROS_REALM_REGEX/" /var/kerberos/krb5kdc/kadm5.acl
+          cat >> run_addpinc <<END
 #!/usr/bin/expect -f
 set timeout 5000
 set principal_kadmin [lindex \$argv 0]

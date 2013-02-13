@@ -65,7 +65,6 @@ public class CmServerHandler extends BaseHandler {
   public static final String ROLE = "cmserver";
 
   public static final String LICENSE_FILE = "cm-license.txt";
-  public static final String CONFIG_FILE = "cm-config.json";
 
   public static final String PROPERTY_PORTS = "cmserver.ports";
   public static final String PROPERTY_PORT_WEB = "cmserver.port.web";
@@ -94,13 +93,6 @@ public class CmServerHandler extends BaseHandler {
         event,
         createOrOverwriteFile("/tmp/" + LICENSE_FILE,
           Splitter.on('\n').split(CharStreams.toString(Resources.newReaderSupplier(licenceConfigUri, Charsets.UTF_8)))));
-    }
-    URL configFileUri = null;
-    if ((configFileUri = CmServerHandler.class.getClassLoader().getResource(CONFIG_FILE)) != null) {
-      addStatement(
-        event,
-        createOrOverwriteFile("/tmp/" + CONFIG_FILE,
-          Splitter.on('\n').split(CharStreams.toString(Resources.newReaderSupplier(configFileUri, Charsets.UTF_8)))));
     }
     addStatement(event, call("configure_cm_server"));
     @SuppressWarnings("unchecked")
