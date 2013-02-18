@@ -22,25 +22,24 @@ function install_cm() {
   REPO_HOST=${REPO_HOST:-archive.cloudera.com}
   CM_MAJOR_VERSION=$(echo $REPO | sed -e 's/cm\([0-9]\).*/\1/')
   CM_VERSION=$(echo $REPO | sed -e 's/cm\([0-9][0-9]*\)/\1/')
-  if [ $CM_MAJOR_VERSION -ge "4" ]; then
+  OS_CODENAME=$(lsb_release -sc)
+  OS_DISTID=$(lsb_release -si | tr '[A-Z]' '[a-z]')
+  if [ $CM_MAJOR_VERSION -ge 4 ]; then
 	  if which dpkg &> /dev/null; then
-      cat > /etc/apt/sources.list.d/cloudera-$REPO.list <<EOF
-deb http://$REPO_HOST/$REPO/ubuntu/lucid/amd64/cm lucid-$REPO contrib
-deb-src http://$REPO_HOST/$REPO/ubuntu/lucid/amd64/cm lucid-$REPO contrib
+        cat > /etc/apt/sources.list.d/cloudera-$REPO.list <<EOF
+deb http://$REPO_HOST/cm$CM_MAJOR_VERSION/$OS_DISTID/$OS_CODENAME/amd64/cm $OS_CODENAME-$REPO contrib
+deb-src http://$REPO_HOST/cm$CM_MAJOR_VERSION/$OS_DISTID/$OS_CODENAME/amd64/cm $OS_CODENAME-$REPO contrib
 EOF
-      curl -s http://$REPO_HOST/$REPO/ubuntu/lucid/amd64/cm/archive.key | apt-key add -
-	    retry_apt_get -y install bigtop-utils bigtop-jsvc bigtop-tomcat hue-plugins
+        curl -s http://$REPO_HOST/cm$CM_MAJOR_VERSION/$OS_DISTID/$OS_CODENAME/amd64/cm/archive.key | apt-key add -
 	  elif which rpm &> /dev/null; then
-      cat > /etc/yum.repos.d/cloudera-$REPO.repo <<EOF
-[cloudera-manager]
-# Packages for Cloudera Manager, Version $CM_VERSION, on RedHat or CentOS 6 x86_64
-name=Cloudera Manager
-baseurl=http://$REPO_HOST/$REPO/redhat/\$releasever/\$basearch/cm/$CM_MAJOR_VERSION/
-gpgkey=http://archive.cloudera.com/$REPO/redhat/\$releasever/\$basearch/cm/RPM-GPG-KEY-cloudera
-gpgcheck=0
-enabled=1
+        cat > /etc/yum.repos.d/cloudera-$REPO.repo <<EOF
+[cloudera-manager-$REPO]
+name=Cloudera Manager, Version $CM_VERSION
+baseurl=http://$REPO_HOST/cm$CM_MAJOR_VERSION/redhat/\$releasever/\$basearch/cm/$CM_VERSION/
+gpgkey=http://$REPO_HOST/cm$CM_MAJOR_VERSION/redhat/\$releasever/\$basearch/cm/RPM-GPG-KEY-cloudera
+gpgcheck=1
 EOF
-	    retry_yum install -y bigtop-utils bigtop-jsvc bigtop-tomcat hue-plugins
+        rpm --import http://$REPO_HOST/cm$CM_MAJOR_VERSION/redhat/$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))/$(rpm -q --qf "%{ARCH}" $(rpm -q --whatprovides redhat-release))/cm/RPM-GPG-KEY-cloudera
 	  fi
   fi
 }

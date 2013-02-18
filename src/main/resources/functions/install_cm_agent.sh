@@ -19,28 +19,8 @@ set -x
 
 function install_cm_agent() {
   if which dpkg &> /dev/null; then
-    retry_apt_get -y install cloudera-manager-agent cloudera-manager-daemons bigtop-utils bigtop-jsvc bigtop-tomcat hadoop hadoop-hdfs hadoop-httpfs hadoop-mapreduce hadoop-yarn hadoop-client hadoop-0.20-mapreduce hue-plugins hbase hive oozie oozie-client pig zookeeper hue
-    if ls /etc/init.d/hadoop-* &> /dev/null; then
-      for SERVICE_SCRIPT in /etc/init.d/hadoop-*; do
-        service $(basename $SERVICE_SCRIPT) stop
-        update-rc.d -f $(basename $SERVICE_SCRIPT) remove
-      done
-    fi
-    service hue stop
-    update-rc.d -f hue remove
-    service oozie stop
-    update-rc.d -f oozie remove
+    retry_apt_get -y install cloudera-manager-agent cloudera-manager-daemons
   elif which rpm &> /dev/null; then
-    retry_yum install -y cloudera-manager-agent cloudera-manager-daemons bigtop-utils bigtop-jsvc bigtop-tomcat hadoop hadoop-hdfs hadoop-httpfs hadoop-mapreduce hadoop-yarn hadoop-client hadoop-0.20-mapreduce hue-plugins hbase hive oozie oozie-client pig zookeeper impala impala-shell hue
-    if ls /etc/init.d/hadoop-* &> /dev/null; then
-      for SERVICE_SCRIPT in /etc/init.d/hadoop-*; do
-        service $(basename $SERVICE_SCRIPT) stop
-        chkconfig $(basename $SERVICE_SCRIPT) off
-      done
-    fi
-    service hue stop
-    chkconfig hue off
-    service oozie stop
-    chkconfig oozie off    
+    retry_yum install -y cloudera-manager-agent cloudera-manager-daemons
   fi
 }
