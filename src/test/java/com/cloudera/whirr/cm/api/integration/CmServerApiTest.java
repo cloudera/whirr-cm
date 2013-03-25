@@ -116,6 +116,12 @@ public class CmServerApiTest implements BaseTest {
     cluster = new CmServerCluster();
     cluster.add(new CmServerService(CmServerServiceType.HIVE_METASTORE, CLUSTER_TAG, "1",
                                     dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
+    cluster.add(new CmServerService(CmServerServiceType.HUE_SERVER, CLUSTER_TAG, "1",
+                                    dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
+    cluster.add(new CmServerService(CmServerServiceType.HUE_BEESWAX_SERVER, CLUSTER_TAG, "1",
+                                    dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
+    cluster.add(new CmServerService(CmServerServiceType.OOZIE_SERVER, CLUSTER_TAG, "1",
+                                    dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
     cluster.add(new CmServerService(CmServerServiceType.HBASE_MASTER, CLUSTER_TAG, "1",
                                     dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
     cluster.add(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, "1",

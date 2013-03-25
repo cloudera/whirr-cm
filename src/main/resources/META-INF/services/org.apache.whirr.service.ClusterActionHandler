@@ -37,3 +37,8 @@ com.cloudera.whirr.cm.cdh.CmCdhHBaseRegionServerHandler
 
 com.cloudera.whirr.cm.cdh.CmCdhImpalaDaemonHandler
 com.cloudera.whirr.cm.cdh.CmCdhImpalaStateStoreHandler
+
+com.cloudera.whirr.cm.cdh.CmCdhHueServerHandler
+com.cloudera.whirr.cm.cdh.CmCdhHueBeeswaxServerHandler
+
+com.cloudera.whirr.cm.cdh.CmCdhOozieServerHandler

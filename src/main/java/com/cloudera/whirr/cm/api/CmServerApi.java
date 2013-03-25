@@ -468,6 +468,15 @@ public class CmServerApi {
       apiServiceConfig.add(new ApiConfig("hdfs_service", cluster.getServiceName(CmServerServiceType.HDFS)));
       apiServiceConfig.add(new ApiConfig("zookeeper_service", cluster.getServiceName(CmServerServiceType.ZOOKEEPER)));
       break;
+    case HUE:
+      apiServiceConfig.add(new ApiConfig("hue_webhdfs", cluster.getServiceName(CmServerServiceType.HDFS_NAMENODE)));
+      apiServiceConfig.add(new ApiConfig("hive_service", cluster.getServiceName(CmServerServiceType.HIVE)));
+      apiServiceConfig.add(new ApiConfig("oozie_service", cluster.getServiceName(CmServerServiceType.OOZIE)));
+      break;
+    case OOZIE:
+      apiServiceConfig.add(new ApiConfig("mapreduce_yarn_service", cluster
+          .getServiceName(CmServerServiceType.MAPREDUCE)));
+      break;
     case HIVE:
       apiServiceConfig.add(new ApiConfig("mapreduce_yarn_service", cluster
           .getServiceName(CmServerServiceType.MAPREDUCE)));
@@ -515,9 +524,9 @@ public class CmServerApi {
       apiRoleConfigGroup.setBase(false);
       apiRoleConfigGroups.add(apiRoleConfigGroup);
     }
-
+    Set<ApiHost> hosts = hosts();
     for (CmServerService subService : cluster.getServices(type)) {
-      String hostId = getHostIdForInstance(subService.getHost());
+      String hostId = getHostIdForInstance(subService.getHost(), hosts);
       ApiRole apiRole = new ApiRole();
       apiRole.setName(subService.getName());
       apiRole.setType(subService.getType().getLabel());
@@ -532,9 +541,8 @@ public class CmServerApi {
     return apiService;
   }
 
-  private String getHostIdForInstance(Instance instance) throws IOException, CmServerApiException {
+  private String getHostIdForInstance(Instance instance, Set<ApiHost> hosts) throws IOException {
     String hostId;
-    Set<ApiHost> hosts = hosts();
 
     final String hostName = instance.getPublicHostName();
     final String privateIp = instance.getPrivateIp();
@@ -575,6 +583,25 @@ public class CmServerApi {
     case HIVE:
       execute(apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
           .hiveCreateMetastoreDatabaseTablesCommand(cluster.getServiceName(CmServerServiceType.HIVE)));
+      break;
+    case HUE:
+      CmServerService hueService = cluster.getService(CmServerServiceType.HUE_SERVER);
+      if (hueService != null) {
+        ApiRoleNameList syncList = new ApiRoleNameList();
+        syncList.add(hueService.getName());
+        execute(
+                apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
+                .getRoleCommandsResource(cluster.getServiceName(CmServerServiceType.HUE)).syncHueDbCommand(syncList),
+                false);
+      }
+      execute(apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
+          .createBeeswaxWarehouseCommand(cluster.getServiceName(CmServerServiceType.HUE)));
+      break;
+    case OOZIE:
+      execute(apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
+          .installOozieShareLib(cluster.getServiceName(CmServerServiceType.OOZIE)));
+      execute(apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
+          .createOozieDb(cluster.getServiceName(CmServerServiceType.OOZIE)));
       break;
     case HBASE:
       execute(apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))

@@ -48,6 +48,14 @@ public enum CmServerServiceType {
   HIVE(CLUSTER, "HIVE", CmServerServiceTypeRepository.CDH), HIVE_METASTORE(HIVE, "HIVEMETASTORE",
       CmServerServiceTypeRepository.CDH),
 
+  // Hue
+  HUE(CLUSTER, "HUE", CmServerServiceTypeRepository.CDH), HUE_SERVER(HUE, "HUE_SERVER",
+      CmServerServiceTypeRepository.CDH), HUE_BEESWAX_SERVER(HUE, "BEESWAX_SERVER", CmServerServiceTypeRepository.CDH),
+
+  // Oozie
+  OOZIE(CLUSTER, "OOZIE", CmServerServiceTypeRepository.CDH), OOZIE_SERVER(OOZIE, "OOZIE_SERVER",
+                                                                           CmServerServiceTypeRepository.CDH),
+
   // Impala
   IMPALA(CLUSTER, "IMPALA", CmServerServiceTypeRepository.IMPALA), IMPALA_STATE_STORE(IMPALA, "STATESTORE",
       CmServerServiceTypeRepository.IMPALA), IMPALA_DAEMON(IMPALA, "IMPALAD", CmServerServiceTypeRepository.IMPALA),

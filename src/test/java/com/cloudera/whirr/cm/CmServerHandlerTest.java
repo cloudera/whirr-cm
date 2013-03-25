@@ -31,10 +31,13 @@ import com.cloudera.whirr.cm.cdh.CmCdhDataNodeHandler;
 import com.cloudera.whirr.cm.cdh.CmCdhHBaseMasterHandler;
 import com.cloudera.whirr.cm.cdh.CmCdhHBaseRegionServerHandler;
 import com.cloudera.whirr.cm.cdh.CmCdhHiveMetaStoreHandler;
+import com.cloudera.whirr.cm.cdh.CmCdhHueServerHandler;
+import com.cloudera.whirr.cm.cdh.CmCdhHueBeeswaxServerHandler;
 import com.cloudera.whirr.cm.cdh.CmCdhImpalaDaemonHandler;
 import com.cloudera.whirr.cm.cdh.CmCdhImpalaStateStoreHandler;
 import com.cloudera.whirr.cm.cdh.CmCdhJobTrackerHandler;
 import com.cloudera.whirr.cm.cdh.CmCdhNameNodeHandler;
+import com.cloudera.whirr.cm.cdh.CmCdhOozieServerHandler;
 import com.cloudera.whirr.cm.cdh.CmCdhSecondaryNameNodeHandler;
 import com.cloudera.whirr.cm.cdh.CmCdhTaskTrackerHandler;
 import com.cloudera.whirr.cm.cdh.CmCdhZookeeperServerHandler;
@@ -85,14 +88,16 @@ public class CmServerHandlerTest extends BaseTestHandler {
             .of("whirr.instance-templates",
                 "1 " + CmServerHandler.ROLE + "+" + CmAgentHandler.ROLE + ",1 " + CmAgentHandler.ROLE + "+"
                     + CmCdhNameNodeHandler.ROLE + "+" + CmCdhSecondaryNameNodeHandler.ROLE + "+"
+                    + CmCdhHueServerHandler.ROLE + "+" + CmCdhHueBeeswaxServerHandler.ROLE + "+"
                     + CmCdhJobTrackerHandler.ROLE + "+" + CmCdhHBaseMasterHandler.ROLE + "+"
-                    + CmCdhHiveMetaStoreHandler.ROLE + "+" + CmCdhImpalaStateStoreHandler.ROLE + ",3 "
+                    + CmCdhHiveMetaStoreHandler.ROLE + "+" + CmCdhImpalaStateStoreHandler.ROLE + "+"
+                    + CmCdhOozieServerHandler.ROLE + ",3 "
                     + CmAgentHandler.ROLE + "+" + CmCdhDataNodeHandler.ROLE + "+" + CmCdhTaskTrackerHandler.ROLE + "+"
                     + CmCdhZookeeperServerHandler.ROLE + "+" + CmCdhHBaseRegionServerHandler.ROLE + "+"
                     + CmCdhImpalaDaemonHandler.ROLE,
                 BaseHandler.CONFIG_WHIRR_CM_PREFIX + "REMOTE_PARCEL_REPO_URLS",
                 "http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/cdh4/parcels/4.2.0.10/\\,http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/impala/parcels/0.6.109/"))));
-    Assert.assertEquals(6, BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().getServiceTypes().size());
+    Assert.assertEquals(8, BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().getServiceTypes().size());
   }
 
   @Test
