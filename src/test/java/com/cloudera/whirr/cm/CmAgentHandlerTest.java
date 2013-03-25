@@ -23,13 +23,15 @@ import static com.google.common.base.Predicates.containsPattern;
 import java.util.Set;
 
 import org.apache.whirr.service.DryRunModule.DryRun;
+import org.junit.Assert;
 import org.junit.Test;
 
+import com.cloudera.whirr.cm.cdh.CmCdhNameNodeHandler;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-public class CmAgentTest extends BaseCmTest {
+public class CmAgentHandlerTest extends BaseTestHandler {
 
   @Override
   protected Set<String> getInstanceRoles() {
@@ -38,8 +40,7 @@ public class CmAgentTest extends BaseCmTest {
 
   @Override
   protected Predicate<CharSequence> bootstrapPredicate() {
-    return and(containsPattern("configure_hostnames"),
-      and(containsPattern("install_cdh_hadoop"), containsPattern("install_cm_agent")));
+    return and(containsPattern("configure_hostnames"), containsPattern("install_cm_agent"));
   }
 
   @Override
@@ -50,8 +51,19 @@ public class CmAgentTest extends BaseCmTest {
   @Test
   public void testNoCmServer() throws Exception {
     DryRun dryRun = launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates", "1 "
-      + CmAgentHandler.ROLE)));
+        + CmAgentHandler.ROLE)));
     assertScriptPredicateOnPhase(dryRun, "bootstrap", bootstrapPredicate());
   }
 
+  @Test
+  public void testNoCmServerCluster() throws Exception {
+    boolean caught = false;
+    try {
+      launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates", "1 "
+          + CmAgentHandler.ROLE + "+" + CmCdhNameNodeHandler.ROLE)));
+    } catch (Exception e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+  }
 }

@@ -17,13 +17,13 @@
  */
 package com.cloudera.whirr.cm;
 
-public class CdhClientHandler extends BaseHandler {
+import java.io.File;
 
-  public static final String ROLE = "cdhclient";
+public interface BaseTest {
 
-  @Override
-  public String getRole() {
-    return ROLE;
-  }
+  public static String CLUSTER_USER = "whirr";
+
+  public static File FILE_KEY_PRIVATE = new File(new File(".").getAbsolutePath() + "/src/test/resources/test-key");
+  public static File FILE_KEY_PUBLIC = new File(new File(".").getAbsolutePath() + "/src/test/resources/test-key.pub");
 
 }

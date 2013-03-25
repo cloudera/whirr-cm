@@ -17,15 +17,10 @@
 
 set -x
 
-function install_cm_server() {
+function start_cmcdh_hivemetastore() {
   if which dpkg &> /dev/null; then
-    export DEBIAN_FRONTEND=noninteractive
-    retry_apt_get update
-    retry_apt_get -q -y install oracle-j2sdk1.6 cloudera-manager-server-db cloudera-manager-server cloudera-manager-daemons
+    ln -s /usr/share/java/libmysql-java.jar $(dirname $(readlink -f $(which hive)))/../lib/hive/lib/libmysql-java.jar
   elif which rpm &> /dev/null; then
-    retry_yum install -y jdk cloudera-manager-server-db cloudera-manager-server cloudera-manager-daemons
+    ln -s /usr/share/java/mysql-connector-java.jar $(dirname $(readlink -f $(which hive)))/../lib/hive/lib/mysql-connector-java.jar
   fi
-  service cloudera-scm-server-db initdb
-  service cloudera-scm-server-db start
-  service cloudera-scm-server start
 }

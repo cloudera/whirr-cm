@@ -15,20 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.whirr.cm;
+package com.cloudera.whirr.cm.cdh;
 
-import static org.apache.whirr.RolePredicates.role;
 import static org.jclouds.scriptbuilder.domain.Statements.call;
 
 import java.io.IOException;
 
 import org.apache.whirr.service.ClusterActionEvent;
-import org.apache.whirr.service.FirewallManager.Rule;
 
-public class CmNodeHandler extends BaseHandlerCm {
-  public static final String ROLE = "cmnode";
+import com.cloudera.whirr.cm.api.CmServerServiceType;
 
-  private static final String PROPERTY_PORTS = "cmnode.ports";
+public class CmCdhHiveMetaStoreHandler extends BaseHandlerCmCdh {
+
+  public static final String ROLE = "cmcdh-hivemetastore";
+  public static final CmServerServiceType TYPE = CmServerServiceType.HIVE_METASTORE;
 
   @Override
   public String getRole() {
@@ -36,21 +36,26 @@ public class CmNodeHandler extends BaseHandlerCm {
   }
 
   @Override
+  public CmServerServiceType getType() {
+    return TYPE;
+  }
+
+  @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
-    addStatement(event, call("install_cm"));
+    addStatement(event, call("install_cmcdh_hivemetastore"));
   }
 
   @Override
   protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeConfigure(event);
-        
-    for (Object port : getConfiguration(event.getClusterSpec()).getList(PROPERTY_PORTS)) {
-      if (port != null && !"".equals(port))
-        event.getFirewallManager().addRule(
-          Rule.create().destination(role(getRole())).port(Integer.parseInt(port.toString())));
-    }
-    handleFirewallRules(event);
+    addStatement(event, call("configure_cmcdh_hivemetastore"));
+  }
+
+  @Override
+  protected void beforeStart(ClusterActionEvent event) throws IOException, InterruptedException {
+    super.beforeStart(event);
+    addStatement(event, call("start_cmcdh_hivemetastore"));
   }
 
 }

@@ -17,50 +17,56 @@
  */
 package com.cloudera.whirr.cm;
 
-import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Predicates.containsPattern;
 
 import java.util.Set;
 
-import org.apache.whirr.service.DryRunModule.DryRun;
+import org.junit.Assert;
 import org.junit.Test;
 
+import com.cloudera.whirr.cm.cdh.CmCdhHiveMetaStoreHandler;
 import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-public class CmNodeTest extends BaseCmTest {
+public class CmCdhHiveMetaStoreHandlerTest extends BaseTestHandler {
 
   @Override
   protected Set<String> getInstanceRoles() {
-    return ImmutableSet.of(CmNodeHandler.ROLE);
+    return ImmutableSet.of(CmServerHandler.ROLE, CmAgentHandler.ROLE, CmCdhHiveMetaStoreHandler.ROLE);
   }
 
   @Override
   protected Predicate<CharSequence> bootstrapPredicate() {
-    return and(containsPattern("configure_hostnames"),
-      and(containsPattern("install_cdh_hadoop"), containsPattern("install_cm")));
+    return containsPattern("install_cmcdh_hivemetastore");
   }
 
   @Override
   protected Predicate<CharSequence> configurePredicate() {
-    return Predicates.alwaysTrue();
-  }
-
-  @Override
-  @Test
-  public void testBootstrapAndConfigure() throws Exception {
-    DryRun dryRun = launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates", "1 "
-      + CmNodeHandler.ROLE)));
-    assertScriptPredicateOnPhase(dryRun, "bootstrap", bootstrapPredicate());
+    return containsPattern("configure_cmcdh_hivemetastore");
   }
 
   @Test
-  public void testWithCmServer() throws Exception {
-    DryRun dryRun = launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates", "1 "
-      + CmServerHandler.ROLE + ",1 " + CmNodeHandler.ROLE)));
-    assertScriptPredicateOnPhase(dryRun, "bootstrap", bootstrapPredicate());
+  public void testNoAgent() throws Exception {
+    boolean caught = false;
+    try {
+      launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates", "1 "
+          + CmServerHandler.ROLE + "+" + CmCdhHiveMetaStoreHandler.ROLE)));
+    } catch (Exception e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
   }
 
+  @Test
+  public void testNoCmServer() throws Exception {
+    boolean caught = false;
+    try {
+      launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates", "1 "
+          + CmAgentHandler.ROLE + "+" + CmCdhHiveMetaStoreHandler.ROLE)));
+    } catch (Exception e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+  }
 }

@@ -35,7 +35,7 @@ public class CmAgentHandler extends CmNodeHandler {
   }
 
   @Override
-  protected void beforeBootstrap(ClusterActionEvent event) throws IOException {
+  protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
     addStatement(event, call("install_cm_agent"));
   }
