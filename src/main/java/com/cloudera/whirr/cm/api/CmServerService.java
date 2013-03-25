@@ -17,6 +17,8 @@
  */
 package com.cloudera.whirr.cm.api;
 
+import org.apache.whirr.Cluster.Instance;
+
 public class CmServerService {
 
   public static final String NAME_TOKEN_DELIM = "_";
@@ -28,17 +30,17 @@ public class CmServerService {
   private CmServerServiceType type;
   private String tag;
   private String qualifier;
-  private String host;
+  private Instance host;
 
   public CmServerService(CmServerServiceType type) {
-    this(type, "", "1", "");
+    this(type, "", "1", null);
   }
 
   public CmServerService(CmServerServiceType type, String tag) {
-    this(type, tag, "1", "");
+    this(type, tag, "1", null);
   }
 
-  public CmServerService(CmServerServiceType type, String tag, String qualifier, String host) {
+  public CmServerService(CmServerServiceType type, String tag, String qualifier, Instance host) {
     this.name = tag + (tag.equals("") ? "" : NAME_TOKEN_DELIM) + type.toString().toLowerCase() + NAME_TOKEN_DELIM
         + qualifier;
     this.group = tag + (tag.equals("") ? "" : NAME_TOKEN_DELIM) + type.toString().toLowerCase() + NAME_TOKEN_DELIM
@@ -102,7 +104,7 @@ public class CmServerService {
     return qualifier;
   }
 
-  public String getHost() {
+  public Instance getHost() {
     return host;
   }
 

@@ -21,10 +21,11 @@ function install_cmcdh_hivemetastore() {
   if which dpkg &> /dev/null; then
     export DEBIAN_FRONTEND=noninteractive
     retry_apt_get update
-    retry_apt_get -q -y mysql-server libmysql-java
+    retry_apt_get -q -y install mysql-server-5.5 mysql-client-5.5 libmysql-java
+    service mysql start
   elif which rpm &> /dev/null; then
     retry_yum install -y mysql-server mysql-connector-java
+    service mysqld start
+    chkconfig mysqld on
   fi
-  service mysqld start
-  chkconfig mysqld on
 }

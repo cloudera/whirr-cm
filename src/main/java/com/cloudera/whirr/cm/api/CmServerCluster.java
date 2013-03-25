@@ -26,8 +26,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.whirr.Cluster.Instance;
+
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+
 public class CmServerCluster {
 
+  private Set<String> dataMounts = new HashSet<String>();
+  
   private Map<CmServerServiceType, List<CmServerService>> services = new HashMap<CmServerServiceType, List<CmServerService>>();
 
   public CmServerCluster() {
@@ -138,8 +147,8 @@ public class CmServerCluster {
     throw new IOException("Cannot determine service name, cluster is empty");
   }
 
-  public synchronized Set<String> getServiceHosts(CmServerServiceType type) {
-    Set<String> hosts = new HashSet<String>();
+  public synchronized Set<Instance> getServiceHosts(CmServerServiceType type) {
+    Set<Instance> hosts = new HashSet<Instance>();
     if (type.equals(CmServerServiceType.CLUSTER)) {
       for (CmServerServiceType serviceType : services.keySet()) {
         for (CmServerService service : services.get(serviceType)) {
@@ -160,6 +169,24 @@ public class CmServerCluster {
     return hosts;
   }
 
+  public synchronized void setDataMounts(Set<String> mnts) {
+    this.dataMounts.addAll(mnts);
+  }
+
+  public synchronized Set<String> getDataMounts() {
+    return ImmutableSet.copyOf(dataMounts);
+  }
+
+  public String getDataDirsForSuffix(final String suffix) throws IOException {
+    return Joiner.on(',').join(Lists.transform(Lists.newArrayList(getDataMounts()),
+      new Function<String, String>() {
+        @Override public String apply(String input) {
+          return input + suffix;
+        }
+      }
+    ));
+  }
+  
   private void assertConsistentTopology(CmServerServiceType type) throws CmServerApiException {
     if (type.getParent() == null || type.getParent().getParent() == null) {
       throw new CmServerApiException("Invalid cluster topology: Attempt to add non leaf type [" + type + "]");

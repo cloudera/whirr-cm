@@ -30,6 +30,8 @@ import java.util.TreeSet;
 
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 
+import org.apache.whirr.Cluster.Instance;
+
 import com.cloudera.api.ClouderaManagerClientBuilder;
 import com.cloudera.api.DataView;
 import com.cloudera.api.model.ApiBulkCommandList;
@@ -53,7 +55,12 @@ import com.cloudera.api.model.ApiServiceList;
 import com.cloudera.api.v3.ParcelResource;
 import com.cloudera.api.v3.RootResourceV3;
 import com.cloudera.whirr.cm.api.CmServerApiLog.CmServerApiLogSyncCommand;
+
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 
 public class CmServerApi {
 
@@ -131,16 +138,16 @@ public class CmServerApi {
     return configPostUpdate;
   }
 
-  public Set<String> hosts() throws CmServerApiException {
+  public Set<ApiHost> hosts() throws CmServerApiException {
 
-    final Set<String> hosts = new HashSet<String>();
+    final Set<ApiHost> hosts = new HashSet<ApiHost>();
     try {
 
       logger.logOperation("GetHosts", new CmServerApiLogSyncCommand() {
         @Override
         public void execute() {
           for (ApiHost host : apiResourceRoot.getHostsResource().readHosts(DataView.SUMMARY).getHosts()) {
-            hosts.add(host.getHostId());
+            hosts.add(host);
           }
         }
       });
@@ -332,8 +339,8 @@ public class CmServerApi {
     });
 
     List<ApiHostRef> apiHostRefs = Lists.newArrayList();
-    for (String host : hosts()) {
-      apiHostRefs.add(new ApiHostRef(host));
+    for (ApiHost host : hosts()) {
+      apiHostRefs.add(new ApiHostRef(host.getHostId()));
     }
     apiResourceRoot.getClustersResource().addHosts(getName(cluster), new ApiHostRefList(apiHostRefs));
 
@@ -399,7 +406,7 @@ public class CmServerApi {
 
   }
 
-  private void configureServices(final CmServerCluster cluster) throws IOException, InterruptedException {
+  private void configureServices(final CmServerCluster cluster) throws IOException, InterruptedException, CmServerApiException {
 
     final ApiServiceList serviceList = new ApiServiceList();
     for (CmServerServiceType type : cluster.getServiceTypes()) {
@@ -439,7 +446,7 @@ public class CmServerApi {
 
   }
 
-  private ApiService buildServices(final CmServerCluster cluster, CmServerServiceType type) throws IOException {
+  private ApiService buildServices(final CmServerCluster cluster, CmServerServiceType type) throws IOException, CmServerApiException {
 
     ApiService apiService = new ApiService();
     List<ApiRole> apiRoles = new ArrayList<ApiRole>();
@@ -484,19 +491,19 @@ public class CmServerApi {
       // TODO Refactor, dont hardcode, pass through from whirr config
       switch (subType) {
       case HDFS_NAMENODE:
-        apiConfigList.add(new ApiConfig("dfs_name_dir_list", "/data/1/dfs/nn"));
+        apiConfigList.add(new ApiConfig("dfs_name_dir_list", cluster.getDataDirsForSuffix("/dfs/nn")));
         break;
       case HDFS_SECONDARY_NAMENODE:
-        apiConfigList.add(new ApiConfig("fs_checkpoint_dir_list", "/data/1/dfs/snn"));
+        apiConfigList.add(new ApiConfig("fs_checkpoint_dir_list", cluster.getDataDirsForSuffix("/dfs/snn")));
         break;
       case HDFS_DATANODE:
-        apiConfigList.add(new ApiConfig("dfs_data_dir_list", "/mnt/data/1/dfs/dn"));
+        apiConfigList.add(new ApiConfig("dfs_data_dir_list", cluster.getDataDirsForSuffix("/dfs/dn")));
         break;
       case MAPREDUCE_JOB_TRACKER:
-        apiConfigList.add(new ApiConfig("jobtracker_mapred_local_dir_list", "/data/1/mapred/jt"));
+        apiConfigList.add(new ApiConfig("jobtracker_mapred_local_dir_list", cluster.getDataDirsForSuffix("/mapred/jt")));
         break;
       case MAPREDUCE_TASK_TRACKER:
-        apiConfigList.add(new ApiConfig("tasktracker_mapred_local_dir_list", "/data/1/mapred/local"));
+        apiConfigList.add(new ApiConfig("tasktracker_mapred_local_dir_list", cluster.getDataDirsForSuffix("/mapred/local")));
         break;
       default:
         break;
@@ -510,10 +517,11 @@ public class CmServerApi {
     }
 
     for (CmServerService subService : cluster.getServices(type)) {
+      String hostId = getHostIdForInstance(subService.getHost());
       ApiRole apiRole = new ApiRole();
       apiRole.setName(subService.getName());
       apiRole.setType(subService.getType().getLabel());
-      apiRole.setHostRef(new ApiHostRef(subService.getHost()));
+      apiRole.setHostRef(new ApiHostRef(hostId));
       apiRole.setRoleConfigGroupRef(new ApiRoleConfigGroupRef(subService.getGroup()));
       apiRoles.add(apiRole);
     }
@@ -524,6 +532,31 @@ public class CmServerApi {
     return apiService;
   }
 
+  private String getHostIdForInstance(Instance instance) throws IOException, CmServerApiException {
+    String hostId;
+    Set<ApiHost> hosts = hosts();
+
+    final String hostName = instance.getPublicHostName();
+    final String privateIp = instance.getPrivateIp();
+    final String publicIp = instance.getPublicIp();
+    ApiHost actualHost = Iterables.getOnlyElement(Sets.filter(hosts, new Predicate<ApiHost>() {
+          @Override
+          public boolean apply(ApiHost host) {
+            return host.getHostname().equals(hostName)
+            || host.getIpAddress().equals(privateIp)
+            || host.getIpAddress().equals(publicIp);
+          }
+        }), null);
+
+    if (actualHost != null) {
+      hostId = actualHost.getHostId();
+    } else {
+      hostId = "";
+    }
+
+    return hostId;
+  }
+  
   private void initPreStartServices(final CmServerCluster cluster, CmServerServiceType type) throws IOException,
       InterruptedException {
 
