@@ -27,7 +27,7 @@ import org.apache.whirr.service.ClusterActionEvent;
 
 public class CmAgentHandler extends CmNodeHandler {
 
-  public static final String ROLE = "cmagent";
+  public static final String ROLE = "cm-agent";
 
   @Override
   public String getRole() {

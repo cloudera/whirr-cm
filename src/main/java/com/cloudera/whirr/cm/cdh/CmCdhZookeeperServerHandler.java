@@ -21,7 +21,7 @@ import com.cloudera.whirr.cm.api.CmServerServiceType;
 
 public class CmCdhZookeeperServerHandler extends BaseHandlerCmCdh {
 
-  public static final String ROLE = "cmcdh-zookeeper";
+  public static final String ROLE = "cm-cdh-zookeeper";
   public static final CmServerServiceType TYPE = CmServerServiceType.ZOOKEEPER_SERVER;
 
   @Override

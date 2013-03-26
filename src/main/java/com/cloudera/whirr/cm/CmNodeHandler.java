@@ -26,9 +26,9 @@ import org.apache.whirr.service.ClusterActionEvent;
 import org.apache.whirr.service.FirewallManager.Rule;
 
 public class CmNodeHandler extends BaseHandlerCm {
-  public static final String ROLE = "cmnode";
+  public static final String ROLE = "cm-node";
 
-  private static final String PROPERTY_PORTS = "cmnode.ports";
+  private static final String PROPERTY_PORTS = "cm-node.ports";
 
   @Override
   public String getRole() {

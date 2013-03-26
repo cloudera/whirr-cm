@@ -46,15 +46,15 @@ import com.google.common.io.Resources;
 
 public class CmServerHandler extends BaseHandlerCm {
 
-  public static final String ROLE = "cmserver";
+  public static final String ROLE = "cm-server";
 
   public static final String LICENSE_FILE = "cm-license.txt";
 
-  public static final String PROPERTY_PARCEL_PRODUCT = "cmserver.parcel.product";
-  public static final String PROPERTY_PARCEL_VERSION = "cmserver.parcel.version";
-  public static final String PROPERTY_PORTS = "cmserver.ports";
-  public static final String PROPERTY_PORT_WEB = "cmserver.port.web";
-  public static final String PROPERTY_PORT_COMMS = "cmserver.port.comms";
+  public static final String PROPERTY_PARCEL_PRODUCT = "cm-server.parcel.product";
+  public static final String PROPERTY_PARCEL_VERSION = "cm-server.parcel.version";
+  public static final String PROPERTY_PORTS = "cm-server.ports";
+  public static final String PROPERTY_PORT_WEB = "cm-server.port.web";
+  public static final String PROPERTY_PORT_COMMS = "cm-server.port.comms";
 
   public static final String CM_USER = "admin";
   public static final String CM_PASSWORD = "admin";

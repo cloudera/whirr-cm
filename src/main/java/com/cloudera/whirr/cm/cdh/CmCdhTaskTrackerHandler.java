@@ -21,7 +21,7 @@ import com.cloudera.whirr.cm.api.CmServerServiceType;
 
 public class CmCdhTaskTrackerHandler extends BaseHandlerCmCdh {
 
-  public static final String ROLE = "cmcdh-tasktracker";
+  public static final String ROLE = "cm-cdh-tasktracker";
   public static final CmServerServiceType TYPE = CmServerServiceType.MAPREDUCE_TASK_TRACKER;
 
   @Override

@@ -21,7 +21,7 @@ import com.cloudera.whirr.cm.api.CmServerServiceType;
 
 public class CmCdhSecondaryNameNodeHandler extends BaseHandlerCmCdh {
 
-  public static final String ROLE = "cmcdh-secondarynamenode";
+  public static final String ROLE = "cm-cdh-secondarynamenode";
   public static final CmServerServiceType TYPE = CmServerServiceType.HDFS_SECONDARY_NAMENODE;
 
   @Override

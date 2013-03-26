@@ -21,7 +21,7 @@ import com.cloudera.whirr.cm.api.CmServerServiceType;
 
 public class CmCdhOozieServerHandler extends BaseHandlerCmCdh {
 
-  public static final String ROLE = "cmcdh-oozie-server";
+  public static final String ROLE = "cm-cdh-oozie-server";
   public static final CmServerServiceType TYPE = CmServerServiceType.OOZIE_SERVER;
 
   @Override

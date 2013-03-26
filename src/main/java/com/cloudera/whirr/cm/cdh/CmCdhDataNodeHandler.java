@@ -21,7 +21,7 @@ import com.cloudera.whirr.cm.api.CmServerServiceType;
 
 public class CmCdhDataNodeHandler extends BaseHandlerCmCdh {
 
-  public static final String ROLE = "cmcdh-datanode";
+  public static final String ROLE = "cm-cdh-datanode";
   public static final CmServerServiceType TYPE = CmServerServiceType.HDFS_DATANODE;
 
   @Override

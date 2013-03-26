@@ -27,7 +27,7 @@ import com.cloudera.whirr.cm.api.CmServerServiceType;
 
 public class CmCdhHiveMetaStoreHandler extends BaseHandlerCmCdh {
 
-  public static final String ROLE = "cmcdh-hivemetastore";
+  public static final String ROLE = "cm-cdh-hivemetastore";
   public static final CmServerServiceType TYPE = CmServerServiceType.HIVE_METASTORE;
 
   @Override

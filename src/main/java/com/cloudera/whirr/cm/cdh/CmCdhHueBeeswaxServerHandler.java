@@ -21,7 +21,7 @@ import com.cloudera.whirr.cm.api.CmServerServiceType;
 
 public class CmCdhHueBeeswaxServerHandler extends BaseHandlerCmCdh {
 
-  public static final String ROLE = "cmcdh-hue-beeswaxserver";
+  public static final String ROLE = "cm-cdh-hue-beeswaxserver";
   public static final CmServerServiceType TYPE = CmServerServiceType.HUE_BEESWAX_SERVER;
 
   @Override

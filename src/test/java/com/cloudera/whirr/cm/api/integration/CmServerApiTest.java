@@ -47,12 +47,12 @@ public class CmServerApiTest implements BaseTest {
   private static final String CLUSTER_TAG = "whirr_test";
 
   // The CDH Master Node, the tests assume a single master provisioned by whirr-cm with all database
-  // dependent roles (eg cmcdh-hivemetastore)
+  // dependent roles (eg cm-cdh-hivemetastore)
   private static String CDH_MASTER_HOST = getSystemProperty("whirr.test.cdh.master.host",
       "37-188-113-33.static.cloud-ips.co.uk");
 
   // The IP of CDH Master Node, the tests assume a single master provisioned by whirr-cm with all database
-  // dependent roles (eg cmcdh-hivemetastore)
+  // dependent roles (eg cm-cdh-hivemetastore)
   private static String CDH_MASTER_IP = getSystemProperty("whirr.test.cdh.master.ip",
       "37.188.113.33");
 
