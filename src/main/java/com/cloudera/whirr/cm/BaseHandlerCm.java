@@ -33,18 +33,22 @@ public abstract class BaseHandlerCm extends BaseHandler {
 
   public static final String DATA_DIRS_ROOT = "cm.data.dirs.root";
   public static final String DATA_DIRS_DEFAULT = "cm.data.dirs.default";
-  
-  protected Map<String,String> deviceMappings = new HashMap<String,String>();
+
+  public static final String CONSOLE_SPACER = "-------------------------------------------------------------------------------";
+
+  protected Map<String, String> deviceMappings = new HashMap<String, String>();
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
+    logHeader("Whirr Pre Host Provision " + getRole());
     super.beforeBootstrap(event);
     addStatement(event, call("configure_hostnames"));
     addStatement(event, call("retry_helpers"));
   }
-  
+
   @Override
   protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
+    logHeader("Whirr Post Host Provision " + getRole());
     super.beforeConfigure(event);
     addStatement(event, call("retry_helpers"));
 
@@ -63,8 +67,47 @@ public abstract class BaseHandlerCm extends BaseHandler {
       }
       VolumeManager volumeManager = new VolumeManager();
       deviceMappings.putAll(volumeManager.getDeviceMappings(event.getClusterSpec(), prototype));
-    } 
-    
+    }
+
     return deviceMappings;
   }
+
+  public void logHeader(String message) {
+
+    System.out.println();
+    System.out.println(CONSOLE_SPACER);
+    System.out.println(message);
+    System.out.println(CONSOLE_SPACER);
+
+  }
+
+  public void logFooter() {
+
+    System.out.println();
+    System.out.println(CONSOLE_SPACER);
+
+  }
+
+  public void logLineItem(String message) {
+
+    System.out.println();
+    System.out.println(message);
+
+  }
+
+  public void logLineItemDetail(String message) {
+
+    System.out.println(message);
+
+  }
+
+  public void logException(String message, Throwable throwable) {
+
+    System.out.println();
+    throwable.printStackTrace();
+    System.out.println();
+    System.out.println(message);
+
+  }
+
 }

@@ -17,19 +17,14 @@
  */
 package com.cloudera.whirr.cm.api.integration;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import junit.framework.Assert;
 
-import org.apache.whirr.Cluster.Instance;
-
-import org.jclouds.domain.Credentials;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.cloudera.api.model.ApiHost;
 
 import com.cloudera.whirr.cm.BaseTest;
 import com.cloudera.whirr.cm.CmServerHandler;
@@ -40,25 +35,19 @@ import com.cloudera.whirr.cm.api.CmServerCluster;
 import com.cloudera.whirr.cm.api.CmServerService;
 import com.cloudera.whirr.cm.api.CmServerServiceType;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 
 public class CmServerApiTest implements BaseTest {
 
   private static final String CLUSTER_TAG = "whirr_test";
 
+  // The CM Server host and port
+  private static String CM_HOST = getSystemProperty("whirr.test.cm.host", "5-79-4-192.static.cloud-ips.co.uk");
+  private static int CM_PORT = Integer.valueOf(getSystemProperty("whirr.test.cm.port", "7180"));
+
   // The CDH Master Node, the tests assume a single master provisioned by whirr-cm with all database
   // dependent roles (eg cm-cdh-hivemetastore)
   private static String CDH_MASTER_HOST = getSystemProperty("whirr.test.cdh.master.host",
-      "37-188-113-33.static.cloud-ips.co.uk");
-
-  // The IP of CDH Master Node, the tests assume a single master provisioned by whirr-cm with all database
-  // dependent roles (eg cm-cdh-hivemetastore)
-  private static String CDH_MASTER_IP = getSystemProperty("whirr.test.cdh.master.ip",
-      "37.188.113.33");
-
-  // The CM Server host and port
-  private static String CM_HOST = getSystemProperty("whirr.test.cm.host", "37-188-116-147.static.cloud-ips.co.uk");
-  private static int CM_PORT = Integer.valueOf(getSystemProperty("whirr.test.cm.port", "7180"));
+      "5-79-4-85.static.cloud-ips.co.uk");
 
   // The CM Server config to be uploaded
   private static Map<String, String> CM_CONFIG = ImmutableMap.of("REMOTE_PARCEL_REPO_URLS",
@@ -70,10 +59,15 @@ public class CmServerApiTest implements BaseTest {
   private static CmServerCluster cluster;
 
   @Test
+  public void testGetServiceHost() throws CmServerApiException {
+
+  }
+
+  @Test
   public void testConfigure() throws CmServerApiException {
 
-    api.configure(cluster);
-    api.unconfigure(cluster);
+    // api.configure(cluster);
+    // api.unconfigure(cluster);
 
   }
 
@@ -82,8 +76,8 @@ public class CmServerApiTest implements BaseTest {
 
     api.configure(cluster);
     api.startFirst(cluster);
-    api.stop(cluster);
-    api.unconfigure(cluster);
+    // api.stop(cluster);
+    // api.unconfigure(cluster);
 
   }
 
@@ -106,51 +100,39 @@ public class CmServerApiTest implements BaseTest {
         new CmServerApiLog.CmServerApiLogSysOut()));
     Assert.assertTrue(api.initialise(CM_CONFIG).size() > 0);
 
-    Set<ApiHost> hosts = api.hosts();
-    Assert.assertNotNull(hosts);
+    Set<String> hosts = new HashSet<String>();
+    for (CmServerService service : api.getServiceHosts()) {
+      hosts.add(service.getHost());
+    }
+    Assert.assertFalse(hosts.isEmpty());
     Assert.assertTrue("Integration test cluster requires at least 4 (+ CM Server) nodes", hosts.size() >= 5);
     hosts.remove(CM_HOST);
     hosts.remove(CDH_MASTER_HOST);
-    ApiHost[] hostSlaves = hosts.toArray(new ApiHost[] {});
+    String[] hostSlaves = hosts.toArray(new String[hosts.size()]);
 
     cluster = new CmServerCluster();
-    cluster.add(new CmServerService(CmServerServiceType.HIVE_METASTORE, CLUSTER_TAG, "1",
-                                    dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
-    cluster.add(new CmServerService(CmServerServiceType.HUE_SERVER, CLUSTER_TAG, "1",
-                                    dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
-    cluster.add(new CmServerService(CmServerServiceType.HUE_BEESWAX_SERVER, CLUSTER_TAG, "1",
-                                    dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
-    cluster.add(new CmServerService(CmServerServiceType.OOZIE_SERVER, CLUSTER_TAG, "1",
-                                    dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
-    cluster.add(new CmServerService(CmServerServiceType.HBASE_MASTER, CLUSTER_TAG, "1",
-                                    dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, "1",
-                                    dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_SECONDARY_NAMENODE, CLUSTER_TAG, "1",
-                                    dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
-    cluster.add(new CmServerService(CmServerServiceType.MAPREDUCE_JOB_TRACKER, CLUSTER_TAG, "1",
-                                    dummyInstance(CDH_MASTER_HOST, CDH_MASTER_IP)));
+    cluster.add(new CmServerService(CmServerServiceType.HIVE_METASTORE, CLUSTER_TAG, "1", CDH_MASTER_HOST));
+    // cluster.add(new CmServerService(CmServerServiceType.HUE_SERVER, CLUSTER_TAG, "1", CDH_MASTER_HOST));
+    // cluster.add(new CmServerService(CmServerServiceType.HUE_BEESWAX_SERVER, CLUSTER_TAG, "1", CDH_MASTER_HOST));
+    // cluster.add(new CmServerService(CmServerServiceType.OOZIE_SERVER, CLUSTER_TAG, "1", CDH_MASTER_HOST));
+    // cluster.add(new CmServerService(CmServerServiceType.HBASE_MASTER, CLUSTER_TAG, "1", CDH_MASTER_HOST));
+    cluster.add(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, "1", CDH_MASTER_HOST));
+    cluster.add(new CmServerService(CmServerServiceType.HDFS_SECONDARY_NAMENODE, CLUSTER_TAG, "1", CDH_MASTER_HOST));
+    cluster.add(new CmServerService(CmServerServiceType.MAPREDUCE_JOB_TRACKER, CLUSTER_TAG, "1", CDH_MASTER_HOST));
     // cluster.add(new CmServerService(CmServerServiceType.IMPALA_STATE_STORE, CLUSTER_TAG, "1", CDH_MASTER_HOST));
     for (int i = 0; i < hostSlaves.length; i++) {
-      cluster.add(new CmServerService(CmServerServiceType.HBASE_REGIONSERVER, CLUSTER_TAG, "" + i + 1,
-                                      dummyInstance(hostSlaves[i].getHostname(), hostSlaves[i].getIpAddress())));
+      // cluster.add(new CmServerService(CmServerServiceType.HBASE_REGIONSERVER, CLUSTER_TAG, "" + i + 1,
+      // hostSlaves[i]));
       cluster.add(new CmServerService(CmServerServiceType.MAPREDUCE_TASK_TRACKER, CLUSTER_TAG, "" + i + 1,
-                                      dummyInstance(hostSlaves[i].getHostname(), hostSlaves[i].getIpAddress())));
-      cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "" + i + 1, 
-                                      dummyInstance(hostSlaves[i].getHostname(), hostSlaves[i].getIpAddress())));
-      cluster.add(new CmServerService(CmServerServiceType.ZOOKEEPER_SERVER, CLUSTER_TAG, "" + i + 1,
-                                      dummyInstance(hostSlaves[i].getHostname(), hostSlaves[i].getIpAddress())));
+          hostSlaves[i]));
+      cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "" + i + 1, hostSlaves[i]));
+      // cluster.add(new CmServerService(CmServerServiceType.ZOOKEEPER_SERVER, CLUSTER_TAG, "" + i + 1, hostSlaves[i]));
       // cluster.add(new CmServerService(CmServerServiceType.IMPALA_DAEMON, CLUSTER_TAG, "" + i+1, hostSlaves[1]));
     }
 
     api.provision(cluster);
   }
 
-  private static Instance dummyInstance(String name, String ip) {
-    Credentials credentials = new Credentials("dummy", "dummy");
-    return new Instance(credentials, Sets.newHashSet("role1", "role2"), ip, ip, "i-" + ip, null);
-  }
-  
   private static String getSystemProperty(String key, String value) {
     return System.getProperty(key) == null ? value : System.getProperty(key);
   }

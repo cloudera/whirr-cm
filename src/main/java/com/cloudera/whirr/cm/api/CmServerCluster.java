@@ -26,8 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.whirr.Cluster.Instance;
-
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
@@ -145,28 +143,6 @@ public class CmServerCluster {
       }
     }
     throw new IOException("Cannot determine service name, cluster is empty");
-  }
-
-  public synchronized Set<Instance> getServiceHosts(CmServerServiceType type) {
-    Set<Instance> hosts = new HashSet<Instance>();
-    if (type.equals(CmServerServiceType.CLUSTER)) {
-      for (CmServerServiceType serviceType : services.keySet()) {
-        for (CmServerService service : services.get(serviceType)) {
-          hosts.add(service.getHost());
-        }
-      }
-    } else if (services.containsKey(type)) {
-      for (CmServerService service : services.get(type)) {
-        hosts.add(service.getHost());
-      }
-    } else if (services.containsKey(type.getParent())) {
-      for (CmServerService service : services.get(type.getParent())) {
-        if (service.getType().equals(type)) {
-          hosts.add(service.getHost());
-        }
-      }
-    }
-    return hosts;
   }
 
   public synchronized void setDataMounts(Set<String> mnts) {

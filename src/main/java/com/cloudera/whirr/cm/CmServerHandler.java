@@ -59,8 +59,6 @@ public class CmServerHandler extends BaseHandlerCm {
   public static final String CM_USER = "admin";
   public static final String CM_PASSWORD = "admin";
 
-  private static final String CONSOLE_SPACER = "-------------------------------------------------------------------------------";
-
   @Override
   public String getRole() {
     return ROLE;
@@ -101,78 +99,55 @@ public class CmServerHandler extends BaseHandlerCm {
   protected void afterConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
     super.afterConfigure(event);
 
-    System.out.println();
-    System.out.println(CONSOLE_SPACER);
-    System.out.println("Cloudera Manager Server");
-    System.out.println(CONSOLE_SPACER);
-    System.out.println();
-    System.out.println("Web Console:");
-    System.out.println("http://" + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp() + ":"
+    logHeader("Cloudera Manager Server");
+    logLineItem("Web Console:");
+    logLineItemDetail("http://" + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp() + ":"
         + getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB));
-    System.out.println();
-    System.out.println("Web Console User/Password (change these!):");
-    System.out.println(CM_USER + "/" + CM_PASSWORD);
-    System.out.println();
-    System.out.println("Automatically provision and start Cloudera Manager services [" + CONFIG_WHIRR_AUTO_VARIABLE
-        + "],");
-    System.out.println("(progress via terminal (below) and web (above) consoles):");
-    System.out.println(event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true));
+    logLineItem("Web Console User/Password (change these!):");
+    logLineItemDetail(CM_USER + "/" + CM_PASSWORD);
+    logLineItem("Automatically provision and start Cloudera Manager services [" + CONFIG_WHIRR_AUTO_VARIABLE + "],\n"
+        + "progress via terminal (below) and web (above) consoles:");
+    logLineItemDetail("" + event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true));
 
-    System.out.println();
-    System.out.println("User:");
-    System.out.println(event.getClusterSpec().getClusterUser());
-    System.out.println();
-    System.out.println("Private Key Path:");
-    System.out.println(event.getClusterSpec().getPrivateKeyFile() == null ? "<not-defined>" : event.getClusterSpec()
+    logLineItemDetail("User:");
+    logLineItem(event.getClusterSpec().getClusterUser());
+    logLineItemDetail("Private Key Path:");
+    logLineItem(event.getClusterSpec().getPrivateKeyFile() == null ? "<not-defined>" : event.getClusterSpec()
         .getPrivateKeyFile().getCanonicalPath());
-    System.out.println();
-    System.out.println("Console:");
-    System.out.println("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
+    logLineItemDetail("Console:");
+    logLineItem("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
         + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp());
 
     Set<Instance> nodes = event.getCluster().getInstancesMatching(role(CmNodeHandler.ROLE));
     if (!nodes.isEmpty()) {
-      System.out.println();
-      System.out.println(CONSOLE_SPACER);
-      System.out.println("Cloudera Manager Nodes");
-      System.out.println(CONSOLE_SPACER);
-      System.out.println();
-      System.out.println("Consoles:");
+      logHeader("Cloudera Manager Nodes");
+      logLineItem("Consoles:");
       for (Instance instance : nodes) {
-        System.out.println("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
+        logLineItem("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
             + instance.getPublicIp());
       }
     }
 
     Set<Instance> agents = event.getCluster().getInstancesMatching(role(CmAgentHandler.ROLE));
     if (!agents.isEmpty()) {
-      System.out.println();
-      System.out.println(CONSOLE_SPACER);
-      System.out.println("Cloudera Manager Agents");
-      System.out.println(CONSOLE_SPACER);
-      System.out.println();
-      System.out.println("Consoles:");
+      logHeader("Cloudera Manager Agents");
+      logLineItem("Consoles:");
       for (Instance instance : agents) {
-        System.out.println("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
+        logLineItemDetail("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
             + instance.getPublicIp());
       }
     }
 
     if (!BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().isEmpty()) {
 
-      System.out.println();
-      System.out.println(CONSOLE_SPACER);
-      System.out.println("Cloudera Manager Cluster Provision");
-      System.out.println(CONSOLE_SPACER);
+      logHeader("Cloudera Manager Cluster Provision");
 
       if (!event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
 
-        System.out.println();
-        System.out.println("Warning, Cloudera Manager services found but whirr property [" + CONFIG_WHIRR_AUTO_VARIABLE
-            + "]");
-        System.out.println("set to false so not provsioning:");
+        logLineItem("Warning, Cloudera Manager services found but whirr property [" + CONFIG_WHIRR_AUTO_VARIABLE
+            + "]\n" + "set to false so not provsioning:");
         for (String role : BaseHandlerCmCdh.getRoles()) {
-          System.out.println(role);
+          logLineItemDetail(role);
         }
 
       } else if (event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
@@ -180,9 +155,8 @@ public class CmServerHandler extends BaseHandlerCm {
         try {
 
           BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().setDataMounts(getDataMounts(event));
-          
-          System.out.println();
-          System.out.println("Roles:");
+
+          logLineItem("Roles:");
           BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().clearServices();
           for (Instance instance : event.getCluster().getInstances()) {
             for (String role : instance.getRoles()) {
@@ -191,16 +165,14 @@ public class CmServerHandler extends BaseHandlerCm {
                 CmServerService service = new CmServerService(type, event.getClusterSpec().getConfiguration()
                     .getString(CONFIG_WHIRR_NAME, CM_CLUSTER_NAME), ""
                     + (BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().getServices(type).size() + 1),
-                    instance);
+                    instance.getPublicHostName(), instance.getPublicIp(), instance.getPrivateIp());
                 BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().add(service);
-                System.out.println(service.getName() + "@[id=" + instance.getId() + ", ip=" + instance.getPublicIp()
-                                   + ", host=" + service.getHost().getPublicHostName() + "]");
+                logLineItemDetail(service.getName() + "@" + instance.getPublicIp());
               }
             }
           }
 
-          System.out.println();
-          System.out.println("Provision:");
+          logLineItem("Provision:");
           Map<String, String> config = new HashMap<String, String>();
           @SuppressWarnings("unchecked")
           Iterator<String> keys = event.getClusterSpec().getConfiguration().getKeys();
@@ -218,26 +190,17 @@ public class CmServerHandler extends BaseHandlerCm {
           cmServerApi.provision(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
           cmServerApi.configure(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
 
-          System.out.println();
-
         } catch (Exception e) {
 
-          System.out.println();
-          e.printStackTrace();
-          System.out.println();
-          System.out
-              .println("Failed to execute Cloudera Manager Cluster Provision, please review the proceeding exception and log into the web console [http://"
+          logException(
+              "Failed to execute Cloudera Manager Cluster Provision, please review the proceeding exception and log into the web console [http://"
                   + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp()
                   + ":"
-                  + getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB) + "] to resolve");
+                  + getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB) + "] to resolve", e);
 
         }
 
       }
-
-      System.out.println();
-      System.out.println(CONSOLE_SPACER);
-      System.out.println();
 
     }
 
@@ -249,69 +212,50 @@ public class CmServerHandler extends BaseHandlerCm {
 
     if (!BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().isEmpty()) {
 
-      System.out.println();
-      System.out.println(CONSOLE_SPACER);
-      System.out.println("Cloudera Manager Cluster Start");
-      System.out.println(CONSOLE_SPACER);
+      logHeader("Cloudera Manager Cluster Start");
 
       if (!event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
 
-        System.out.println();
-        System.out.println("Warning, Cloudera Manager services found but whirr property [" + CONFIG_WHIRR_AUTO_VARIABLE
-            + "]");
-        System.out.println("set to false so not starting:");
+        logLineItem("Warning, Cloudera Manager services found but whirr property [" + CONFIG_WHIRR_AUTO_VARIABLE
+            + "]\n" + "set to false so not starting:");
         for (String role : BaseHandlerCmCdh.getRoles()) {
-          System.out.println(role);
+          logLineItemDetail(role);
         }
 
       } else if (event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
 
         try {
 
-          System.out.println();
-          System.out.println("Services:");
+          logLineItem("Services:");
           for (CmServerServiceType type : BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().getServiceTypes()) {
-            System.out.println(type);
+            logLineItemDetail(type.toString());
           }
 
-          System.out.println();
-          System.out.println("Start:");
+          logLineItem("Start:");
           CmServerApi cmServerApi = new CmServerApi(event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp(),
               7180, CM_USER, CM_PASSWORD, new CmServerApiLog.CmServerApiLogSysOut());
           cmServerApi.startFirst(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
 
-          System.out.println();
-
         } catch (Exception e) {
 
-          System.out.println();
-          e.printStackTrace();
-          System.out.println();
-          System.out
-              .println("Failed to execute Cloudera Manager Cluster Start, please review the proceeding exception and log into the web console [http://"
+          logException(
+              "Failed to execute Cloudera Manager Cluster Start, please review the proceeding exception and log into the web console [http://"
                   + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp()
                   + ":"
-                  + getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB) + "] to resolve");
+                  + getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB) + "] to resolve", e);
 
         }
 
       }
 
-      System.out.println();
-      System.out.println(CONSOLE_SPACER);
-      System.out.println("Cloudera Manager Server");
-      System.out.println(CONSOLE_SPACER);
-      System.out.println();
-      System.out.println("Web Console:");
-      System.out.println("http://" + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp() + ":"
+      logHeader("Cloudera Manager Server");
+      logLineItem("Web Console:");
+      logLineItemDetail("http://" + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp() + ":"
           + getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB));
-      System.out.println();
-      System.out.println("Web Console User/Password (change these!):");
-      System.out.println(CM_USER + "/" + CM_PASSWORD);
+      logLineItem("Web Console User/Password (change these!):");
+      logLineItemDetail(CM_USER + "/" + CM_PASSWORD);
 
-      System.out.println();
-      System.out.println(CONSOLE_SPACER);
-      System.out.println();
+      logFooter();
 
     }
 

@@ -19,17 +19,11 @@ package com.cloudera.whirr.cm.api;
 
 import java.io.IOException;
 
-import org.apache.whirr.Cluster.Instance;
-
-import org.jclouds.domain.Credentials;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.cloudera.whirr.cm.BaseTest;
-
-import com.google.common.collect.Sets;
 
 public class CmServerClusterTest implements BaseTest {
 
@@ -37,33 +31,17 @@ public class CmServerClusterTest implements BaseTest {
 
   private CmServerCluster cluster;
 
-  private Credentials credentials;
-  private Instance host1;
-  private Instance host2;
-  private Instance host3;
-  private Instance host4;
-
   @Before
   public void setupCluster() throws CmServerApiException {
-    credentials = new Credentials("dummy", "dummy");
-    host1 = new Instance(credentials, Sets.newHashSet("role1", "role2"), "127.0.0.1",
-                         "127.0.0.1", "i-host1", null);
-    host2 = new Instance(credentials, Sets.newHashSet("role1", "role2"), "127.0.0.2",
-                         "127.0.0.2", "i-host2", null);
-    host3 = new Instance(credentials, Sets.newHashSet("role1", "role2"), "127.0.0.3",
-                         "127.0.0.3", "i-host3", null);
-    host4 = new Instance(credentials, Sets.newHashSet("role1", "role2"), "127.0.0.4",
-                         "127.0.0.4", "i-host4", null);
-    
     cluster = new CmServerCluster();
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "2", host2));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, "1", host1));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "1", host1));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_SECONDARY_NAMENODE, CLUSTER_TAG, "1", host1));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "3", host3));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "4", host4));
-    cluster.add(new CmServerService(CmServerServiceType.HBASE_REGIONSERVER, CLUSTER_TAG, "1", host4));
-    cluster.add(new CmServerService(CmServerServiceType.IMPALA_DAEMON, CLUSTER_TAG, "1", host4));
+    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "2", "host-2"));
+    cluster.add(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, "1", "host-1"));
+    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "1", "host-1"));
+    cluster.add(new CmServerService(CmServerServiceType.HDFS_SECONDARY_NAMENODE, CLUSTER_TAG, "1", "host-1"));
+    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "3", "host-3"));
+    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "4", "host-4"));
+    cluster.add(new CmServerService(CmServerServiceType.HBASE_REGIONSERVER, CLUSTER_TAG, "1", "host-4"));
+    cluster.add(new CmServerService(CmServerServiceType.IMPALA_DAEMON, CLUSTER_TAG, "1", "host-4"));
   }
 
   @Test
@@ -76,7 +54,7 @@ public class CmServerClusterTest implements BaseTest {
     cluster.add(CmServerServiceType.HDFS_NAMENODE);
     Assert.assertFalse(cluster.isEmpty());
     Assert.assertTrue(cluster.isEmptyServices());
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, "1", host1));
+    cluster.add(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, "1", "host-1"));
     Assert.assertFalse(cluster.isEmpty());
     Assert.assertFalse(cluster.isEmptyServices());
     cluster.clearServices();
@@ -192,15 +170,6 @@ public class CmServerClusterTest implements BaseTest {
       caught = true;
     }
     Assert.assertTrue(caught);
-  }
-
-  @Test
-  public void testGetHosts()   {
-    Assert.assertEquals(4, cluster.getServiceHosts(CmServerServiceType.CLUSTER).size());
-    Assert.assertEquals(4, cluster.getServiceHosts(CmServerServiceType.HDFS).size());
-    Assert.assertEquals(1, cluster.getServiceHosts(CmServerServiceType.HDFS_NAMENODE).size());
-    Assert.assertEquals(4, cluster.getServiceHosts(CmServerServiceType.HDFS_DATANODE).size());
-    Assert.assertEquals(0, cluster.getServiceHosts(CmServerServiceType.CLIENT).size());
   }
 
 }

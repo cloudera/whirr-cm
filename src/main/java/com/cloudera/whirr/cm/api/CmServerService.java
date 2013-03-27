@@ -17,8 +17,6 @@
  */
 package com.cloudera.whirr.cm.api;
 
-import org.apache.whirr.Cluster.Instance;
-
 public class CmServerService {
 
   public static final String NAME_TOKEN_DELIM = "_";
@@ -30,25 +28,39 @@ public class CmServerService {
   private CmServerServiceType type;
   private String tag;
   private String qualifier;
-  private Instance host;
+  private String host;
+  private String ip;
+  private String ipInternal;
 
   public CmServerService(CmServerServiceType type) {
-    this(type, "", "1", null);
+    this(type, null);
   }
 
   public CmServerService(CmServerServiceType type, String tag) {
-    this(type, tag, "1", null);
+    this(type, tag, "1", null, null, null);
   }
 
-  public CmServerService(CmServerServiceType type, String tag, String qualifier, Instance host) {
-    this.name = tag + (tag.equals("") ? "" : NAME_TOKEN_DELIM) + type.toString().toLowerCase() + NAME_TOKEN_DELIM
-        + qualifier;
-    this.group = tag + (tag.equals("") ? "" : NAME_TOKEN_DELIM) + type.toString().toLowerCase() + NAME_TOKEN_DELIM
-        + NAME_QUALIFIER_GROUP;
+  public CmServerService(String host, String ip) {
+    this(null, null, null, host, ip, null);
+  }
+
+  public CmServerService(CmServerServiceType type, String tag, String qualifier, String host) {
+    this(type, tag, qualifier, host, null, null);
+  }
+
+  public CmServerService(CmServerServiceType type, String tag, String qualifier, String host, String ip,
+      String ipInternal) {
+    this.name = type == null ? null : ((tag == null ? "" : (tag + NAME_TOKEN_DELIM))
+        + (type == null ? null : (type.toString().toLowerCase() + NAME_TOKEN_DELIM)) + (qualifier == null ? ""
+        : qualifier));
+    this.group = type == null ? "" : ((tag == null ? "" : (tag + NAME_TOKEN_DELIM))
+        + (type == null ? "" : (type.toString().toLowerCase() + NAME_TOKEN_DELIM)) + NAME_QUALIFIER_GROUP);
     this.type = type;
     this.tag = tag;
-    this.host = host;
     this.qualifier = qualifier;
+    this.host = host;
+    this.ip = ip;
+    this.ipInternal = ipInternal;
   }
 
   @Override
@@ -72,16 +84,14 @@ public class CmServerService {
     string.append(", ");
     string.append("host=");
     string.append(host);
+    string.append(", ");
+    string.append("ip=");
+    string.append(ip);
+    string.append(", ");
+    string.append("ipInternal=");
+    string.append(ipInternal);
     string.append("}");
     return string.toString();
-  }
-
-  public static String getNameTokenDelim() {
-    return NAME_TOKEN_DELIM;
-  }
-
-  public static String getNameQualifierGroup() {
-    return NAME_QUALIFIER_GROUP;
   }
 
   public String getName() {
@@ -104,8 +114,16 @@ public class CmServerService {
     return qualifier;
   }
 
-  public Instance getHost() {
+  public String getHost() {
     return host;
+  }
+
+  public String getIp() {
+    return ip;
+  }
+
+  public String geIpInternal() {
+    return ipInternal;
   }
 
 }
