@@ -123,7 +123,7 @@ public class CmServerHandler extends BaseHandlerCm {
       logHeader("Cloudera Manager Nodes");
       logLineItem("Consoles:");
       for (Instance instance : nodes) {
-        logLineItem("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
+        logLineItemDetail("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
             + instance.getPublicIp());
       }
     }
@@ -234,7 +234,7 @@ public class CmServerHandler extends BaseHandlerCm {
           logLineItem("Start:");
           CmServerApi cmServerApi = new CmServerApi(event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp(),
               7180, CM_USER, CM_PASSWORD, new CmServerApiLog.CmServerApiLogSysOut());
-          cmServerApi.startFirst(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
+          cmServerApi.start(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
 
         } catch (Exception e) {
 

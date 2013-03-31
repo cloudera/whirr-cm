@@ -40,7 +40,9 @@ public abstract class BaseHandlerCm extends BaseHandler {
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
-    logHeader("Whirr Pre Host Provision " + getRole());
+    logHeader("Whirr Pre Host Provision");
+    logLineItem("Role:");
+    logLineItemDetail(getRole());
     super.beforeBootstrap(event);
     addStatement(event, call("configure_hostnames"));
     addStatement(event, call("retry_helpers"));
@@ -48,7 +50,9 @@ public abstract class BaseHandlerCm extends BaseHandler {
 
   @Override
   protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
-    logHeader("Whirr Post Host Provision " + getRole());
+    logHeader("Whirr Post Host Provision");
+    logLineItem("Role:");
+    logLineItemDetail(getRole());
     super.beforeConfigure(event);
     addStatement(event, call("retry_helpers"));
 

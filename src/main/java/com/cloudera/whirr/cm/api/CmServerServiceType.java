@@ -54,7 +54,7 @@ public enum CmServerServiceType {
 
   // Oozie
   OOZIE(CLUSTER, "OOZIE", CmServerServiceTypeRepository.CDH), OOZIE_SERVER(OOZIE, "OOZIE_SERVER",
-                                                                           CmServerServiceTypeRepository.CDH),
+      CmServerServiceTypeRepository.CDH),
 
   // Impala
   IMPALA(CLUSTER, "IMPALA", CmServerServiceTypeRepository.IMPALA), IMPALA_STATE_STORE(IMPALA, "STATESTORE",
@@ -64,12 +64,12 @@ public enum CmServerServiceType {
   CLIENT(CLUSTER, "GATEWAY", CmServerServiceTypeRepository.CDH);
 
   private CmServerServiceType parent;
-  private String label;
+  private String id;
   private CmServerServiceTypeRepository respository;
 
-  private CmServerServiceType(CmServerServiceType parent, String label, CmServerServiceTypeRepository respository) {
+  private CmServerServiceType(CmServerServiceType parent, String id, CmServerServiceTypeRepository respository) {
     this.parent = parent;
-    this.label = label;
+    this.id = id;
     this.respository = respository;
   }
 
@@ -77,12 +77,21 @@ public enum CmServerServiceType {
     return parent;
   }
 
-  public String getLabel() {
-    return label;
+  public String getId() {
+    return id;
   }
 
   public CmServerServiceTypeRepository getRepository() {
     return respository;
+  }
+
+  public static CmServerServiceType valueOfId(String id) {
+    for (CmServerServiceType type : values()) {
+      if (type.getId().equals(id)) {
+        return type;
+      }
+    }
+    throw new IllegalArgumentException("Unknown " + CmServerServiceType.class.getName() + " id [" + id + "]");
   }
 
 }

@@ -17,11 +17,12 @@
  */
 package com.cloudera.whirr.cm.api;
 
-public class CmServerService {
+public class CmServerService implements Comparable<CmServerService> {
 
   public static final String NAME_TOKEN_DELIM = "_";
-
-  private static final String NAME_QUALIFIER_GROUP = "group";
+  public static final String NAME_TAG_DEFAULT = "CDH";
+  public static final String NAME_QUALIFIER_DEFAULT = "1";
+  public static final String NAME_QUALIFIER_GROUP = "group";
 
   private String name;
   private String group;
@@ -32,29 +33,40 @@ public class CmServerService {
   private String ip;
   private String ipInternal;
 
+  private String toString;
+
   public CmServerService(CmServerServiceType type) {
-    this(type, null);
+    this(type, NAME_TAG_DEFAULT);
   }
 
   public CmServerService(CmServerServiceType type, String tag) {
-    this(type, tag, "1", null, null, null);
+    this(type, tag, NAME_QUALIFIER_DEFAULT, null, null, null);
   }
 
   public CmServerService(String host, String ip) {
-    this(null, null, null, host, ip, null);
+    this(CmServerServiceType.CLUSTER, NAME_TAG_DEFAULT, NAME_QUALIFIER_DEFAULT, host, ip, null);
+  }
+
+  public CmServerService(String host, String ip, String ipInternal) {
+    this(CmServerServiceType.CLUSTER, NAME_TAG_DEFAULT, NAME_QUALIFIER_DEFAULT, host, ip, ipInternal);
   }
 
   public CmServerService(CmServerServiceType type, String tag, String qualifier, String host) {
     this(type, tag, qualifier, host, null, null);
   }
 
-  public CmServerService(CmServerServiceType type, String tag, String qualifier, String host, String ip,
-      String ipInternal) {
-    this.name = type == null ? null : ((tag == null ? "" : (tag + NAME_TOKEN_DELIM))
-        + (type == null ? null : (type.toString().toLowerCase() + NAME_TOKEN_DELIM)) + (qualifier == null ? ""
-        : qualifier));
-    this.group = type == null ? "" : ((tag == null ? "" : (tag + NAME_TOKEN_DELIM))
-        + (type == null ? "" : (type.toString().toLowerCase() + NAME_TOKEN_DELIM)) + NAME_QUALIFIER_GROUP);
+  public CmServerService(String name, String host, String ip, String ipInternal) {
+    if (name == null) {
+      throw new IllegalArgumentException("Illegal argumnents passed to constructor");
+    }
+    String tag = _getTag(name);
+    String qualifier = _getQualifier(name);
+    CmServerServiceType type = _getType(name);
+    if (tag == null || qualifier == null || type == null || !_getName(type, tag, qualifier).equals(name)) {
+      throw new IllegalArgumentException("Illgal argumnents passed to constructor");
+    }
+    this.name = name;
+    this.group = _getName(type, tag, NAME_QUALIFIER_GROUP);
     this.type = type;
     this.tag = tag;
     this.qualifier = qualifier;
@@ -63,35 +75,113 @@ public class CmServerService {
     this.ipInternal = ipInternal;
   }
 
+  public CmServerService(CmServerServiceType type, String tag, String qualifier, String host, String ip) {
+    this(type, tag, qualifier, host, ip, null);
+  }
+
+  public CmServerService(CmServerServiceType type, String tag, String qualifier, String host, String ip,
+      String ipInternal) {
+    if (type == null || tag == null || tag.contains(NAME_TOKEN_DELIM) || qualifier == null
+        || qualifier.contains(NAME_TOKEN_DELIM)) {
+      throw new IllegalArgumentException("Illgal argumnents passed to constructor");
+    }
+    this.name = _getName(type, tag, qualifier);
+    this.group = _getName(type, tag, NAME_QUALIFIER_GROUP);
+    this.type = type;
+    this.tag = tag;
+    this.qualifier = qualifier;
+    this.host = host;
+    this.ip = ip;
+    this.ipInternal = ipInternal;
+  }
+
+  private static String _getName(CmServerServiceType type, String tag, String qualifier) {
+    return tag + NAME_TOKEN_DELIM + type.toString().toLowerCase() + NAME_TOKEN_DELIM + qualifier;
+  }
+
+  private static String _getTag(String name) {
+    try {
+      return name.substring(0, name.indexOf(NAME_TOKEN_DELIM));
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Illegal name [" + name + "]");
+    }
+  }
+
+  private static String _getQualifier(String name) {
+    try {
+      return name.substring(name.lastIndexOf(NAME_TOKEN_DELIM) + 1, name.length());
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Illegal name [" + name + "]");
+    }
+  }
+
+  private static CmServerServiceType _getType(String name) {
+    try {
+      return CmServerServiceType.valueOf(name.substring(name.indexOf(NAME_TOKEN_DELIM) + 1,
+          name.lastIndexOf(NAME_TOKEN_DELIM)).toUpperCase());
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Illegal name [" + name + "]");
+    }
+  }
+
+  @Override
+  public int compareTo(CmServerService service) {
+    int compareTo = 0;
+    if (getType() != null && service.getType() != null) {
+      compareTo = getType().compareTo(service.getType());
+    }
+    if (compareTo == 0) {
+      compareTo = toString().compareTo(service.toString());
+    }
+    return compareTo;
+  }
+
+  @Override
+  public int hashCode() {
+    return toString().hashCode();
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof CmServerService) {
+      return toString().equals(object.toString());
+    }
+    return false;
+  }
+
   @Override
   public String toString() {
-    StringBuilder string = new StringBuilder();
-    string.append("{");
-    string.append("name=");
-    string.append(name);
-    string.append(", ");
-    string.append("group=");
-    string.append(group);
-    string.append(", ");
-    string.append("type=");
-    string.append(type);
-    string.append(", ");
-    string.append("tag=");
-    string.append(tag);
-    string.append(", ");
-    string.append("qualifier=");
-    string.append(qualifier);
-    string.append(", ");
-    string.append("host=");
-    string.append(host);
-    string.append(", ");
-    string.append("ip=");
-    string.append(ip);
-    string.append(", ");
-    string.append("ipInternal=");
-    string.append(ipInternal);
-    string.append("}");
-    return string.toString();
+    // toString can be cached given object is immutable
+    if (toString == null) {
+      StringBuilder string = new StringBuilder();
+      string.append("{");
+      string.append("name=");
+      string.append(name);
+      string.append(", ");
+      string.append("group=");
+      string.append(group);
+      string.append(", ");
+      string.append("type=");
+      string.append(type);
+      string.append(", ");
+      string.append("tag=");
+      string.append(tag);
+      string.append(", ");
+      string.append("qualifier=");
+      string.append(qualifier);
+      string.append(", ");
+      string.append("host=");
+      string.append(host);
+      string.append(", ");
+      string.append("ip=");
+      string.append(ip);
+      string.append(", ");
+      string.append("ipInternal=");
+      string.append(ipInternal);
+      string.append("}");
+      toString = string.toString();
+    }
+    return toString;
   }
 
   public String getName() {
