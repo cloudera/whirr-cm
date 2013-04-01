@@ -27,7 +27,7 @@ import com.cloudera.whirr.cm.BaseTest;
 
 public class CmServerClusterTest implements BaseTest {
 
-  private static final String CLUSTER_TAG = "whirr_test";
+  private static final String CLUSTER_TAG = "whirrtest";
 
   private CmServerCluster cluster;
 
@@ -42,6 +42,44 @@ public class CmServerClusterTest implements BaseTest {
     cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "4", "host-4"));
     cluster.add(new CmServerService(CmServerServiceType.HBASE_REGIONSERVER, CLUSTER_TAG, "1", "host-4"));
     cluster.add(new CmServerService(CmServerServiceType.IMPALA_DAEMON, CLUSTER_TAG, "1", "host-4"));
+  }
+
+  @Test
+  public void testService() throws CmServerApiException {
+
+    Assert.assertTrue(new CmServerService(CmServerServiceType.CLUSTER).equals(new CmServerService(
+        CmServerServiceType.CLUSTER)));
+    Assert.assertTrue(new CmServerService(CmServerServiceType.CLUSTER, CLUSTER_TAG).equals(new CmServerService(
+        CmServerServiceType.CLUSTER, CLUSTER_TAG)));
+    Assert.assertTrue(new CmServerService("host", null).equals(new CmServerService("host", null)));
+    Assert.assertTrue(new CmServerService("host", "127.0.0.1").equals(new CmServerService("host", "127.0.0.1")));
+    Assert.assertTrue(new CmServerService(CLUSTER_TAG + CmServerService.NAME_TOKEN_DELIM
+        + CmServerServiceType.HDFS_NAMENODE.toString().toLowerCase() + CmServerService.NAME_TOKEN_DELIM
+        + CmServerService.NAME_QUALIFIER_DEFAULT, "host", "127.0.0.1", null).equals(new CmServerService(
+        CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, CmServerService.NAME_QUALIFIER_DEFAULT, "host", "127.0.0.1")));
+    boolean caught = false;
+    try {
+      Assert
+          .assertTrue(new CmServerService("", "host", "127.0.0.1", null).equals(new CmServerService(
+              CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, CmServerService.NAME_QUALIFIER_DEFAULT, "host",
+              "127.0.0.1")));
+    } catch (IllegalArgumentException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertTrue(new CmServerService(CLUSTER_TAG + CmServerService.NAME_TOKEN_DELIM
+          + CmServerService.NAME_TOKEN_DELIM + CmServerServiceType.HDFS_NAMENODE.toString().toLowerCase()
+          + CmServerService.NAME_TOKEN_DELIM + CmServerService.NAME_QUALIFIER_DEFAULT, "host", "127.0.0.1", null)
+          .equals(new CmServerService(CmServerServiceType.HDFS_NAMENODE,
+              CLUSTER_TAG + CmServerService.NAME_TOKEN_DELIM, CmServerService.NAME_QUALIFIER_DEFAULT, "host",
+              "127.0.0.1")));
+    } catch (IllegalArgumentException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+
   }
 
   @Test
@@ -124,6 +162,13 @@ public class CmServerClusterTest implements BaseTest {
     Assert.assertEquals(1, cluster.getServiceTypes(CmServerServiceType.HDFS_NAMENODE).size());
     Assert.assertEquals(1, cluster.getServiceTypes(CmServerServiceType.HDFS_DATANODE).size());
     Assert.assertEquals(0, cluster.getServiceTypes(CmServerServiceType.CLIENT).size());
+    Assert.assertArrayEquals(new CmServerServiceType[] { CmServerServiceType.HDFS_NAMENODE,
+        CmServerServiceType.HDFS_SECONDARY_NAMENODE, CmServerServiceType.HDFS_DATANODE,
+        CmServerServiceType.HBASE_REGIONSERVER, CmServerServiceType.IMPALA_DAEMON },
+        cluster.getServiceTypes(CmServerServiceType.CLUSTER).toArray());
+    Assert.assertArrayEquals(new CmServerServiceType[] { CmServerServiceType.HDFS_NAMENODE,
+        CmServerServiceType.HDFS_SECONDARY_NAMENODE, CmServerServiceType.HDFS_DATANODE },
+        cluster.getServiceTypes(CmServerServiceType.HDFS).toArray());
   }
 
   @Test
@@ -133,6 +178,20 @@ public class CmServerClusterTest implements BaseTest {
     Assert.assertEquals(1, cluster.getServices(CmServerServiceType.HDFS_NAMENODE).size());
     Assert.assertEquals(4, cluster.getServices(CmServerServiceType.HDFS_DATANODE).size());
     Assert.assertEquals(0, cluster.getServices(CmServerServiceType.CLIENT).size());
+    int i = 0;
+    CmServerServiceType[] serviceTypes = new CmServerServiceType[] { CmServerServiceType.HDFS_NAMENODE,
+        CmServerServiceType.HDFS_SECONDARY_NAMENODE, CmServerServiceType.HDFS_DATANODE,
+        CmServerServiceType.HDFS_DATANODE, CmServerServiceType.HDFS_DATANODE, CmServerServiceType.HDFS_DATANODE,
+        CmServerServiceType.HBASE_REGIONSERVER, CmServerServiceType.IMPALA_DAEMON };
+    for (CmServerService service : cluster.getServices(CmServerServiceType.CLUSTER)) {
+      Assert.assertEquals(serviceTypes[i++], service.getType());
+    }
+    Assert.assertEquals(8, i);
+    i = 0;
+    for (CmServerService service : cluster.getServices(CmServerServiceType.HDFS)) {
+      Assert.assertEquals(serviceTypes[i++], service.getType());
+    }
+    Assert.assertEquals(6, i);
   }
 
   @Test

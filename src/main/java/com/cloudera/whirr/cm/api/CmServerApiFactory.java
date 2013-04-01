@@ -15,17 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.whirr.cm;
+package com.cloudera.whirr.cm.api;
 
-import java.io.File;
+public class CmServerApiFactory {
 
-public interface BaseTest {
+  public static CmServerApi getCmServerApi(String ip, int port, String user, String password) {
+    return new CmServerApiImpl(ip, port, user, password, new CmServerApiLog.CmServerApiLogSlf4j());
+  }
 
-  public static String CLUSTER_USER = "whirr";
-
-  public static File DIR_CONFIG = new File(new File(".").getAbsolutePath() + "/target/test-client");
-
-  public static File FILE_KEY_PRIVATE = new File(new File(".").getAbsolutePath() + "/src/test/resources/test-key");
-  public static File FILE_KEY_PUBLIC = new File(new File(".").getAbsolutePath() + "/src/test/resources/test-key.pub");
+  public static CmServerApi getCmServerApi(String ip, int port, String user, String password, CmServerApiLog logger) {
+    return new CmServerApiImpl(ip, port, user, password, logger);
+  }
 
 }

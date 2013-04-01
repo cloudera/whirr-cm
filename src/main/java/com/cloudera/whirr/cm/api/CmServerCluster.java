@@ -18,10 +18,8 @@
 package com.cloudera.whirr.cm.api;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -33,9 +31,9 @@ import com.google.common.collect.Lists;
 
 public class CmServerCluster {
 
+  private Map<CmServerServiceType, Set<CmServerService>> services = new HashMap<CmServerServiceType, Set<CmServerService>>();
+
   private Set<String> dataMounts = new HashSet<String>();
-  
-  private Map<CmServerServiceType, List<CmServerService>> services = new HashMap<CmServerServiceType, List<CmServerService>>();
 
   public CmServerCluster() {
   }
@@ -66,7 +64,7 @@ public class CmServerCluster {
   public synchronized boolean add(CmServerServiceType type) throws CmServerApiException {
     assertConsistentTopology(type);
     if (!services.containsKey(type.getParent())) {
-      services.put(type.getParent(), new ArrayList<CmServerService>());
+      services.put(type.getParent(), new TreeSet<CmServerService>());
       return true;
     }
     return false;
@@ -83,7 +81,7 @@ public class CmServerCluster {
   }
 
   public synchronized Set<CmServerServiceType> getServiceTypes(CmServerServiceType type) {
-    Set<CmServerServiceType> types = new HashSet<CmServerServiceType>();
+    Set<CmServerServiceType> types = new TreeSet<CmServerServiceType>();
     if (type.equals(CmServerServiceType.CLUSTER)) {
       for (CmServerServiceType serviceType : services.keySet()) {
         for (CmServerService service : services.get(serviceType)) {
@@ -105,13 +103,13 @@ public class CmServerCluster {
   }
 
   public synchronized CmServerService getService(CmServerServiceType type) throws IOException {
-    List<CmServerService> serviceCopy = getServices(type);
-    return serviceCopy.size() == 0 ? null : serviceCopy.get(0);
+    Set<CmServerService> serviceCopy = getServices(type);
+    return serviceCopy.size() == 0 ? null : serviceCopy.iterator().next();
   }
 
-  public synchronized List<CmServerService> getServices(CmServerServiceType type) {
+  public synchronized Set<CmServerService> getServices(CmServerServiceType type) {
     // TODO: Do Deep Copy
-    List<CmServerService> servicesCopy = new ArrayList<CmServerService>();
+    Set<CmServerService> servicesCopy = new TreeSet<CmServerService>();
     if (type.equals(CmServerServiceType.CLUSTER)) {
       for (CmServerServiceType serviceType : services.keySet()) {
         servicesCopy.addAll(services.get(serviceType));
@@ -130,16 +128,16 @@ public class CmServerCluster {
 
   public synchronized String getServiceName(CmServerServiceType type) throws IOException {
     if (services.get(type) != null) {
-      CmServerService service = services.get(type).get(0);
+      CmServerService service = services.get(type).iterator().next();
       if (service.getType().equals(type)) {
         return service.getName();
       } else {
         return new CmServerService(type, service.getTag()).getName();
       }
     } else {
-      List<CmServerService> servicesChild = null;
+      Set<CmServerService> servicesChild = null;
       if (!services.isEmpty() && !(servicesChild = services.get(getServiceTypes().iterator().next())).isEmpty()) {
-        return new CmServerService(type, servicesChild.get(0).getTag()).getName();
+        return new CmServerService(type, servicesChild.iterator().next().getTag()).getName();
       }
     }
     throw new IOException("Cannot determine service name, cluster is empty");
@@ -153,16 +151,18 @@ public class CmServerCluster {
     return ImmutableSet.copyOf(dataMounts);
   }
 
-  public String getDataDirsForSuffix(final String suffix) throws IOException {
-    return Joiner.on(',').join(Lists.transform(Lists.newArrayList(getDataMounts()),
-      new Function<String, String>() {
-        @Override public String apply(String input) {
-          return input + suffix;
-        }
-      }
-    ));
+  public String getDataDirsForSuffix(final Set<String> defaults, final String suffix) throws IOException {
+    Set<String> dataMounts = getDataMounts();
+    return Joiner.on(',').join(
+        Lists.transform(Lists.newArrayList(dataMounts.isEmpty() ? defaults : dataMounts),
+            new Function<String, String>() {
+              @Override
+              public String apply(String input) {
+                return input + suffix;
+              }
+            }));
   }
-  
+
   private void assertConsistentTopology(CmServerServiceType type) throws CmServerApiException {
     if (type.getParent() == null || type.getParent().getParent() == null) {
       throw new CmServerApiException("Invalid cluster topology: Attempt to add non leaf type [" + type + "]");

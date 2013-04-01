@@ -38,11 +38,15 @@ public abstract class CmServerApiLog {
 
   public abstract void logOperationInProgressSync(String operation);
 
+  public abstract void logOperationFailedSync(String operation);
+
   public abstract void logOperationFinishedSync(String operation);
 
   public abstract void logOperationStartedAsync(String operation);
 
   public abstract void logOperationInProgressAsync(String operation);
+
+  public abstract void logOperationFailedAsync(String operation);
 
   public abstract void logOperationFinishedAsync(String operation);
 
@@ -74,6 +78,11 @@ public abstract class CmServerApiLog {
     }
 
     @Override
+    public void logOperationFailedAsync(String operation) {
+      log(LOG_REFIX + " [" + operation + "] failed");
+    }
+    
+    @Override
     public void logOperationFinishedAsync(String operation) {
       log(LOG_REFIX + " [" + operation + "] finished");
     }
@@ -95,6 +104,11 @@ public abstract class CmServerApiLog {
       logOperationInProgressAsync(operation);
     }
 
+    @Override
+    public void logOperationFailedSync(String operation) {
+      logOperationFailedAsync(operation);
+    }
+    
     @Override
     public void logOperationFinishedSync(String operation) {
       logOperationFinishedAsync(operation);
@@ -131,6 +145,11 @@ public abstract class CmServerApiLog {
     }
 
     @Override
+    public void logOperationFailedAsync(String operation) {
+      System.out.println(" . failed");
+    }
+    
+    @Override
     public void logOperationFinishedAsync(String operation) {
       System.out.println(" . finished");
     }
@@ -150,6 +169,12 @@ public abstract class CmServerApiLog {
       System.out.println(LOG_REFIX + " [" + operation + "] in progress");
     }
 
+    @Override
+    public void logOperationFailedSync(String operation) {
+      System.out.println(LOG_REFIX + " [" + operation + "] failed");
+    }
+
+    
     @Override
     public void logOperationFinishedSync(String operation) {
       System.out.println(LOG_REFIX + " [" + operation + "] finished");

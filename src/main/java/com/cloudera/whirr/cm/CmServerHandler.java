@@ -35,6 +35,7 @@ import org.apache.whirr.service.ClusterActionEvent;
 import org.apache.whirr.service.FirewallManager.Rule;
 
 import com.cloudera.whirr.cm.api.CmServerApi;
+import com.cloudera.whirr.cm.api.CmServerApiFactory;
 import com.cloudera.whirr.cm.api.CmServerApiLog;
 import com.cloudera.whirr.cm.api.CmServerService;
 import com.cloudera.whirr.cm.api.CmServerServiceType;
@@ -123,7 +124,7 @@ public class CmServerHandler extends BaseHandlerCm {
       logHeader("Cloudera Manager Nodes");
       logLineItem("Consoles:");
       for (Instance instance : nodes) {
-        logLineItem("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
+        logLineItemDetail("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
             + instance.getPublicIp());
       }
     }
@@ -184,11 +185,14 @@ public class CmServerHandler extends BaseHandlerCm {
             }
           }
 
-          CmServerApi cmServerApi = new CmServerApi(event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp(),
-              7180, CM_USER, CM_PASSWORD, new CmServerApiLog.CmServerApiLogSysOut());
+          CmServerApi cmServerApi = CmServerApiFactory.getCmServerApi(event.getCluster()
+              .getInstanceMatching(role(ROLE)).getPublicIp(), 7180, CM_USER, CM_PASSWORD,
+              new CmServerApiLog.CmServerApiLogSysOut());
           cmServerApi.initialise(config);
           cmServerApi.provision(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
           cmServerApi.configure(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
+          cmServerApi.getServiceConfigs(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance(), event.getClusterSpec()
+              .getClusterDirectory());
 
         } catch (Exception e) {
 
@@ -232,9 +236,9 @@ public class CmServerHandler extends BaseHandlerCm {
           }
 
           logLineItem("Start:");
-          CmServerApi cmServerApi = new CmServerApi(event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp(),
-              7180, CM_USER, CM_PASSWORD, new CmServerApiLog.CmServerApiLogSysOut());
-          cmServerApi.startFirst(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
+          CmServerApi cmServerApi = CmServerApiFactory.getCmServerApi(event.getCluster().getInstanceMatching(role(ROLE))
+              .getPublicIp(), 7180, CM_USER, CM_PASSWORD, new CmServerApiLog.CmServerApiLogSysOut());
+          cmServerApi.start(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
 
         } catch (Exception e) {
 
