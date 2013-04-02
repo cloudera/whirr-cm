@@ -17,17 +17,13 @@
  */
 package com.cloudera.whirr.cm;
 
-import java.io.File;
+public interface CmConstants {
 
-public interface BaseTest {
+  public static final String CONFIG_WHIRR_NAME = "whirr.cluster-name";
+  public static final String CONFIG_WHIRR_AUTO_VARIABLE = "whirr.env.cmauto";
+  public static final String CONFIG_WHIRR_USE_PACKAGES = "whirr.cm.use.packages";
+  public static final String CONFIG_WHIRR_CM_PREFIX = "whirr.cm.config.";
 
-  public static final String CLUSTER_TAG = "whirr";
-
-  public static final String CLUSTER_USER = "whirr";
-
-  public static final File DIR_CLIENT_CONFIG = new File(new File(".").getAbsolutePath() + "/target/test-client");
-  public static final File FILE_KEY_PRIVATE = new File(new File(".").getAbsolutePath() + "/src/test/resources/test-key");
-  public static final File FILE_KEY_PUBLIC = new File(new File(".").getAbsolutePath()
-      + "/src/test/resources/test-key.pub");
+  public static final String CONFIG_WHIRR_NAME_DEFAULT = "whirr";
 
 }

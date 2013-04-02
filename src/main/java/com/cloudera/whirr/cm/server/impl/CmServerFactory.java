@@ -15,19 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.whirr.cm;
+package com.cloudera.whirr.cm.server.impl;
 
-import java.io.File;
+import com.cloudera.whirr.cm.server.CmServer;
 
-public interface BaseTest {
+public class CmServerFactory {
 
-  public static final String CLUSTER_TAG = "whirr";
+  public static CmServer getCmServer(String ip, int port, String user, String password) {
+    return new CmServerImpl(ip, port, user, password, new CmServerLog.CmServerLogSlf4j());
+  }
 
-  public static final String CLUSTER_USER = "whirr";
-
-  public static final File DIR_CLIENT_CONFIG = new File(new File(".").getAbsolutePath() + "/target/test-client");
-  public static final File FILE_KEY_PRIVATE = new File(new File(".").getAbsolutePath() + "/src/test/resources/test-key");
-  public static final File FILE_KEY_PUBLIC = new File(new File(".").getAbsolutePath()
-      + "/src/test/resources/test-key.pub");
+  public static CmServer getCmServer(String ip, int port, String user, String password, CmServerLog logger) {
+    return new CmServerImpl(ip, port, user, password, logger);
+  }
 
 }

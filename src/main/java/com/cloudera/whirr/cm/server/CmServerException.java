@@ -15,19 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.whirr.cm;
+package com.cloudera.whirr.cm.server;
 
-import java.io.File;
+public class CmServerException extends Exception {
 
-public interface BaseTest {
+  private static final long serialVersionUID = 2857571661219247290L;
 
-  public static final String CLUSTER_TAG = "whirr";
+  public CmServerException() {
+    super();
+  }
 
-  public static final String CLUSTER_USER = "whirr";
+  public CmServerException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-  public static final File DIR_CLIENT_CONFIG = new File(new File(".").getAbsolutePath() + "/target/test-client");
-  public static final File FILE_KEY_PRIVATE = new File(new File(".").getAbsolutePath() + "/src/test/resources/test-key");
-  public static final File FILE_KEY_PUBLIC = new File(new File(".").getAbsolutePath()
-      + "/src/test/resources/test-key.pub");
+  public CmServerException(String message) {
+    super(message);
+  }
 
 }

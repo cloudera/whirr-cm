@@ -15,19 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.whirr.cm;
+package com.cloudera.whirr.cm.cmd;
 
-import java.io.File;
+public class CmServerClientCommand {
 
-public interface BaseTest {
-
-  public static final String CLUSTER_TAG = "whirr";
-
-  public static final String CLUSTER_USER = "whirr";
-
-  public static final File DIR_CLIENT_CONFIG = new File(new File(".").getAbsolutePath() + "/target/test-client");
-  public static final File FILE_KEY_PRIVATE = new File(new File(".").getAbsolutePath() + "/src/test/resources/test-key");
-  public static final File FILE_KEY_PUBLIC = new File(new File(".").getAbsolutePath()
-      + "/src/test/resources/test-key.pub");
+  // TODO
 
 }

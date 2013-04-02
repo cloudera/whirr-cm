@@ -15,32 +15,30 @@
 # limitations under the License.
 #
 
-com.cloudera.whirr.cm.CmNodeHandler
-com.cloudera.whirr.cm.CmAgentHandler
-com.cloudera.whirr.cm.CmServerHandler
+com.cloudera.whirr.cm.handler.CmNodeHandler
+com.cloudera.whirr.cm.handler.CmAgentHandler
+com.cloudera.whirr.cm.handler.CmServerHandler
 
-com.cloudera.whirr.cm.cdh.CmCdhClientHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsNameNodeHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsSecondaryNameNodeHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsDataNodeHandler
 
-com.cloudera.whirr.cm.cdh.CmCdhNameNodeHandler
-com.cloudera.whirr.cm.cdh.CmCdhSecondaryNameNodeHandler
-com.cloudera.whirr.cm.cdh.CmCdhDataNodeHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhMapReduceJobTrackerHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhMapReduceTaskTrackerHandler
 
-com.cloudera.whirr.cm.cdh.CmCdhJobTrackerHandler
-com.cloudera.whirr.cm.cdh.CmCdhTaskTrackerHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhHiveMetaStoreHandler
 
-com.cloudera.whirr.cm.cdh.CmCdhHiveMetaStoreHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhZookeeperServerHandler
 
-com.cloudera.whirr.cm.cdh.CmCdhZookeeperServerHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhHBaseMasterHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhHBaseRegionServerHandler
 
-com.cloudera.whirr.cm.cdh.CmCdhHBaseMasterHandler
-com.cloudera.whirr.cm.cdh.CmCdhHBaseRegionServerHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhImpalaDaemonHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhImpalaStateStoreHandler
 
-com.cloudera.whirr.cm.cdh.CmCdhImpalaDaemonHandler
-com.cloudera.whirr.cm.cdh.CmCdhImpalaStateStoreHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhHueServerHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhHueBeeswaxServerHandler
 
-com.cloudera.whirr.cm.cdh.CmCdhHueServerHandler
-com.cloudera.whirr.cm.cdh.CmCdhHueBeeswaxServerHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhOozieServerHandler
 
-com.cloudera.whirr.cm.cdh.CmCdhOozieServerHandler
-
-com.cloudera.whirr.cm.cdh.CmCdhFlumeAgentHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhFlumeAgentHandler
