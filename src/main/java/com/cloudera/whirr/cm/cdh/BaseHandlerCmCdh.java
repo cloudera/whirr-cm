@@ -18,6 +18,7 @@
 package com.cloudera.whirr.cm.cdh;
 
 import static org.apache.whirr.RolePredicates.role;
+import static org.jclouds.scriptbuilder.domain.Statements.call;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -54,6 +55,11 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
       throw new IOException(e);
     }
     roleToType.putIfAbsent(getRole(), getType());
+
+    if (event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_USE_PACKAGES, false)) {
+      addStatement(event, call("register_cdh_repo"));
+      addStatement(event, call("install_cdh_packages"));
+    }
   }
 
   @Override

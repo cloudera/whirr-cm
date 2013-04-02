@@ -155,6 +155,12 @@ public class CmServerHandler extends BaseHandlerCm {
 
         try {
 
+          if (event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_USE_PACKAGES, false)) {
+            BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().setIsParcel(false);
+          } else {
+            BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().setIsParcel(true);
+          }
+          
           BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().setDataMounts(getDataMounts(event));
 
           logLineItem("Roles:");

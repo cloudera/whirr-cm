@@ -42,3 +42,5 @@ com.cloudera.whirr.cm.cdh.CmCdhHueServerHandler
 com.cloudera.whirr.cm.cdh.CmCdhHueBeeswaxServerHandler
 
 com.cloudera.whirr.cm.cdh.CmCdhOozieServerHandler
+
+com.cloudera.whirr.cm.cdh.CmCdhFlumeAgentHandler
