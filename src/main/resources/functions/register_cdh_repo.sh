@@ -20,25 +20,26 @@ function register_cdh_repo() {
     CDH_REPO_HOST=${CDH_REPO_HOST:-archive.cloudera.com}
     CDH_MAJOR_VERSION=$(echo $REPOCDH | sed -e 's/cdh\([0-9]\).*/\1/')
     CDH_VERSION=$(echo $REPOCDH | sed -e 's/cdh\([0-9][0-9]*\)/\1/')
+    CDH_REPO_ROOT=${CDH_REPO_ROOT:-http://$CDH_REPO_HOST/cdh$CDH_MAJOR_VERSION}
     if which dpkg &> /dev/null; then
 	retry_apt-get -y install lsb-release
 	OS_CODENAME=$(lsb_release -sc)
 	OS_DISTID=$(lsb_release -si | tr '[A-Z]' '[a-z]')
         cat > /etc/apt/sources.list.d/cloudera-$REPOCDH.list <<EOF
-deb [arch=amd64] http://$CDH_REPO_HOST/cdh$CDH_MAJOR_VERSION/$OS_DISTID/$OS_CODENAME/amd64/cdh $OS_CODENAME-$REPOCDH contrib
-deb-src http://$CDH_REPO_HOST/cdh$CDH_MAJOR_VERSION/$OS_DISTID/$OS_CODENAME/amd64/cdh $OS_CODENAME-$REPOCDH contrib
+deb [arch=amd64] $CDH_REPO_ROOT/$OS_DISTID/$OS_CODENAME/amd64/cdh $OS_CODENAME-$REPOCDH contrib
+deb-src $CDH_REPO_ROOT/$OS_DISTID/$OS_CODENAME/amd64/cdh $OS_CODENAME-$REPOCDH contrib
 EOF
-        curl -s http://$CDH_REPO_HOST/cdh$CDH_MAJOR_VERSION/$OS_DISTID/$OS_CODENAME/amd64/cdh/archive.key | apt-key add -
+        curl -s $CDH_REPO_ROOT/$OS_DISTID/$OS_CODENAME/amd64/cdh/archive.key | apt-key add -
         retry_apt_get -y update
     elif which rpm &> /dev/null; then
         cat > /etc/yum.repos.d/cloudera-$REPOCDH.repo <<EOF
 [cloudera-$REPOCDH]
 name=Cloudera's Distribution for Hadoop, Version $CDH_VERSION
-baseurl=http://$CDH_REPO_HOST/cdh$CDH_MAJOR_VERSION/redhat/\$releasever/\$basearch/cdh/$CDH_VERSION/
-gpgkey=http://$CDH_REPO_HOST/cdh$CDH_MAJOR_VERSION/redhat/\$releasever/\$basearch/cdh/RPM-GPG-KEY-cloudera
+baseurl=$CDH_REPO_ROOT/redhat/\$releasever/\$basearch/cdh/$CDH_VERSION/
+gpgkey=$CDH_REPO_ROOT/redhat/\$releasever/\$basearch/cdh/RPM-GPG-KEY-cloudera
 gpgcheck=1
 EOF
-        rpm --import http://$CDH_REPO_HOST/cdh$CDH_MAJOR_VERSION/redhat/$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))/$(rpm -q --qf "%{ARCH}" $(rpm -q --whatprovides redhat-release))/cdh/RPM-GPG-KEY-cloudera
+        rpm --import $CDH_REPO_ROOT/redhat/$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))/$(rpm -q --qf "%{ARCH}" $(rpm -q --whatprovides redhat-release))/cdh/RPM-GPG-KEY-cloudera
         
         retry_yum update -y retry_yum
     fi
