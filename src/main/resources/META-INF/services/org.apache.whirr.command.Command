@@ -15,3 +15,7 @@
 # limitations under the License.
 #
 
+com.cloudera.whirr.cm.cmd.CmServerDownloadConfigCommand
+com.cloudera.whirr.cm.cmd.CmServerCreateServicesCommand
+com.cloudera.whirr.cm.cmd.CmServerDestroyServicesCommand
+com.cloudera.whirr.cm.cmd.CmServerListServicesCommand

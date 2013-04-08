@@ -17,8 +17,65 @@
  */
 package com.cloudera.whirr.cm.cmd;
 
-public class BaseCommand {
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.List;
 
-  // TODO
+import joptsimple.OptionSet;
+
+import org.apache.commons.lang.WordUtils;
+import org.apache.whirr.ClusterController;
+import org.apache.whirr.ClusterControllerFactory;
+import org.apache.whirr.ClusterSpec;
+import org.apache.whirr.command.AbstractClusterCommand;
+import org.apache.whirr.state.ClusterStateStore;
+import org.apache.whirr.state.ClusterStateStoreFactory;
+
+import com.cloudera.whirr.cm.CmConstants;
+import com.cloudera.whirr.cm.server.impl.CmServerLog;
+
+public abstract class BaseCommand extends AbstractClusterCommand implements CmConstants {
+
+  protected static final CmServerLog logger = new CmServerLog.CmServerLogSysOut(LOG_TAG_WHIRR_COMMAND, false);
+
+  public BaseCommand(String name, String description, ClusterControllerFactory factory,
+      ClusterStateStoreFactory stateStoreFactory) {
+    super(name, description, factory, stateStoreFactory);
+  }
+
+  public BaseCommand(String name, String description, ClusterControllerFactory factory) {
+    super(name, description, factory);
+  }
+
+  public abstract int run(OptionSet optionSet, ClusterSpec specification, ClusterStateStore clusterStateStore,
+      ClusterController clusterController) throws Exception;
+
+  public String getLabel() {
+    return WordUtils.capitalize(getName().replace("-", " ").replace("_", " ")).replace(" ", "");
+  }
+
+  @Override
+  public int run(InputStream in, PrintStream out, PrintStream err, List<String> args) throws Exception {
+
+    try {
+
+      OptionSet optionSet = parser.parse(args.toArray(new String[args.size()]));
+      if (!optionSet.nonOptionArguments().isEmpty()) {
+        printUsage(err);
+        return -1;
+      }
+
+      ClusterSpec specification = getClusterSpec(optionSet);
+      printProviderInfo(out, err, specification, optionSet);
+
+      return run(optionSet, specification, createClusterStateStore(specification),
+          createClusterController(specification.getServiceName()));
+
+    } catch (Exception e) {
+      printErrorAndHelpHint(err, e);
+      return -1;
+    }
+
+  }
 
 }

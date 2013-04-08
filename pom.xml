@@ -37,9 +37,11 @@
 	<properties>
 		<whirr.version>0.9.0-SNAPSHOT</whirr.version>
 		<cm.version>4.5.0</cm.version>
-		<junit.version>4.8.1</junit.version>
 		<log4j.version>1.2.16</log4j.version>
 		<slf4j.version>1.6.4</slf4j.version>
+		<hamcrest-all.version>1.1</hamcrest-all.version>
+		<mockito-all.version>1.9.0</mockito-all.version>
+		<junit.version>4.8.1</junit.version>
 		<maven-artifact.version>3.0.3</maven-artifact.version>
 		<maven-compiler-plugin.version>2.5.1</maven-compiler-plugin.version>
 		<maven-surefire-plugin.version>2.12</maven-surefire-plugin.version>
@@ -174,6 +176,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.whirr</groupId>
+			<artifactId>whirr-cli</artifactId>
+			<version>${whirr.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.whirr</groupId>
 			<artifactId>whirr-cdh</artifactId>
 			<version>${whirr.version}</version>
 			<scope>provided</scope>
@@ -201,6 +209,18 @@
 			<artifactId>whirr-core</artifactId>
 			<classifier>tests</classifier>
 			<version>${whirr.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-all</artifactId>
+			<version>${hamcrest-all.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-all</artifactId>
+			<version>${mockito-all.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

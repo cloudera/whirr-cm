@@ -24,10 +24,11 @@ import org.junit.Test;
 
 import com.cloudera.whirr.cm.server.CmServerException;
 import com.cloudera.whirr.cm.server.CmServerService;
-import com.cloudera.whirr.cm.server.CmServerServiceType;
 import com.cloudera.whirr.cm.server.CmServerService.CmServerServiceStatus;
+import com.cloudera.whirr.cm.server.CmServerServiceBuilder;
+import com.cloudera.whirr.cm.server.CmServerServiceType;
 
-public class CmServerTest extends BaseTestIntegrationServer {
+public class CmServerClusterTest extends BaseTestIntegrationServer {
 
   @Test
   public void testClean() throws CmServerException {
@@ -40,26 +41,27 @@ public class CmServerTest extends BaseTestIntegrationServer {
     Assert.assertEquals(clusterSize, serviceHosts.size());
     Assert.assertTrue(serviceHosts.size() > 2);
     Assert.assertEquals(serviceHosts.get(2).getHost(),
-        server.getServiceHost(new CmServerService(serviceHosts.get(2).getHost(), null)).getHost());
+        server.getServiceHost(new CmServerServiceBuilder().host(serviceHosts.get(2).getHost()).build()).getHost());
     Assert.assertEquals(serviceHosts.get(2).getHost(),
-        server.getServiceHost(new CmServerService((String) null, serviceHosts.get(2).getIp())).getHost());
-    Assert.assertEquals(
-        serviceHosts.get(2).getHost(),
-        server.getServiceHost(
-            new CmServerService((String) null, null, serviceHosts.get(2).getIp(), CmServerServiceStatus.UNKNOWN))
+        server.getServiceHost(new CmServerServiceBuilder().host(null).ip(serviceHosts.get(2).getIp()).build())
             .getHost());
     Assert.assertEquals(
         serviceHosts.get(2).getHost(),
         server.getServiceHost(
-            new CmServerService("some-rubbish", "192.168.1.89", serviceHosts.get(2).getIp(),
-                CmServerServiceStatus.UNKNOWN)).getHost());
+            new CmServerServiceBuilder().host(null).ipInternal(serviceHosts.get(2).getIp())
+                .status(CmServerServiceStatus.UNKNOWN).build()).getHost());
+    Assert.assertEquals(
+        serviceHosts.get(2).getHost(),
+        server.getServiceHost(
+            new CmServerServiceBuilder().host("some-rubbish").ip("192.168.1.89")
+                .ipInternal(serviceHosts.get(2).getIp()).status(CmServerServiceStatus.UNKNOWN).build()).getHost());
     boolean caught = false;
     try {
       Assert.assertEquals(
           serviceHosts.get(2).getHost(),
           server.getServiceHost(
-              new CmServerService("some-rubbish", "192.168.1.89", "192.168.1.90", CmServerServiceStatus.UNKNOWN))
-              .getHost());
+              new CmServerServiceBuilder().host("some-rubbish").ip("192.168.1.89").ipInternal("192.168.1.90")
+                  .status(CmServerServiceStatus.UNKNOWN).build()).getHost());
     } catch (CmServerException e) {
       caught = true;
     }
@@ -67,8 +69,9 @@ public class CmServerTest extends BaseTestIntegrationServer {
     Assert.assertEquals(
         serviceHosts.get(2).getHost(),
         server.getServiceHost(
-            new CmServerService("some-rubbish", "192.168.1.89", serviceHosts.get(2).getIp(),
-                CmServerServiceStatus.UNKNOWN), serviceHosts).getHost());
+            new CmServerServiceBuilder().host("some-rubbish").ip("192.168.1.89")
+                .ipInternal(serviceHosts.get(2).getIp()).status(CmServerServiceStatus.UNKNOWN).build(), serviceHosts)
+            .getHost());
   }
 
   @Test
@@ -81,10 +84,12 @@ public class CmServerTest extends BaseTestIntegrationServer {
   @Test
   public void testGetService() throws CmServerException {
     Assert.assertTrue(server.getServices(cluster).isEmpty());
-    Assert.assertTrue(server.configure(cluster));  
+    Assert.assertTrue(server.configure(cluster));
     Assert.assertFalse(server.getServices(cluster).isEmpty());
-    Assert.assertEquals(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG,
-        CmServerService.NAME_QUALIFIER_DEFAULT, server.getService(cluster, CmServerServiceType.HDFS_NAMENODE).getHost()),
+    Assert.assertEquals(
+        new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG)
+            .qualifier(CmServerService.NAME_QUALIFIER_DEFAULT)
+            .host(server.getService(cluster, CmServerServiceType.HDFS_NAMENODE).getHost()),
         server.getService(cluster, CmServerServiceType.HDFS_NAMENODE));
   }
 
@@ -171,6 +176,11 @@ public class CmServerTest extends BaseTestIntegrationServer {
     Assert.assertFalse(server.isConfigured(cluster));
     Assert.assertFalse(server.isStarted(cluster));
     Assert.assertTrue(server.isStopped(cluster));
+  }
+
+  @Test
+  public void testUnprovision() throws CmServerException {
+    Assert.assertTrue(server.unprovision(cluster));
   }
 
 }

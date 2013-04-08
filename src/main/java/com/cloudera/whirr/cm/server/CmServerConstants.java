@@ -15,10 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.whirr.cm.cmd;
+package com.cloudera.whirr.cm.server;
 
-public class CmServerClientCommand {
+public interface CmServerConstants {
 
-  // TODO
+  public static final String LOG_TAG_CM_SERVER_API = "CM Server API";
+  public static final String LOG_TAG_CM_SERVER_CMD = "CM Server CMD";
 
 }

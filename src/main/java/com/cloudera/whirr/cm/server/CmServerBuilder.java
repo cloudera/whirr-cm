@@ -25,6 +25,7 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +39,7 @@ import com.cloudera.whirr.cm.server.impl.CmServerFactory;
 import com.cloudera.whirr.cm.server.impl.CmServerImpl;
 import com.cloudera.whirr.cm.server.impl.CmServerLog;
 
-public class CmServerCommand {
+public class CmServerBuilder implements CmServerConstants {
 
   public static final String ARGUMENT_PREFIX = "--";
 
@@ -58,7 +59,9 @@ public class CmServerCommand {
 
   private CmServerCluster cluster;
 
-  private CmServerLog logger = new CmServerLog.CmServerLogSysOut();
+  private CmServerFactory factory = new CmServerFactory();
+
+  private CmServerLog logger = new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_CMD, false);
 
   private CmServer server;
 
@@ -73,29 +76,25 @@ public class CmServerCommand {
 
   private static final Map<String, Method> CONFIG_COMMANDS = new HashMap<String, Method>();
   static {
-    for (Method method : CmServerCommand.class.getMethods()) {
+    for (Method method : CmServerBuilder.class.getMethods()) {
       if (method.isAnnotationPresent(CmServerCommandMethod.class)) {
         CONFIG_COMMANDS.put(method.getAnnotation(CmServerCommandMethod.class).name(), method);
       }
     }
   }
 
-  private CmServerCommand() throws CmServerException {
+  public CmServerBuilder() throws CmServerException {
   }
 
   public static Set<String> getCommands() {
     return new HashSet<String>(COMMANDS.keySet());
   }
 
-  public static CmServerCommand get() throws CmServerException {
-    return new CmServerCommand();
-  }
-
-  public CmServerCommand arguments(String[] arguments) throws CmServerException {
+  public CmServerBuilder arguments(String[] arguments) throws CmServerException {
     return arguments(argumentsPreProcess(arguments));
   }
 
-  public CmServerCommand arguments(Map<String, String> arguments) throws CmServerException {
+  public CmServerBuilder arguments(Map<String, String> arguments) throws CmServerException {
     for (String argument : arguments.keySet()) {
       if (CONFIG_COMMANDS.containsKey(argument)) {
         try {
@@ -109,7 +108,7 @@ public class CmServerCommand {
   }
 
   @CmServerCommandMethod(name = "host")
-  public CmServerCommand host(String host) throws CmServerException {
+  public CmServerBuilder host(String host) throws CmServerException {
     if (host == null || host.equals("")) {
       throw new CmServerException("Illegal host argument passed [" + host + "]");
     }
@@ -119,7 +118,7 @@ public class CmServerCommand {
   }
 
   @CmServerCommandMethod(name = "port")
-  public CmServerCommand port(String port) throws CmServerException {
+  public CmServerBuilder port(String port) throws CmServerException {
     if (port == null || port.equals("") || !StringUtils.isNumeric(port)) {
       throw new CmServerException("Illegal port argument passed [" + port + "]");
     }
@@ -129,7 +128,7 @@ public class CmServerCommand {
   }
 
   @CmServerCommandMethod(name = "user")
-  public CmServerCommand user(String user) throws CmServerException {
+  public CmServerBuilder user(String user) throws CmServerException {
     if (user == null || user.equals("")) {
       throw new CmServerException("Illegal user argument passed [" + user + "]");
     }
@@ -139,7 +138,7 @@ public class CmServerCommand {
   }
 
   @CmServerCommandMethod(name = "password")
-  public CmServerCommand password(String password) throws CmServerException {
+  public CmServerBuilder password(String password) throws CmServerException {
     if (password == null || password.equals("")) {
       throw new CmServerException("Illegal password argument passed [" + password + "]");
     }
@@ -149,7 +148,7 @@ public class CmServerCommand {
   }
 
   @CmServerCommandMethod(name = "client")
-  public CmServerCommand client(String client) throws CmServerException {
+  public CmServerBuilder client(String client) throws CmServerException {
     if (client == null) {
       throw new CmServerException("Illegal client argument passed [" + client + "]");
     }
@@ -158,7 +157,7 @@ public class CmServerCommand {
   }
 
   @CmServerCommandMethod(name = "command")
-  public CmServerCommand command(String command) throws CmServerException {
+  public CmServerBuilder command(String command) throws CmServerException {
     if (command == null || !COMMANDS.containsKey(command)) {
       throw new CmServerException("Illegal command argument passed [" + command + "]");
     }
@@ -166,7 +165,7 @@ public class CmServerCommand {
     return this;
   }
 
-  public CmServerCommand cluster(CmServerCluster cluster) throws CmServerException {
+  public CmServerBuilder cluster(CmServerCluster cluster) throws CmServerException {
     if (cluster == null || cluster.isEmpty()) {
       throw new CmServerException("Illegal cluster argument passed [" + cluster + "]");
     }
@@ -174,7 +173,7 @@ public class CmServerCommand {
     return this;
   }
 
-  public CmServerCommand logger(CmServerLog logger) throws CmServerException {
+  public CmServerBuilder logger(CmServerLog logger) throws CmServerException {
     if (logger == null) {
       throw new CmServerException("Illegal logger argument passed [" + logger + "]");
     }
@@ -182,8 +181,40 @@ public class CmServerCommand {
     return this;
   }
 
+  public void execute() throws CmServerException {
+    executeObject();
+  }
+
+  public boolean executeBoolean() throws CmServerException {
+    Object object = executeObject();
+    if (object instanceof Boolean) {
+      return ((Boolean) object).booleanValue();
+    } else {
+      return object != null;
+    }
+  }
+
   @SuppressWarnings("unchecked")
-  public boolean execute() throws CmServerException {
+  public List<CmServerService> executeServices() throws CmServerException {
+    Object object = executeObject();
+    if (object instanceof List
+        && (((List<?>) object).isEmpty() || ((List<?>) object).get(0) instanceof CmServerService)) {
+      return (List<CmServerService>) object;
+    } else {
+      return Collections.emptyList();
+    }
+  }
+
+  public CmServerCluster executeCluster() throws CmServerException {
+    Object object = executeObject();
+    if (object instanceof CmServerCluster) {
+      return (CmServerCluster) object;
+    } else {
+      return new CmServerCluster();
+    }
+  }
+
+  private Object executeObject() throws CmServerException {
     if (host == null) {
       throw new CmServerException("Required paramater [host] not set");
     }
@@ -191,7 +222,8 @@ public class CmServerCommand {
       throw new CmServerException("Required paramater [command] not set");
     }
     if (server == null) {
-      server = CmServerFactory.getCmServer(host, port, user, password, new CmServerLog.CmServerLogNull());
+      server = factory.getCmServer(host, port, user, password, new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API,
+          false));
     }
     List<Object> paramaters = new ArrayList<Object>();
     for (Class<?> clazz : COMMANDS.get(command).getParameterTypes()) {
@@ -209,48 +241,15 @@ public class CmServerCommand {
         throw new CmServerException("Unexpected paramater type [" + clazz.getName() + "]");
       }
     }
+    String label = WordUtils.capitalize(command);
     try {
-
-      logger.logOperationStartedSync(WordUtils.capitalize(command));
-
+      logger.logOperationStartedSync(label);
       Object commandReturn = COMMANDS.get(command).invoke(server, paramaters.toArray());
-
-      boolean commandReturnBoolean = false;
-      if (commandReturn instanceof Boolean) {
-
-        commandReturnBoolean = ((Boolean) commandReturn).booleanValue();
-
-      } else if (commandReturn instanceof List<?>) {
-
-        List<?> commandReturnList = ((List<?>) commandReturn);
-        commandReturnBoolean = !commandReturnList.isEmpty();
-        if (commandReturnBoolean && commandReturnList.get(0) instanceof CmServerService) {
-          for (CmServerService service : ((List<CmServerService>) commandReturnList)) {
-            logger.logOperationInProgressSync(WordUtils.capitalize(command),
-                "  " + (service.getName() + "@" + service.getHost() + "=" + service.getStatus()));
-          }
-        }
-
-      } else if (commandReturn instanceof CmServerCluster) {
-
-        CmServerCluster commandReturnCluster = ((CmServerCluster) commandReturn);
-        commandReturnBoolean = !commandReturnCluster.isEmpty();
-        for (CmServerServiceType type : commandReturnCluster.getServiceTypes()) {
-          logger.logOperationInProgressSync(WordUtils.capitalize(command), "  " + type.toString());
-          for (CmServerService service : commandReturnCluster.getServices(type)) {
-            logger.logOperationInProgressSync(WordUtils.capitalize(command),
-                "    " + service.getName() + "@" + service.getHost() + "=" + service.getStatus());
-          }
-        }
-
-      }
-
-      logger.logOperationFinishedSync(WordUtils.capitalize(command));
-
-      return commandReturnBoolean;
-
+      logger.logOperationFinishedSync(label);
+      return commandReturn;
     } catch (Exception exception) {
-      throw new CmServerException("Unexpected runtime exception executing CM Server", exception);
+      logger.logOperationFailedSync(label, exception);
+      throw new CmServerException("Unexpected runtime exception executing CM Server command", exception);
     }
   }
 

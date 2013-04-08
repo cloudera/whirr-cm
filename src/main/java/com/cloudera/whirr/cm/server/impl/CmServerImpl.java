@@ -61,11 +61,12 @@ import com.cloudera.api.model.ApiServiceList;
 import com.cloudera.api.v3.ParcelResource;
 import com.cloudera.api.v3.RootResourceV3;
 import com.cloudera.whirr.cm.server.CmServer;
-import com.cloudera.whirr.cm.server.CmServerException;
+import com.cloudera.whirr.cm.server.CmServerBuilder.CmServerCommandMethod;
 import com.cloudera.whirr.cm.server.CmServerCluster;
+import com.cloudera.whirr.cm.server.CmServerException;
 import com.cloudera.whirr.cm.server.CmServerService;
-import com.cloudera.whirr.cm.server.CmServerCommand.CmServerCommandMethod;
 import com.cloudera.whirr.cm.server.CmServerService.CmServerServiceStatus;
+import com.cloudera.whirr.cm.server.CmServerServiceBuilder;
 import com.cloudera.whirr.cm.server.CmServerServiceType;
 import com.cloudera.whirr.cm.server.CmServerServiceTypeRepo;
 import com.cloudera.whirr.cm.server.impl.CmServerLog.CmServerLogSyncCommand;
@@ -80,6 +81,7 @@ public class CmServerImpl implements CmServer {
   private static final String CM_PARCEL_STAGE_ACTIVATED = "ACTIVATED";
 
   private static int API_POLL_PERIOD_MS = 500;
+  private static int API_POLL_PERIOD_BACKOFF_NUMBER = 5;
 
   private CmServerLog logger;
   final private RootResourceV3 apiResourceRoot;
@@ -151,7 +153,6 @@ public class CmServerImpl implements CmServer {
   }
 
   @Override
-  @CmServerCommandMethod(name = "hosts")
   public List<CmServerService> getServiceHosts() throws CmServerException {
 
     final List<CmServerService> services = new ArrayList<CmServerService>();
@@ -161,7 +162,8 @@ public class CmServerImpl implements CmServer {
         @Override
         public void execute() {
           for (ApiHost host : apiResourceRoot.getHostsResource().readHosts(DataView.SUMMARY).getHosts()) {
-            services.add(new CmServerService(host.getHostId(), host.getIpAddress(), null, CmServerServiceStatus.STARTED));
+            services.add(new CmServerServiceBuilder().host(host.getHostId()).ip(host.getIpAddress())
+                .status(CmServerServiceStatus.STARTED).build());
           }
         }
       });
@@ -213,17 +215,27 @@ public class CmServerImpl implements CmServer {
   public CmServerCluster getServices(final CmServerCluster cluster) throws CmServerException {
 
     final CmServerCluster clusterView = new CmServerCluster();
+    clusterView.setServer(cluster.getServer());
+    for (CmServerService service : getServiceHosts()) {
+      clusterView.addAgent(service.getIp());
+    }
     try {
 
       logger.logOperation("GetServices", new CmServerLogSyncCommand() {
         @Override
         public void execute() throws IOException, CmServerException {
+          Map<String, String> hosts = new HashMap<String, String>();
           for (ApiService apiService : apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
               .readServices(DataView.SUMMARY)) {
             for (ApiRole apiRole : apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
                 .getRolesResource(apiService.getName()).readRoles()) {
-              clusterView.add(new CmServerService(apiRole.getName(), apiRole.getHostRef().getHostId(),
-                  CmServerServiceStatus.valueOf(apiRole.getRoleState().toString())));
+              if (!hosts.containsKey(apiRole.getHostRef().getHostId())) {
+                hosts.put(apiRole.getHostRef().getHostId(),
+                    apiResourceRoot.getHostsResource().readHost(apiRole.getHostRef().getHostId()).getIpAddress());
+              }
+              clusterView.addService(new CmServerServiceBuilder().name(apiRole.getName())
+                  .host(apiRole.getHostRef().getHostId()).ip(hosts.get(apiRole.getHostRef().getHostId()))
+                  .status(CmServerServiceStatus.valueOf(apiRole.getRoleState().toString())).build());
             }
           }
         }
@@ -260,7 +272,7 @@ public class CmServerImpl implements CmServer {
       for (CmServerService service : getServices(cluster).getServices(CmServerServiceType.CLUSTER)) {
         if (type.equals(CmServerServiceType.CLUSTER) || type.equals(service.getType().getParent())
             || type.equals(service.getType())) {
-          clusterView.add(service);
+          clusterView.addService(service);
         }
       }
 
@@ -395,6 +407,7 @@ public class CmServerImpl implements CmServer {
       logger.logOperationFinishedSync("ClusterInitialise");
 
     } catch (Exception e) {
+      logger.logOperationFailedSync("ClusterInitialise");
       throw new CmServerException("Failed to initialise cluster", e);
     }
     return configPostUpdate;
@@ -419,6 +432,7 @@ public class CmServerImpl implements CmServer {
       logger.logOperationFinishedSync("ClusterProvision");
 
     } catch (Exception e) {
+      logger.logOperationFailedSync("ClusterProvision");
       throw new CmServerException("Failed to provision cluster", e);
     }
 
@@ -426,6 +440,7 @@ public class CmServerImpl implements CmServer {
   }
 
   @Override
+  @CmServerCommandMethod(name = "configure")
   public boolean configure(CmServerCluster cluster) throws CmServerException {
 
     boolean executed = false;
@@ -445,6 +460,7 @@ public class CmServerImpl implements CmServer {
       logger.logOperationFinishedSync("ClusterConfigure");
 
     } catch (Exception e) {
+      logger.logOperationFailedSync("ClusterConfigure");
       throw new CmServerException("Failed to configure cluster", e);
     }
 
@@ -484,6 +500,7 @@ public class CmServerImpl implements CmServer {
       logger.logOperationFinishedSync("ClusterStart");
 
     } catch (Exception e) {
+      logger.logOperationFailedSync("ClusterStart");
       throw new CmServerException("Failed to start cluster", e);
     }
 
@@ -511,6 +528,7 @@ public class CmServerImpl implements CmServer {
       logger.logOperationFinishedSync("ClusterStop");
 
     } catch (Exception e) {
+      logger.logOperationFailedSync("ClusterStop");
       throw new CmServerException("Failed to stop cluster", e);
     }
 
@@ -518,6 +536,7 @@ public class CmServerImpl implements CmServer {
   }
 
   @Override
+  @CmServerCommandMethod(name = "unconfigure")
   public boolean unconfigure(final CmServerCluster cluster) throws CmServerException {
 
     boolean executed = false;
@@ -536,6 +555,7 @@ public class CmServerImpl implements CmServer {
       logger.logOperationFinishedSync("ClusterUnConfigure");
 
     } catch (Exception e) {
+      logger.logOperationFailedSync("ClusterUnConfigure");
       throw new CmServerException("Failed to unconfigure cluster", e);
     }
 
@@ -563,6 +583,7 @@ public class CmServerImpl implements CmServer {
       logger.logOperationFinishedSync("ClusterUnProvision");
 
     } catch (Exception e) {
+      logger.logOperationFailedSync("ClusterUnProvision");
       throw new CmServerException("Failed to unprovision cluster", e);
     }
 
@@ -634,8 +655,7 @@ public class CmServerImpl implements CmServer {
     execute("WaitForParcelsAvailability", new Callback() {
       @Override
       public boolean poll() {
-        Set<CmServerServiceTypeRepo> repositoriesNotLoaded = new HashSet<CmServerServiceTypeRepo>(
-            repositoriesRequired);
+        Set<CmServerServiceTypeRepo> repositoriesNotLoaded = new HashSet<CmServerServiceTypeRepo>(repositoriesRequired);
         for (ApiParcel parcel : apiResourceRoot.getClustersResource().getParcelsResource(getName(cluster))
             .readParcels(DataView.FULL).getParcels()) {
           try {
@@ -951,30 +971,31 @@ public class CmServerImpl implements CmServer {
 
   private ApiCommand execute(String label, ApiCommand command, Callback callback, boolean checkReturn)
       throws InterruptedException {
-
-    logger.logOperationStartedAsync(WordUtils.capitalize(label.replace("-", " ").replace("_", " ")).replace(" ", ""));
-
+    label = WordUtils.capitalize(label.replace("-", " ").replace("_", " ")).replace(" ", "");
+    logger.logOperationStartedAsync(label);
     ApiCommand commandReturn = null;
+    int apiPollPeriods = 1;
+    int apiPollPeriodLog = 1;
+    int apiPollPeriodBackoffNumber = API_POLL_PERIOD_BACKOFF_NUMBER;
     while (true) {
-
-      logger.logOperationInProgressAsync(label);
-
+      if (apiPollPeriods++ % apiPollPeriodLog == 0) {
+        logger.logOperationInProgressAsync(label);
+      }
       if (callback.poll()) {
         if (checkReturn && command != null
             && !(commandReturn = apiResourceRoot.getCommandsResource().readCommand(command.getId())).getSuccess()) {
-
           logger.logOperationFailedAsync(label);
-
           throw new RuntimeException("Command [" + command + "] failed [" + commandReturn + "]");
         }
-
         logger.logOperationFinishedAsync(label);
-
         return commandReturn;
+      }
+      if (apiPollPeriodBackoffNumber-- == 0) {
+        apiPollPeriodLog++;
+        apiPollPeriodBackoffNumber = API_POLL_PERIOD_BACKOFF_NUMBER;
       }
       Thread.sleep(API_POLL_PERIOD_MS);
     }
-
   }
 
   private static abstract class Callback {

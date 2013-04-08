@@ -27,6 +27,8 @@ import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.service.ClusterActionEvent;
 import org.apache.whirr.service.hadoop.VolumeManager;
 
+import com.cloudera.whirr.cm.CmServerClusterInstance;
+import com.cloudera.whirr.cm.server.impl.CmServerLog;
 import com.google.common.collect.Iterables;
 
 public abstract class BaseHandlerCm extends BaseHandler {
@@ -34,27 +36,33 @@ public abstract class BaseHandlerCm extends BaseHandler {
   public static final String DATA_DIRS_ROOT = "cm.data.dirs.root";
   public static final String DATA_DIRS_DEFAULT = "cm.data.dirs.default";
 
-  public static final String CONSOLE_SPACER = "-------------------------------------------------------------------------------";
+  protected static final CmServerLog logger = new CmServerLog.CmServerLogSysOut(LOG_TAG_WHIRR_HANDLER, false);
 
   protected Map<String, String> deviceMappings = new HashMap<String, String>();
 
+  protected String getInstanceId() {
+    return getRole() + "-instance-id";
+  }
+
   @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
-    logOperation("Host Pre Bootstrap");
+    logHeaderHandler("HostPreBootstrap");
     super.beforeBootstrap(event);
     addStatement(event, call("configure_hostnames"));
     addStatement(event, call("retry_helpers"));
+    logFooterHandler("HostPreBootstrap");
   }
 
   @Override
   protected void afterBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
-    logOperation("Host Post Bootstrap");
+    logHeaderHandler("HostPostBootstrap");
     super.afterBootstrap(event);
+    logFooterHandler("HostPostBootstrap");
   }
 
   @Override
   protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
-    logOperation("Host Pre Configure");
+    logHeaderHandler("HostConfigure");
     super.beforeConfigure(event);
     addStatement(event, call("retry_helpers"));
     if (getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_ROOT) == null) {
@@ -62,7 +70,7 @@ public abstract class BaseHandlerCm extends BaseHandler {
       String devMappings = VolumeManager.asString(deviceMappings);
       addStatement(event, call("prepare_all_disks", "'" + devMappings + "'"));
     }
-    logOperation("Host Post Configure");
+    logFooterHandler("HostConfigure");
   }
 
   public Map<String, String> getDeviceMappings(ClusterActionEvent event) {
@@ -78,50 +86,14 @@ public abstract class BaseHandlerCm extends BaseHandler {
     return deviceMappings;
   }
 
-  private void logOperation(String operation) {
-
-    logHeader("Whirr " + operation);
-    logLineItem("Role:");
-    logLineItemDetail(getRole());
-
+  private void logHeaderHandler(String operation) {
+    CmServerClusterInstance.logHeader(logger, operation);
+    CmServerClusterInstance.logLineItem(logger, operation);
+    CmServerClusterInstance.logLineItemDetail(logger, operation, "Role " + getRole());
   }
 
-  public void logHeader(String message) {
-
-    System.out.println();
-    System.out.println(CONSOLE_SPACER);
-    System.out.println(message);
-    System.out.println(CONSOLE_SPACER);
-
-  }
-
-  public void logFooter() {
-
-    System.out.println();
-    System.out.println(CONSOLE_SPACER);
-
-  }
-
-  public void logLineItem(String message) {
-
-    System.out.println();
-    System.out.println(message);
-
-  }
-
-  public void logLineItemDetail(String message) {
-
-    System.out.println(message);
-
-  }
-
-  public void logException(String message, Throwable throwable) {
-
-    System.out.println();
-    throwable.printStackTrace();
-    System.out.println();
-    System.out.println(message);
-
+  private void logFooterHandler(String operation) {
+    CmServerClusterInstance.logLineItemFooter(logger, operation);
   }
 
 }

@@ -31,40 +31,40 @@ import com.google.common.collect.Lists;
 
 public class CmServerCluster {
 
-  private Map<CmServerServiceType, Set<CmServerService>> services = new HashMap<CmServerServiceType, Set<CmServerService>>();
-
-  private Set<String> dataMounts = new HashSet<String>();
-
+  private String server;
   private boolean isParcel = true;
+  private Set<String> agents = new TreeSet<String>();
+  private Set<String> nodes = new TreeSet<String>();
+  private Set<String> mounts = new HashSet<String>();
+  private Map<CmServerServiceType, Set<CmServerService>> services = new HashMap<CmServerServiceType, Set<CmServerService>>();
 
   public CmServerCluster() {
   }
 
   public synchronized boolean isEmpty() {
-    return services.isEmpty();
-  }
-
-  public synchronized boolean isEmptyServices() {
     for (CmServerServiceType type : services.keySet()) {
       if (!services.get(type).isEmpty()) {
-        return false;
+        return server == null || (agents.isEmpty() && nodes.isEmpty());
       }
     }
     return true;
   }
 
-  public synchronized void clear() {
-    services.clear();
-  }
+  public synchronized boolean addServiceType(CmServerServiceType type) throws CmServerException {
 
-  public synchronized void clearServices() {
-    for (CmServerServiceType type : services.keySet()) {
-      services.get(type).clear();
+    if (type.getParent() == null || type.getParent().getParent() == null) {
+      throw new CmServerException("Invalid cluster topology: Attempt to add non leaf type [" + type + "]");
     }
-  }
+    switch (type) {
+    case HDFS_NAMENODE:
+      if (getServices(CmServerServiceType.HDFS_NAMENODE).size() > 0) {
+        throw new CmServerException("Invalid cluster topology: Attempt to add multiple types [" + type + "]");
+      }
+      break;
+    default:
+      break;
+    }
 
-  public synchronized boolean add(CmServerServiceType type) throws CmServerException {
-    assertConsistentTopology(type);
     if (!services.containsKey(type.getParent())) {
       services.put(type.getParent(), new TreeSet<CmServerService>());
       return true;
@@ -72,9 +72,30 @@ public class CmServerCluster {
     return false;
   }
 
-  public synchronized boolean add(CmServerService service) throws CmServerException {
-    add(service.getType());
+  public synchronized boolean addService(CmServerService service) throws CmServerException {
+    addServiceType(service.getType());
     services.get(service.getType().getParent()).add(service);
+    return true;
+  }
+
+  public synchronized boolean setServer(String server) throws CmServerException {
+    if (this.server != null) {
+      throw new CmServerException("Invalid cluster topology: Attempt to add multiple servers");
+    }
+    return (this.server = server) != null;
+  }
+
+  public synchronized boolean addAgent(String agent) throws CmServerException {
+    if (!agents.add(agent)) {
+      throw new CmServerException("Invalid cluster topology: Attempt to add col-located agents");
+    }
+    return true;
+  }
+
+  public synchronized boolean addNode(String node) throws CmServerException {
+    if (!nodes.add(node)) {
+      throw new CmServerException("Invalid cluster topology: Attempt to add co-located nodes");
+    }
     return true;
   }
 
@@ -134,35 +155,46 @@ public class CmServerCluster {
       if (service.getType().equals(type)) {
         return service.getName();
       } else {
-        return new CmServerService(type, service.getTag()).getName();
+        return new CmServerServiceBuilder().type(type).tag(service.getTag()).build().getName();
       }
     } else {
       Set<CmServerService> servicesChild = null;
       if (!services.isEmpty() && !(servicesChild = services.get(getServiceTypes().iterator().next())).isEmpty()) {
-        return new CmServerService(type, servicesChild.iterator().next().getTag()).getName();
+        return new CmServerServiceBuilder().type(type).tag(servicesChild.iterator().next().getTag()).build().getName();
       }
     }
     throw new IOException("Cannot determine service name, cluster is empty");
   }
 
-  public synchronized void setDataMounts(Set<String> mnts) {
-    this.dataMounts.addAll(mnts);
+  public synchronized String getServer() {
+    return server;
   }
 
-  public synchronized Set<String> getDataMounts() {
-    return ImmutableSet.copyOf(dataMounts);
+  public synchronized Set<String> getAgents() {
+    return new TreeSet<String>(agents);
+  }
+
+  public synchronized Set<String> getNodes() {
+    return new TreeSet<String>(nodes);
+  }
+
+  public synchronized void setMounts(Set<String> mounts) {
+    this.mounts.addAll(mounts);
+  }
+
+  public synchronized Set<String> getMounts() {
+    return ImmutableSet.copyOf(mounts);
   }
 
   public String getDataDirsForSuffix(final Set<String> defaults, final String suffix) throws IOException {
-    Set<String> dataMounts = getDataMounts();
+    Set<String> mounts = getMounts();
     return Joiner.on(',').join(
-        Lists.transform(Lists.newArrayList(dataMounts.isEmpty() ? defaults : dataMounts),
-            new Function<String, String>() {
-              @Override
-              public String apply(String input) {
-                return input + suffix;
-              }
-            }));
+        Lists.transform(Lists.newArrayList(mounts.isEmpty() ? defaults : mounts), new Function<String, String>() {
+          @Override
+          public String apply(String input) {
+            return input + suffix;
+          }
+        }));
   }
 
   public void setIsParcel(boolean isParcel) {
@@ -171,21 +203,6 @@ public class CmServerCluster {
 
   public boolean getIsParcel() {
     return isParcel;
-  }
-
-  private void assertConsistentTopology(CmServerServiceType type) throws CmServerException {
-    if (type.getParent() == null || type.getParent().getParent() == null) {
-      throw new CmServerException("Invalid cluster topology: Attempt to add non leaf type [" + type + "]");
-    }
-    switch (type) {
-    case HDFS_NAMENODE:
-      if (getServices(CmServerServiceType.HDFS_NAMENODE).size() > 0) {
-        throw new CmServerException("Invalid cluster topology: Attempt to add multiple types [" + type + "]");
-      }
-      break;
-    default:
-      break;
-    }
   }
 
 }

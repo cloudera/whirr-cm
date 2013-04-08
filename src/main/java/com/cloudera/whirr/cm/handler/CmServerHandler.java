@@ -30,15 +30,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.service.ClusterActionEvent;
 import org.apache.whirr.service.FirewallManager.Rule;
 
-import com.cloudera.whirr.cm.handler.cdh.BaseHandlerCmCdh;
+import com.cloudera.whirr.cm.CmServerClusterInstance;
 import com.cloudera.whirr.cm.server.CmServer;
+import com.cloudera.whirr.cm.server.CmServerCluster;
+import com.cloudera.whirr.cm.server.CmServerException;
 import com.cloudera.whirr.cm.server.CmServerService;
+import com.cloudera.whirr.cm.server.CmServerService.CmServerServiceStatus;
 import com.cloudera.whirr.cm.server.CmServerServiceType;
-import com.cloudera.whirr.cm.server.impl.CmServerFactory;
 import com.cloudera.whirr.cm.server.impl.CmServerLog;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
@@ -57,9 +58,6 @@ public class CmServerHandler extends BaseHandlerCm {
   public static final String PROPERTY_PORT_WEB = "cm-server.port.web";
   public static final String PROPERTY_PORT_COMMS = "cm-server.port.comms";
 
-  public static final String CM_USER = "admin";
-  public static final String CM_PASSWORD = "admin";
-
   @Override
   public String getRole() {
     return ROLE;
@@ -68,6 +66,11 @@ public class CmServerHandler extends BaseHandlerCm {
   @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
+    try {
+      CmServerClusterInstance.getCluster().setServer(getInstanceId());
+    } catch (CmServerException e) {
+      throw new IOException("Unexpected error building cluster", e);
+    }
     addStatement(event, call("install_cm"));
     addStatement(event, call("install_cm_server"));
   }
@@ -99,192 +102,156 @@ public class CmServerHandler extends BaseHandlerCm {
   @Override
   protected void afterConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
     super.afterConfigure(event);
-    
-    logHeader("Cloudera Manager Server");
-    logLineItem("Web Console:");
-    logLineItemDetail("http://" + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp() + ":"
-        + getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB));
-    logLineItem("Web Console User/Password (change these!):");
-    logLineItemDetail(CM_USER + "/" + CM_PASSWORD);
-    logLineItem("Automatically provision and start Cloudera Manager services [" + CONFIG_WHIRR_AUTO_VARIABLE + "],\n"
-        + "progress via terminal (below) and web (above) consoles:");
-    logLineItemDetail("" + event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true));
-
-    logLineItemDetail("User:");
-    logLineItem(event.getClusterSpec().getClusterUser());
-    logLineItemDetail("Private Key Path:");
-    logLineItem(event.getClusterSpec().getPrivateKeyFile() == null ? "<not-defined>" : event.getClusterSpec()
-        .getPrivateKeyFile().getCanonicalPath());
-    logLineItemDetail("Console:");
-    logLineItem("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
-        + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp());
-
-    Set<Instance> nodes = event.getCluster().getInstancesMatching(role(CmNodeHandler.ROLE));
-    if (!nodes.isEmpty()) {
-      logHeader("Cloudera Manager Nodes");
-      logLineItem("Consoles:");
-      for (Instance instance : nodes) {
-        logLineItemDetail("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
-            + instance.getPublicIp());
-      }
-    }
-
-    Set<Instance> agents = event.getCluster().getInstancesMatching(role(CmAgentHandler.ROLE));
-    if (!agents.isEmpty()) {
-      logHeader("Cloudera Manager Agents");
-      logLineItem("Consoles:");
-      for (Instance instance : agents) {
-        logLineItemDetail("ssh -o StrictHostKeyChecking=no " + event.getClusterSpec().getClusterUser() + "@"
-            + instance.getPublicIp());
-      }
-    }
-
-    if (!BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().isEmpty()) {
-
-      logHeader("Cloudera Manager Cluster Provision");
-
-      if (!event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
-
-        logLineItem("Warning, Cloudera Manager services found but whirr property [" + CONFIG_WHIRR_AUTO_VARIABLE
-            + "]\n" + "set to false so not provsioning:");
-        for (String role : BaseHandlerCmCdh.getRoles()) {
-          logLineItemDetail(role);
-        }
-
-      } else if (event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
-
-        try {
-
-          if (event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_USE_PACKAGES, false)) {
-            BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().setIsParcel(false);
-          } else {
-            BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().setIsParcel(true);
+    executeServer("CMClusterProvision", event, null, new ServerCommand() {
+      @Override
+      public CmServerCluster execute(ClusterActionEvent event, CmServer server, CmServerCluster clusterInput)
+          throws Exception {
+        Map<String, String> config = new HashMap<String, String>();
+        @SuppressWarnings("unchecked")
+        Iterator<String> keys = event.getClusterSpec().getConfiguration().getKeys();
+        while (keys.hasNext()) {
+          String key = keys.next();
+          if (key.startsWith(CONFIG_WHIRR_CM_PREFIX)) {
+            config.put(key.replaceFirst(CONFIG_WHIRR_CM_PREFIX, ""), event.getClusterSpec().getConfiguration()
+                .getString(key));
           }
-          
-          BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().setDataMounts(getDataMounts(event));
-
-          logLineItem("Roles:");
-          BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().clearServices();
-          for (Instance instance : event.getCluster().getInstances()) {
-            for (String role : instance.getRoles()) {
-              CmServerServiceType type = BaseHandlerCmCdh.getType(role);
-              if (type != null) {
-                CmServerService service = new CmServerService(type, event.getClusterSpec().getConfiguration()
-                    .getString(CONFIG_WHIRR_NAME, CONFIG_WHIRR_NAME_DEFAULT), ""
-                    + (BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().getServices(type).size() + 1),
-                    instance.getPublicHostName(), instance.getPublicIp(), instance.getPrivateIp());
-                BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().add(service);
-                logLineItemDetail(service.getName() + "@" + instance.getPublicIp());
-              }
+        }
+        boolean success = false;
+        server.initialise(config);
+        if (server.provision(clusterInput)) {
+          if (server.configure(clusterInput)) {
+            if (server.getServiceConfigs(clusterInput, event.getClusterSpec().getClusterDirectory())) {
+              success = true;
             }
           }
-
-          logLineItem("Provision:");
-          Map<String, String> config = new HashMap<String, String>();
-          @SuppressWarnings("unchecked")
-          Iterator<String> keys = event.getClusterSpec().getConfiguration().getKeys();
-          while (keys.hasNext()) {
-            String key = keys.next();
-            if (key.startsWith(CONFIG_WHIRR_CM_PREFIX)) {
-              config.put(key.replaceFirst(CONFIG_WHIRR_CM_PREFIX, ""), event.getClusterSpec().getConfiguration()
-                  .getString(key));
-            }
-          }
-
-          CmServer server = CmServerFactory.getCmServer(event.getCluster()
-              .getInstanceMatching(role(ROLE)).getPublicIp(), 7180, CM_USER, CM_PASSWORD,
-              new CmServerLog.CmServerLogSysOut());
-          server.initialise(config);
-          server.provision(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
-          server.configure(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
-          server.getServiceConfigs(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance(), event.getClusterSpec()
-              .getClusterDirectory());
-
-        } catch (Exception e) {
-
-          logException(
-              "Failed to execute Cloudera Manager Cluster Provision, please review the proceeding exception and log into the web console [http://"
-                  + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp()
-                  + ":"
-                  + getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB) + "] to resolve", e);
-
         }
-
+        if (!success) {
+          throw new CmServerException("Unexepcted error attempting to provision cluster");
+        }
+        return clusterInput;
       }
-
-    }
-
+    }, false);
   }
 
   @Override
   protected void afterStart(ClusterActionEvent event) throws IOException, InterruptedException {
     super.afterStart(event);
-
-    if (!BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().isEmpty()) {
-
-      logHeader("Cloudera Manager Cluster Start");
-
-      if (!event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
-
-        logLineItem("Warning, Cloudera Manager services found but whirr property [" + CONFIG_WHIRR_AUTO_VARIABLE
-            + "]\n" + "set to false so not starting:");
-        for (String role : BaseHandlerCmCdh.getRoles()) {
-          logLineItemDetail(role);
-        }
-
-      } else if (event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
-
-        try {
-
-          logLineItem("Services:");
-          for (CmServerServiceType type : BaseHandlerCmCdh.CmServerClusterSingleton.getInstance().getServiceTypes()) {
-            logLineItemDetail(type.toString());
+    executeServer("CMClusterStart", event, CmServerServiceStatus.STARTING, new ServerCommand() {
+      @Override
+      public CmServerCluster execute(ClusterActionEvent event, CmServer server, CmServerCluster clusterInput)
+          throws Exception {
+        CmServerCluster clusterOutput = new CmServerCluster();
+        server.start(clusterInput);
+        if (server.isStarted(clusterInput)) {
+          if ((clusterOutput = server.getServices(clusterInput)).isEmpty()) {
+            throw new CmServerException("Unexpected error, empty cluster returned");
           }
-
-          logLineItem("Start:");
-          CmServer server = CmServerFactory.getCmServer(event.getCluster().getInstanceMatching(role(ROLE))
-              .getPublicIp(), 7180, CM_USER, CM_PASSWORD, new CmServerLog.CmServerLogSysOut());
-          server.start(BaseHandlerCmCdh.CmServerClusterSingleton.getInstance());
-
-        } catch (Exception e) {
-
-          logException(
-              "Failed to execute Cloudera Manager Cluster Start, please review the proceeding exception and log into the web console [http://"
-                  + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp()
-                  + ":"
-                  + getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB) + "] to resolve", e);
-
+        } else {
+          throw new CmServerException("Unexpected error starting cluster, not correctly provisioned");
         }
-
+        return clusterOutput;
       }
+    }, true);
+  }
 
-      logHeader("Cloudera Manager Server");
-      logLineItem("Web Console:");
-      logLineItemDetail("http://" + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp() + ":"
-          + getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB));
-      logLineItem("Web Console User/Password (change these!):");
-      logLineItemDetail(CM_USER + "/" + CM_PASSWORD);
+  @Override
+  protected void afterStop(ClusterActionEvent event) throws IOException, InterruptedException {
+    super.afterStop(event);
+    executeServer("CMClusterStop", event, CmServerServiceStatus.STOPPING, new ServerCommand() {
+      @Override
+      public CmServerCluster execute(ClusterActionEvent event, CmServer server, CmServerCluster clusterInput)
+          throws Exception {
+        CmServerCluster clusterOutput = new CmServerCluster();
+        if (server.isConfigured(clusterInput)) {
+          server.stop(clusterInput);
+          if ((clusterOutput = server.getServices(clusterInput)).isEmpty()) {
+            throw new CmServerException("Unexpected error, empty cluster returned");
+          }
+        } else {
+          throw new CmServerException("Unexpected error stopping cluster, not correctly provisioned");
+        }
+        return clusterOutput;
+      }
+    }, true);
+  }
 
-      logFooter();
-
+  private void executeServer(String operation, ClusterActionEvent event, CmServerServiceStatus status,
+      ServerCommand command, boolean footer) throws IOException, InterruptedException {
+    super.afterStart(event);
+    try {
+      CmServerClusterInstance.logHeader(logger, operation);
+      CmServerCluster cluster = getCluster(event, status);
+      if (!cluster.isEmpty()) {
+        if (!event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
+          CmServerClusterInstance.logLineItem(logger, operation, "Warning, services found, but whirr property");
+          CmServerClusterInstance.logLineItemDetail(logger, operation, "[" + CONFIG_WHIRR_AUTO_VARIABLE
+              + "] is false so not executing");
+        } else if (event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
+          CmServerClusterInstance.logLineItem(logger, operation);
+          CmServer server = CmServerClusterInstance.getFactory().getCmServer(
+              event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp(), 7180, CM_USER, CM_PASSWORD,
+              new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API, false));
+          cluster = command.execute(event, server, cluster);
+          CmServerClusterInstance.logLineItemFooter(logger, operation);
+          CmServerClusterInstance.logLineItem(logger, operation);
+          CmServerClusterInstance.logCluster(logger, operation, event.getClusterSpec(), cluster);
+          CmServerClusterInstance.logLineItemFooter(logger, operation);
+        }
+      }
+    } catch (Exception e) {
+      CmServerClusterInstance.logException(logger, operation,
+          "Failed to execute (see above), log into the web console to resolve", e);
+    } finally {
+      CmServerClusterInstance.getCluster(true);
     }
+    if (footer) {
+      CmServerClusterInstance.logLineItemFooterFinal(logger);
+    }
+  }
 
+  private CmServerCluster getCluster(ClusterActionEvent event, CmServerServiceStatus status) throws CmServerException,
+      IOException {
+    CmServerCluster clusterStale = CmServerClusterInstance.getCluster();
+    CmServerCluster cluster, clusterCurrent = cluster = CmServerClusterInstance.getCluster(event.getClusterSpec(),
+        event.getCluster().getInstances(), getDataMounts(event));
+    if (status != null) {
+      CmServerCluster clusterFiltered = CmServerClusterInstance.getCluster(clusterCurrent);
+      for (CmServerServiceType type : clusterStale.getServiceTypes()) {
+        boolean typeFiltered = true;
+        for (CmServerService service : clusterStale.getServices(type)) {
+          if (!service.getStatus().equals(status)) {
+            typeFiltered = false;
+            break;
+          }
+        }
+        if (typeFiltered) {
+          for (CmServerService service : clusterCurrent.getServices(type)) {
+            clusterFiltered.addService(service);
+          }
+        }
+      }
+      cluster = clusterFiltered;
+    }
+    CmServerClusterInstance.getCluster(true);
+    return cluster;
   }
 
   private Set<String> getDataMounts(ClusterActionEvent event) throws IOException {
-    Set<String> mnts = new HashSet<String>();
-
-    String overrideMnt = getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_ROOT);
-
-    if (overrideMnt != null) {
-      mnts.add(overrideMnt);
+    Set<String> mounts = new HashSet<String>();
+    String overirdeMounts = getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_ROOT);
+    if (overirdeMounts != null) {
+      mounts.add(overirdeMounts);
     } else if (!getDeviceMappings(event).isEmpty()) {
-      mnts.addAll(getDeviceMappings(event).keySet());
+      mounts.addAll(getDeviceMappings(event).keySet());
     } else {
-      mnts.add(getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_DEFAULT));
+      mounts.add(getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_DEFAULT));
     }
+    return mounts;
+  }
 
-    return mnts;
+  public static abstract class ServerCommand {
+    public abstract CmServerCluster execute(ClusterActionEvent event, CmServer server, CmServerCluster clusterInput)
+        throws Exception;
   }
 
 }

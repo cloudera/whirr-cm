@@ -52,10 +52,4 @@ public class CmCdhHiveMetaStoreHandler extends BaseHandlerCmCdh {
     addStatement(event, call("configure_cmcdh_hivemetastore"));
   }
 
-  @Override
-  protected void beforeStart(ClusterActionEvent event) throws IOException, InterruptedException {
-    super.beforeStart(event);
-    addStatement(event, call("start_cmcdh_hivemetastore"));
-  }
-
 }

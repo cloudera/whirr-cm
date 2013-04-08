@@ -25,6 +25,9 @@ import java.io.IOException;
 import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.service.ClusterActionEvent;
 
+import com.cloudera.whirr.cm.CmServerClusterInstance;
+import com.cloudera.whirr.cm.server.CmServerException;
+
 public class CmAgentHandler extends CmNodeHandler {
 
   public static final String ROLE = "cm-agent";
@@ -35,8 +38,18 @@ public class CmAgentHandler extends CmNodeHandler {
   }
 
   @Override
+  protected String getInstanceId() {
+    return super.getInstanceId() + "-" + (CmServerClusterInstance.getCluster().getAgents().size() + 1);
+  }
+
+  @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
+    try {
+      CmServerClusterInstance.getCluster().addAgent(getInstanceId());
+    } catch (CmServerException e) {
+      throw new IOException("Unexpected error building cluster", e);
+    }
     addStatement(event, call("install_cm_agent"));
   }
 
@@ -54,8 +67,6 @@ public class CmAgentHandler extends CmNodeHandler {
           call("configure_cm_agent", "-h", event.getCluster().getInstanceMatching(role(CmServerHandler.ROLE))
               .getPublicIp(), "-p",
               getConfiguration(event.getClusterSpec()).getString(CmServerHandler.PROPERTY_PORT_COMMS)));
-    } else {
-      logLineItem("Warning, not configuring agent, because failed to find CM server");
     }
   }
 

@@ -26,8 +26,6 @@ import org.apache.whirr.service.DryRunModule.DryRun;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.cloudera.whirr.cm.handler.CmAgentHandler;
-import com.cloudera.whirr.cm.handler.CmServerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsNameNodeHandler;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;

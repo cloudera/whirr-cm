@@ -17,6 +17,9 @@
  */
 package com.cloudera.whirr.cm.server.impl;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,15 +27,75 @@ import com.cloudera.whirr.cm.server.CmServer;
 
 public abstract class CmServerLog {
 
-  private static Logger logOperation = LoggerFactory.getLogger(CmServer.class);
-
-  private static final String LOG_REFIX = "CM Server";
+  protected String tag;
+  protected boolean quiet;
 
   public static abstract class CmServerLogSyncCommand {
     public abstract void execute() throws Exception;
   }
 
-  public abstract void log(String message);
+  public CmServerLog() {
+    this(null, false);
+  }
+
+  public CmServerLog(boolean quiet) {
+    this(null, quiet);
+  }
+
+  public CmServerLog(String tag, boolean quiet) {
+    this.tag = tag;
+    this.quiet = quiet;
+  }
+
+  public void logSpacer() {
+    logOperation("", "");
+  }
+
+  public void logSpacerDashed() {
+    logOperation("", "-----------------------------------------------------------------");
+  }
+
+  public void logOperation(String message) {
+    logOperation(null, message);
+  }
+
+  public void logOperation(String operation, String message) {
+    if (!quiet) {
+      logMessage((operation == null ? "" : (tag == null ? "" : (tag + " ")))
+          + (operation == null || operation.equals("") ? "" : (((tag == null ? "" : "[") + operation
+              + (tag == null ? "" : "]") + " "))) + (message == null ? "" : message));
+    }
+  }
+
+  public void logOperationIntermediate(String message) {
+    logOperationIntermediate(null, message);
+  }
+
+  public void logOperationIntermediate(String operation, String message) {
+    if (!quiet) {
+      logMessageIntermediate((operation == null ? "" : (tag == null ? "" : (tag + " ")))
+          + (operation == null || operation.equals("") ? "" : (((tag == null ? "" : "[") + operation
+              + (tag == null ? "" : "]") + " "))) + (message == null ? "" : message));
+    }
+  }
+
+  public void logOperationStackTrace(Throwable throwable) {
+    logOperationStackTrace(null, throwable);
+  }
+
+  public void logOperationStackTrace(String operation, Throwable throwable) {
+    if (!quiet) {
+      StringWriter stringWriter = new StringWriter();
+      throwable.printStackTrace(new PrintWriter(stringWriter));
+      for (String stackTraceLine : stringWriter.toString().split(System.getProperty("line.separator"))) {
+        logOperation(operation, stackTraceLine);
+      }
+    }
+  }
+
+  protected abstract void logMessage(String message);
+
+  protected abstract void logMessageIntermediate(String message);
 
   public abstract void logOperation(String operation, CmServerLogSyncCommand command);
 
@@ -57,6 +120,26 @@ public abstract class CmServerLog {
   public abstract void logOperationFinishedAsync(String operation);
 
   public static class CmServerLogNull extends CmServerLog {
+
+    public CmServerLogNull() {
+      super();
+    }
+
+    public CmServerLogNull(boolean quiet) {
+      super(null, quiet);
+    }
+
+    public CmServerLogNull(String tag, boolean quiet) {
+      super(tag, quiet);
+    }
+
+    @Override
+    protected void logMessage(String message) {
+    }
+
+    @Override
+    protected void logMessageIntermediate(String message) {
+    }
 
     @Override
     public void logOperation(String operation, CmServerLogSyncCommand command) {
@@ -88,10 +171,6 @@ public abstract class CmServerLog {
     }
 
     @Override
-    public void log(String message) {
-    }
-
-    @Override
     public void logOperationStartedSync(String operation) {
     }
 
@@ -115,57 +194,69 @@ public abstract class CmServerLog {
 
   public static class CmServerLogSlf4j extends CmServerLog {
 
-    @Override
-    public void logOperation(String operation, CmServerLogSyncCommand command) {
-      boolean failed = false;
-      log(LOG_REFIX + " [" + operation + "] started");
-      try {
-        command.execute();
-      } catch (Exception e) {
-        failed = true;
-        if (logOperation.isErrorEnabled()) {
-          logOperation.error("Unexpected error executing command", e);
-        }
-      }
-      log(LOG_REFIX + " [" + operation + "] " + (failed ? "failed" : "finished"));
+    private static Logger logOperation = LoggerFactory.getLogger(CmServer.class);
+
+    public CmServerLogSlf4j() {
+      super();
+    }
+
+    public CmServerLogSlf4j(boolean quiet) {
+      super(null, quiet);
+    }
+
+    public CmServerLogSlf4j(String tag, boolean quiet) {
+      super(tag, quiet);
     }
 
     @Override
-    public void logOperationStartedAsync(String operation) {
-      log(LOG_REFIX + " [" + operation + "] started");
-    }
-
-    @Override
-    public void logOperationInProgressAsync(String operation) {
-      log(LOG_REFIX + " [" + operation + "] in progress");
-    }
-
-    @Override
-    public void logOperationFailedAsync(String operation) {
-      log(LOG_REFIX + " [" + operation + "] failed");
-    }
-
-    @Override
-    public void logOperationFailedAsync(String operation, Throwable throwable) {
-      log(LOG_REFIX + " [" + operation + "] failed", throwable);
-    }
-
-    @Override
-    public void logOperationFinishedAsync(String operation) {
-      log(LOG_REFIX + " [" + operation + "] finished");
-    }
-
-    @Override
-    public void log(String message) {
+    protected void logMessage(String message) {
       if (logOperation.isInfoEnabled()) {
         logOperation.info(message);
       }
     }
 
-    public void log(String message, Throwable throwable) {
-      if (logOperation.isInfoEnabled()) {
-        logOperation.info(message, throwable);
+    @Override
+    protected void logMessageIntermediate(String message) {
+      logMessage(message);
+    }
+
+    @Override
+    public void logOperation(String operation, CmServerLogSyncCommand command) {
+      boolean failed = false;
+      logOperation(operation, "started");
+      try {
+        command.execute();
+      } catch (Exception e) {
+        failed = true;
+        logOperation(operation, "Unexpected error executing command");
       }
+      logOperation(operation, (failed ? "failed" : "finished"));
+    }
+
+    @Override
+    public void logOperationStartedAsync(String operation) {
+      logOperation(operation, "started");
+    }
+
+    @Override
+    public void logOperationInProgressAsync(String operation) {
+      logOperation(operation, "in progress");
+    }
+
+    @Override
+    public void logOperationFailedAsync(String operation) {
+      logOperation(operation, "failed");
+    }
+
+    @Override
+    public void logOperationFailedAsync(String operation, Throwable throwable) {
+      logOperation(operation, "failed");
+      logOperationStackTrace(operation, throwable);
+    }
+
+    @Override
+    public void logOperationFinishedAsync(String operation) {
+      logOperation(operation, "finished");
     }
 
     @Override
@@ -175,7 +266,7 @@ public abstract class CmServerLog {
 
     @Override
     public void logOperationInProgressSync(String operation, String detail) {
-      log(LOG_REFIX + " [" + operation + "] " + detail);
+      logOperation(operation, detail);
     }
 
     @Override
@@ -197,77 +288,94 @@ public abstract class CmServerLog {
 
   public static class CmServerLogSysOut extends CmServerLog {
 
+    public CmServerLogSysOut(String tag, boolean quiet) {
+      super(tag, quiet);
+    }
+
+    public CmServerLogSysOut() {
+      super();
+    }
+
+    public CmServerLogSysOut(boolean quiet) {
+      super(null, quiet);
+    }
+
+    @Override
+    protected void logMessage(String message) {
+      System.out.println(message);
+    }
+
+    @Override
+    public void logMessageIntermediate(String message) {
+      System.out.print(message);
+    }
+
     @Override
     public void logOperation(String operation, CmServerLogSyncCommand command) {
       boolean failed = false;
-      System.out.print(LOG_REFIX + " [" + operation + "] started .");
+      logOperationIntermediate(operation, "started .");
       try {
         command.execute();
       } catch (Exception e) {
         failed = true;
-        System.out.println(" . failed");
+        logOperation(".. failed");
         e.printStackTrace();
       }
       if (!failed) {
-        System.out.println(" . finished");
+        logOperation(".. finished");
       }
     }
 
     @Override
     public void logOperationStartedAsync(String operation) {
-      System.out.print(LOG_REFIX + " [" + operation + "] started");
+      logOperationIntermediate(operation, "started .");
     }
 
     @Override
     public void logOperationInProgressAsync(String operation) {
-      System.out.print(" .");
+      logOperationIntermediate(".");
     }
 
     @Override
     public void logOperationFailedAsync(String operation) {
-      System.out.println(" . failed");
+      logOperation(".. failed");
     }
 
     @Override
     public void logOperationFailedAsync(String operation, Throwable throwable) {
-      System.out.println(" . failed");
-      throwable.printStackTrace(System.out);
+      logOperation(".. failed");
+      logOperationStackTrace(operation, throwable);
     }
 
     @Override
     public void logOperationFinishedAsync(String operation) {
-      System.out.println(" . finished");
-    }
-
-    @Override
-    public void log(String message) {
-      System.out.println(message);
+      logOperation(".. finished");
     }
 
     @Override
     public void logOperationStartedSync(String operation) {
-      System.out.println(LOG_REFIX + " [" + operation + "] started");
+      logOperation(operation, "started");
     }
 
     @Override
     public void logOperationInProgressSync(String operation, String detail) {
-      System.out.println(LOG_REFIX + " [" + operation + "] " + detail);
+      logOperation(operation, detail);
     }
 
     @Override
     public void logOperationFailedSync(String operation) {
-      System.out.println(LOG_REFIX + " [" + operation + "] failed");
+      logOperation(operation, "failed");
     }
 
     @Override
     public void logOperationFailedSync(String operation, Throwable throwable) {
-      System.out.println(LOG_REFIX + " [" + operation + "] failed");
-      throwable.printStackTrace(System.out);
+      logOperation(operation, "failed");
+      logOperationStackTrace(operation, throwable);
     }
 
     @Override
     public void logOperationFinishedSync(String operation) {
-      System.out.println(LOG_REFIX + " [" + operation + "] finished");
+      logOperation(operation, "finished");
     }
 
   }

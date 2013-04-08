@@ -19,7 +19,7 @@ package com.cloudera.whirr.cm;
 
 import java.io.File;
 
-public interface BaseTest {
+public interface BaseTest extends CmConstants {
 
   public static final String CLUSTER_TAG = "whirr";
 
@@ -29,5 +29,7 @@ public interface BaseTest {
   public static final File FILE_KEY_PRIVATE = new File(new File(".").getAbsolutePath() + "/src/test/resources/test-key");
   public static final File FILE_KEY_PUBLIC = new File(new File(".").getAbsolutePath()
       + "/src/test/resources/test-key.pub");
+
+  public static final String LOG_TAG_CM_SERVER_API_TEST = "TestBootstrap";
 
 }

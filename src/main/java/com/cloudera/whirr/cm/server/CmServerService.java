@@ -41,43 +41,6 @@ public class CmServerService implements Comparable<CmServerService> {
 
   private String toString;
 
-  public CmServerService(CmServerServiceType type) {
-    this(type, NAME_TAG_DEFAULT);
-  }
-
-  public CmServerService(CmServerServiceType type, String tag) {
-    this(type, tag, NAME_QUALIFIER_DEFAULT, null, null, null);
-  }
-
-  public CmServerService(String host, String ip) {
-    this(CmServerServiceType.CLUSTER, NAME_TAG_DEFAULT, NAME_QUALIFIER_DEFAULT, host, ip, null);
-  }
-
-  public CmServerService(String host, String ip, String ipInternal, CmServerServiceStatus status) {
-    this(CmServerServiceType.CLUSTER, NAME_TAG_DEFAULT, NAME_QUALIFIER_DEFAULT, host, ip, ipInternal, status);
-  }
-
-  public CmServerService(CmServerServiceType type, String tag, String qualifier) {
-    this(type, tag, qualifier, null, null, null);
-  }
-
-  public CmServerService(CmServerServiceType type, String tag, String qualifier, String host) {
-    this(type, tag, qualifier, host, null, null);
-  }
-
-  public CmServerService(CmServerServiceType type, String tag, String qualifier, String host, String ip) {
-    this(type, tag, qualifier, host, ip, null);
-  }
-
-  public CmServerService(CmServerServiceType type, String tag, String qualifier, String host, String ip,
-      String ipInternal) {
-    this(type, tag, qualifier, host, ip, ipInternal, CmServerServiceStatus.UNKNOWN);
-  }
-
-  public CmServerService(String name, String host, CmServerServiceStatus status) {
-    this(name, host, null, null, status);
-  }
-
   public CmServerService(String name, String host, String ip, String ipInternal, CmServerServiceStatus status) {
     if (name == null) {
       throw new IllegalArgumentException("Illegal argumnents passed to constructor");

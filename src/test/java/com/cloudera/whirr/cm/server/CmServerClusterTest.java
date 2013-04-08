@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.whirr.cm.server.impl;
+package com.cloudera.whirr.cm.server;
 
 import java.io.IOException;
 
@@ -23,59 +23,82 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.cloudera.whirr.cm.server.CmServerCluster;
-import com.cloudera.whirr.cm.server.CmServerException;
-import com.cloudera.whirr.cm.server.CmServerService;
 import com.cloudera.whirr.cm.server.CmServerService.CmServerServiceStatus;
-import com.cloudera.whirr.cm.server.CmServerServiceType;
 
-public class CmServerClusterTest extends BaseTestServerImpl {
+public class CmServerClusterTest extends BaseTestServer {
 
   private CmServerCluster cluster;
 
   @Before
   public void setupCluster() throws CmServerException {
     cluster = new CmServerCluster();
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "2", "host-2"));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, "1", "host-1"));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "1", "host-1"));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_SECONDARY_NAMENODE, CLUSTER_TAG, "1", "host-1"));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "3", "host-3"));
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_DATANODE, CLUSTER_TAG, "4", "host-4"));
-    cluster.add(new CmServerService(CmServerServiceType.HBASE_REGIONSERVER, CLUSTER_TAG, "1", "host-4"));
-    cluster.add(new CmServerService(CmServerServiceType.IMPALA_DAEMON, CLUSTER_TAG, "1", "host-4"));
+    cluster.setServer("some-host");
+    cluster.addAgent("some-host");
+    cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_DATANODE).tag(CLUSTER_TAG)
+        .qualifier("2").host("host-2").build());
+    cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG)
+        .qualifier("1").host("host-1").build());
+    cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_DATANODE).tag(CLUSTER_TAG)
+        .qualifier("1").host("host-1").build());
+    cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_SECONDARY_NAMENODE).tag(CLUSTER_TAG)
+        .qualifier("1").host("host-1").build());
+    cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_DATANODE).tag(CLUSTER_TAG)
+        .qualifier("3").host("host-3").build());
+    cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_DATANODE).tag(CLUSTER_TAG)
+        .qualifier("4").host("host-4").build());
+    cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HBASE_REGIONSERVER).tag(CLUSTER_TAG)
+        .qualifier("1").host("host-4").build());
+    cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.IMPALA_DAEMON).tag(CLUSTER_TAG)
+        .qualifier("1").host("host-4").build());
   }
 
   @Test
   public void testService() throws CmServerException {
-    Assert.assertTrue(new CmServerService(CmServerServiceType.CLUSTER).equals(new CmServerService(
-        CmServerServiceType.CLUSTER)));
-    Assert.assertTrue(new CmServerService(CmServerServiceType.CLUSTER, CLUSTER_TAG).equals(new CmServerService(
-        CmServerServiceType.CLUSTER, CLUSTER_TAG)));
-    Assert.assertTrue(new CmServerService("host", null).equals(new CmServerService("host", null)));
-    Assert.assertTrue(new CmServerService("host", "127.0.0.1").equals(new CmServerService("host", "127.0.0.1")));
-    Assert.assertTrue(new CmServerService(CLUSTER_TAG + CmServerService.NAME_TOKEN_DELIM
-        + CmServerServiceType.HDFS_NAMENODE.toString().toLowerCase() + CmServerService.NAME_TOKEN_DELIM
-        + CmServerService.NAME_QUALIFIER_DEFAULT, "host", "127.0.0.1", null, CmServerServiceStatus.UNKNOWN)
-        .equals(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG,
-            CmServerService.NAME_QUALIFIER_DEFAULT, "host", "127.0.0.1")));
+    Assert.assertTrue(new CmServerServiceBuilder().type(CmServerServiceType.CLUSTER).build()
+        .equals(new CmServerServiceBuilder().build()));
+    Assert.assertTrue(new CmServerServiceBuilder().type(CmServerServiceType.CLUSTER).tag(CLUSTER_TAG).build()
+        .equals(new CmServerServiceBuilder().tag(CLUSTER_TAG).build()));
+    Assert.assertTrue(new CmServerServiceBuilder().host("host").ip(null).build()
+        .equals(new CmServerServiceBuilder().host("host").build()));
+    Assert.assertTrue(new CmServerServiceBuilder()
+        .name(
+            CLUSTER_TAG + CmServerService.NAME_TOKEN_DELIM + CmServerServiceType.HDFS_NAMENODE.toString().toLowerCase()
+                + CmServerService.NAME_TOKEN_DELIM + CmServerService.NAME_QUALIFIER_DEFAULT)
+        .host("host")
+        .ip("127.0.0.1")
+        .status(CmServerServiceStatus.UNKNOWN)
+        .build()
+        .equals(
+            new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG)
+                .qualifier(CmServerService.NAME_QUALIFIER_DEFAULT).host("host").ip("127.0.0.1").build()));
     boolean caught = false;
     try {
-      Assert
-          .assertTrue(new CmServerService("", "host", CmServerServiceStatus.UNKNOWN).equals(new CmServerService(
-              CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, CmServerService.NAME_QUALIFIER_DEFAULT, "host",
-              "127.0.0.1")));
+      Assert.assertTrue(new CmServerServiceBuilder()
+          .name("")
+          .host("host")
+          .status(CmServerServiceStatus.UNKNOWN)
+          .build()
+          .equals(
+              new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG)
+                  .qualifier(CmServerService.NAME_QUALIFIER_DEFAULT).host("host").ip("127.0.0.1").build()));
     } catch (IllegalArgumentException e) {
       caught = true;
     }
     Assert.assertTrue(caught);
     caught = false;
     try {
-      Assert.assertTrue(new CmServerService(CLUSTER_TAG + CmServerService.NAME_TOKEN_DELIM
-          + CmServerService.NAME_TOKEN_DELIM + CmServerServiceType.HDFS_NAMENODE.toString().toLowerCase()
-          + CmServerService.NAME_TOKEN_DELIM + CmServerService.NAME_QUALIFIER_DEFAULT, "host",
-          CmServerServiceStatus.UNKNOWN).equals(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG
-          + CmServerService.NAME_TOKEN_DELIM, CmServerService.NAME_QUALIFIER_DEFAULT, "host", "127.0.0.1")));
+      Assert.assertTrue(new CmServerServiceBuilder()
+          .name(
+              CLUSTER_TAG + CmServerService.NAME_TOKEN_DELIM + CmServerService.NAME_TOKEN_DELIM
+                  + CmServerServiceType.HDFS_NAMENODE.toString().toLowerCase() + CmServerService.NAME_TOKEN_DELIM
+                  + CmServerService.NAME_QUALIFIER_DEFAULT)
+          .host("host")
+          .status(CmServerServiceStatus.UNKNOWN)
+          .build()
+          .equals(
+              new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE)
+                  .tag(CLUSTER_TAG + CmServerService.NAME_TOKEN_DELIM)
+                  .qualifier(CmServerService.NAME_QUALIFIER_DEFAULT).host("host").ip("127.0.0.1").build()));
     } catch (IllegalArgumentException e) {
       caught = true;
     }
@@ -84,65 +107,57 @@ public class CmServerClusterTest extends BaseTestServerImpl {
 
   @Test
   public void testIsEmpty() throws CmServerException {
-    Assert.assertFalse(cluster.isEmpty());
-    Assert.assertFalse(cluster.isEmptyServices());
-    cluster.clear();
+    CmServerCluster cluster = new CmServerCluster();
     Assert.assertTrue(cluster.isEmpty());
-    Assert.assertTrue(cluster.isEmptyServices());
-    cluster.add(CmServerServiceType.HDFS_NAMENODE);
-    Assert.assertFalse(cluster.isEmpty());
-    Assert.assertTrue(cluster.isEmptyServices());
-    cluster.add(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG, "1", "host-1"));
-    Assert.assertFalse(cluster.isEmpty());
-    Assert.assertFalse(cluster.isEmptyServices());
-    cluster.clearServices();
-    Assert.assertFalse(cluster.isEmpty());
-    Assert.assertTrue(cluster.isEmptyServices());
-    cluster.clear();
+    cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG)
+        .qualifier("1").host("host-1").build());
     Assert.assertTrue(cluster.isEmpty());
-    Assert.assertTrue(cluster.isEmptyServices());
+    cluster.setServer("some-host");
+    Assert.assertTrue(cluster.isEmpty());
+    cluster.addAgent("some-host");
+    Assert.assertFalse(cluster.isEmpty());
   }
 
   @Test
   public void testAdd() throws CmServerException {
     boolean caught = false;
     try {
-      cluster.add(CmServerServiceType.CLUSTER);
+      cluster.addServiceType(CmServerServiceType.CLUSTER);
     } catch (CmServerException e) {
       caught = true;
     }
     Assert.assertTrue(caught);
     caught = false;
     try {
-      cluster.add(CmServerServiceType.HDFS);
+      cluster.addServiceType(CmServerServiceType.HDFS);
     } catch (CmServerException e) {
       caught = true;
     }
     Assert.assertTrue(caught);
     caught = false;
     try {
-      cluster.add(new CmServerService(CmServerServiceType.CLUSTER, CLUSTER_TAG));
+      cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.CLUSTER).tag(CLUSTER_TAG).build());
     } catch (CmServerException e) {
       caught = true;
     }
     Assert.assertTrue(caught);
     caught = false;
     try {
-      cluster.add(new CmServerService(CmServerServiceType.HDFS, CLUSTER_TAG));
+      cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS).tag(CLUSTER_TAG).build());
     } catch (CmServerException e) {
       caught = true;
     }
     Assert.assertTrue(caught);
     caught = false;
     try {
-      cluster.add(CmServerServiceType.HDFS_NAMENODE);
+      cluster.addServiceType(CmServerServiceType.HDFS_NAMENODE);
     } catch (CmServerException e) {
       caught = true;
     }
     Assert.assertTrue(caught);
     caught = false;
     try {
-      cluster.add(new CmServerService(CmServerServiceType.HDFS_NAMENODE, CLUSTER_TAG));
+      cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG).build());
     } catch (CmServerException e) {
       caught = true;
     }

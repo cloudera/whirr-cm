@@ -17,13 +17,24 @@
  */
 package com.cloudera.whirr.cm;
 
-public interface CmConstants {
+import com.cloudera.whirr.cm.server.CmServerConstants;
+
+public interface CmConstants extends CmServerConstants {
+
+  public static final String CM_USER = "admin";
+  public static final String CM_PASSWORD = "admin";
 
   public static final String CONFIG_WHIRR_NAME = "whirr.cluster-name";
+  public static final String CONFIG_WHIRR_USER = "whirr.cluster-user";
+  public static final String CONFIG_WHIRR_PRIV_KEY = "whirr.private-key-file";
+  public static final String CONFIG_WHIRR_PUB_KEY = "whirr.public-key-file";
   public static final String CONFIG_WHIRR_AUTO_VARIABLE = "whirr.env.cmauto";
   public static final String CONFIG_WHIRR_USE_PACKAGES = "whirr.cm.use.packages";
   public static final String CONFIG_WHIRR_CM_PREFIX = "whirr.cm.config.";
 
   public static final String CONFIG_WHIRR_NAME_DEFAULT = "whirr";
+
+  public static final String LOG_TAG_WHIRR_HANDLER = "Whirr Handler";
+  public static final String LOG_TAG_WHIRR_COMMAND = "Whirr Command";
 
 }
