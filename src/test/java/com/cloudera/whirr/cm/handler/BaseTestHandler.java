@@ -42,6 +42,7 @@ import com.cloudera.whirr.cm.server.CmServer;
 import com.cloudera.whirr.cm.server.CmServerCluster;
 import com.cloudera.whirr.cm.server.CmServerException;
 import com.cloudera.whirr.cm.server.CmServerService;
+import com.cloudera.whirr.cm.server.CmServerServiceBuilder;
 import com.cloudera.whirr.cm.server.CmServerServiceType;
 import com.cloudera.whirr.cm.server.impl.CmServerFactory;
 import com.cloudera.whirr.cm.server.impl.CmServerLog;
@@ -91,19 +92,20 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
       }
 
       @Override
+      @SuppressWarnings("unchecked")
       public List<CmServerService> getServiceHosts() throws CmServerException {
         return any(Collections.emptyList());
       }
 
       @Override
       public CmServerService getServiceHost(CmServerService service) throws CmServerException {
-        return any(null);
+        return any(new CmServerServiceBuilder().build());
       }
 
       @Override
       public CmServerService getServiceHost(CmServerService service, List<CmServerService> services)
           throws CmServerException {
-        return any(null);
+        return any(new CmServerServiceBuilder().build());
       }
 
       @Override
@@ -113,7 +115,7 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
 
       @Override
       public CmServerService getService(CmServerCluster cluster, CmServerServiceType type) throws CmServerException {
-        return any(cluster.getServiceTypes(type));
+        return any(new CmServerServiceBuilder().build());
       }
 
       @Override
@@ -142,6 +144,7 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
       }
 
       @Override
+      @SuppressWarnings("unchecked")
       public Map<String, String> initialise(Map<String, String> config) throws CmServerException {
         return any(Collections.emptyMap());
       }
@@ -211,15 +214,36 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
     return controller.launchCluster(clusterSpec);
   }
 
-  @SuppressWarnings("unchecked")
-  private static <T> T any(Object value) {
+  private static boolean any(boolean value) {
+    return (Boolean) any((Object) value);
+  }
+
+  @SuppressWarnings("rawtypes")
+  private static List any(List value) {
+    return (List) any((Object) value);
+  }
+
+  @SuppressWarnings("rawtypes")
+  private static Map any(Map value) {
+    return (Map) any((Object) value);
+  }
+
+  private static CmServerService any(CmServerService value) {
+    return (CmServerService) any((Object) value);
+  }
+
+  private static CmServerCluster any(CmServerCluster value) {
+    return (CmServerCluster) any((Object) value);
+  }
+
+  private static Object any(Object value) {
     new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API, false).logOperation(
         WordUtils.capitalize(Thread.currentThread().getStackTrace()[3].getMethodName()), new CmServerLogSyncCommand() {
           @Override
           public void execute() throws Exception {
           }
         });
-    return (T) value;
+    return value;
   }
 
 }

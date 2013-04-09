@@ -115,7 +115,7 @@ public class CmServerCommandTest extends BaseTestCommand {
         "--private-key-file", keys.get("private").getAbsolutePath()));
 
     assertThat(rc, is(-1));
-    assertThat(errBytes.toString(), containsString("No appropriate roles found to target."));
+    assertThat(errBytes.toString(), containsString("Could not find any appropriate roles to target."));
     verify(factory).create("test-service");
 
   }
@@ -236,7 +236,7 @@ public class CmServerCommandTest extends BaseTestCommand {
         "some-fake-role", "--quiet", "--private-key-file", keys.get("private").getAbsolutePath()));
 
     assertThat(rc, is(-1));
-    assertThat(errBytes.toString(), containsString("No appropriate roles found to target."));
+    assertThat(errBytes.toString(), containsString("Role filter does not include any appropriate roles."));
     verify(factory).create("test-service");
 
   }
