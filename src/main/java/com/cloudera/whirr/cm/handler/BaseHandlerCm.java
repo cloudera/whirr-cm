@@ -65,12 +65,17 @@ public abstract class BaseHandlerCm extends BaseHandler {
     logHeaderHandler("HostConfigure");
     super.beforeConfigure(event);
     addStatement(event, call("retry_helpers"));
-    if (getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_ROOT) == null) {
+    if (CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_ROOT) == null) {
       getDeviceMappings(event);
       String devMappings = VolumeManager.asString(deviceMappings);
       addStatement(event, call("prepare_all_disks", "'" + devMappings + "'"));
     }
+  }
+
+  @Override
+  protected void afterConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
     logFooterHandler("HostConfigure");
+    super.afterConfigure(event);
   }
 
   public Map<String, String> getDeviceMappings(ClusterActionEvent event) {

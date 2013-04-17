@@ -33,7 +33,7 @@ public class CmServerClusterTest extends BaseTestServer {
   public void setupCluster() throws CmServerException {
     cluster = new CmServerCluster();
     cluster.setServer("some-host");
-    cluster.addAgent("some-host");
+    cluster.addAgent(new CmServerServiceBuilder().host("some-host").build());
     cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_DATANODE).tag(CLUSTER_TAG)
         .qualifier("2").host("host-2").build());
     cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG)
@@ -114,7 +114,7 @@ public class CmServerClusterTest extends BaseTestServer {
     Assert.assertTrue(cluster.isEmpty());
     cluster.setServer("some-host");
     Assert.assertTrue(cluster.isEmpty());
-    cluster.addAgent("some-host");
+    cluster.addAgent(new CmServerServiceBuilder().host("some-host").build());
     Assert.assertFalse(cluster.isEmpty());
   }
 
@@ -222,6 +222,8 @@ public class CmServerClusterTest extends BaseTestServer {
   public void testGetNames() throws InterruptedException, IOException {
     Assert.assertEquals(CLUSTER_TAG + CmServerService.NAME_TOKEN_DELIM
         + CmServerServiceType.CLUSTER.toString().toLowerCase() + CmServerService.NAME_TOKEN_DELIM + "1",
+        cluster.getServiceName(CmServerServiceType.CLUSTER));
+    Assert.assertEquals(cluster.setName("My Cluster - Against Conventions!"),
         cluster.getServiceName(CmServerServiceType.CLUSTER));
     Assert.assertEquals(CLUSTER_TAG + CmServerService.NAME_TOKEN_DELIM
         + CmServerServiceType.HDFS.toString().toLowerCase() + CmServerService.NAME_TOKEN_DELIM + "1",

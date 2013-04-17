@@ -27,6 +27,7 @@ import org.apache.whirr.service.FirewallManager.Rule;
 
 import com.cloudera.whirr.cm.CmServerClusterInstance;
 import com.cloudera.whirr.cm.server.CmServerException;
+import com.cloudera.whirr.cm.server.CmServerServiceBuilder;
 
 public class CmNodeHandler extends BaseHandlerCm {
   public static final String ROLE = "cm-node";
@@ -47,7 +48,7 @@ public class CmNodeHandler extends BaseHandlerCm {
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
     try {
-      CmServerClusterInstance.getCluster().addNode(getInstanceId());
+      CmServerClusterInstance.getCluster().addNode(new CmServerServiceBuilder().host(getInstanceId()).build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
     }
@@ -58,7 +59,7 @@ public class CmNodeHandler extends BaseHandlerCm {
   protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeConfigure(event);
 
-    for (Object port : getConfiguration(event.getClusterSpec()).getList(PROPERTY_PORTS)) {
+    for (Object port : CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getList(PROPERTY_PORTS)) {
       if (port != null && !"".equals(port))
         event.getFirewallManager().addRule(
             Rule.create().destination(role(getRole())).port(Integer.parseInt(port.toString())));

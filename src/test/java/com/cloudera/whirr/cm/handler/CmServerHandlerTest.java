@@ -96,22 +96,15 @@ public class CmServerHandlerTest extends BaseTestHandler {
 
   @Test
   public void testNodesAndAgentsAndCluster() throws Exception {
-    Assert
-        .assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap
-            .of("whirr.instance-templates",
-                WHIRR_INSTANCE_TEMPLATE_ALL,
-                CONFIG_WHIRR_CM_PREFIX + "REMOTE_PARCEL_REPO_URLS",
-                "http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/cdh4/parcels/4.2.0.10/\\,http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/impala/parcels/0.6.109/"))));
+    Assert.assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
+        WHIRR_INSTANCE_TEMPLATE_ALL))));
     Assert.assertTrue(countersAssertAndReset(27, 27, 27, 0));
   }
 
   @Test
   public void testNodesAndAgentsAndClusterLifecycle() throws Exception {
-    ClusterSpec clusterSpec = newClusterSpecForProperties(ImmutableMap
-        .of("whirr.instance-templates",
-            WHIRR_INSTANCE_TEMPLATE_ALL,
-            CONFIG_WHIRR_CM_PREFIX + "REMOTE_PARCEL_REPO_URLS",
-            "http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/cdh4/parcels/4.2.0.10/\\,http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/impala/parcels/0.6.109/"));
+    ClusterSpec clusterSpec = newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
+        WHIRR_INSTANCE_TEMPLATE_ALL));
     ClusterController controller = getController(clusterSpec);
     Cluster cluster = launchWithClusterSpecAndWithController(clusterSpec, controller);
     Assert.assertNotNull(cluster);
@@ -126,11 +119,8 @@ public class CmServerHandlerTest extends BaseTestHandler {
 
   @Test
   public void testNodesAndAgentsAndClusterLifecycleFilteredHdfs() throws Exception {
-    ClusterSpec clusterSpec = newClusterSpecForProperties(ImmutableMap
-        .of("whirr.instance-templates",
-            WHIRR_INSTANCE_TEMPLATE_ALL,
-            CONFIG_WHIRR_CM_PREFIX + "REMOTE_PARCEL_REPO_URLS",
-            "http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/cdh4/parcels/4.2.0.10/\\,http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/impala/parcels/0.6.109/"));
+    ClusterSpec clusterSpec = newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
+        WHIRR_INSTANCE_TEMPLATE_ALL));
     Set<String> roles = BaseCommandCmServer.filterRoles(CmCdhHdfsNameNodeHandler.ROLE);
     ClusterController controller = getController(clusterSpec);
     Cluster cluster = launchWithClusterSpecAndWithController(clusterSpec, controller);
@@ -146,13 +136,8 @@ public class CmServerHandlerTest extends BaseTestHandler {
 
   @Test
   public void testNodesAndAgentsAndClusterNotAuto() throws Exception {
-    Assert
-        .assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap
-            .of("whirr.instance-templates",
-                WHIRR_INSTANCE_TEMPLATE_ALL,
-                CONFIG_WHIRR_CM_PREFIX + "REMOTE_PARCEL_REPO_URLS",
-                "http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/cdh4/parcels/4.2.0.10/\\,http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/impala/parcels/0.6.109/",
-                CONFIG_WHIRR_AUTO_VARIABLE, Boolean.FALSE.toString()))));
+    Assert.assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
+        WHIRR_INSTANCE_TEMPLATE_ALL, CONFIG_WHIRR_AUTO_VARIABLE, Boolean.FALSE.toString()))));
   }
 
   @Test
@@ -199,7 +184,8 @@ public class CmServerHandlerTest extends BaseTestHandler {
       ClusterSpec clusterSpec = newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates", "1 "
           + CmServerHandler.ROLE + ",1 " + CmAgentHandler.ROLE + ",1 " + CmAgentHandler.ROLE + "+"
           + CmCdhHdfsNameNodeHandler.ROLE));
-      clusterSpec.getConfiguration().setProperty(CONFIG_WHIRR_NAME, "some_cluster_name");
+      clusterSpec.getConfiguration()
+          .setProperty(ClusterSpec.Property.CLUSTER_NAME.getConfigName(), "some_cluster_name");
       Assert.assertNotNull(launchWithClusterSpec(clusterSpec));
     } catch (Exception e) {
       caught = true;

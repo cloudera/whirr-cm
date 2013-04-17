@@ -81,7 +81,8 @@ public class CmServerImpl implements CmServer {
   private static final String CM_PARCEL_STAGE_ACTIVATED = "ACTIVATED";
 
   private static int API_POLL_PERIOD_MS = 500;
-  private static int API_POLL_PERIOD_BACKOFF_NUMBER = 5;
+  private static int API_POLL_PERIOD_BACKOFF_NUMBER = 3;
+  private static int API_POLL_PERIOD_BACKOFF_INCRAMENT = 2;
 
   private CmServerLog logger;
   final private RootResourceV3 apiResourceRoot;
@@ -100,52 +101,57 @@ public class CmServerImpl implements CmServer {
     final AtomicBoolean executed = new AtomicBoolean(false);
     try {
 
-      logger.logOperation("GetConfig", new CmServerLogSyncCommand() {
-        @Override
-        public void execute() throws IOException {
-          for (ApiService apiService : apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
-              .readServices(DataView.SUMMARY)) {
-            switch (CmServerServiceType.valueOfId(apiService.getType())) {
-            case HDFS:
-            case MAPREDUCE:
-            case HIVE:
-              ZipInputStream configInput = null;
-              try {
-                configInput = new ZipInputStream(apiResourceRoot.getClustersResource()
-                    .getServicesResource(getName(cluster)).getClientConfig(apiService.getName()).getInputStream());
-                ZipEntry configInputZipEntry = null;
-                while ((configInputZipEntry = configInput.getNextEntry()) != null) {
-                  String configFile = configInputZipEntry.getName();
-                  if (configFile.contains(File.separator)) {
-                    configFile = configFile.substring(configFile.lastIndexOf(File.separator), configFile.length());
-                  }
-                  directory.mkdirs();
-                  BufferedWriter configOutput = null;
-                  try {
-                    configOutput = new BufferedWriter(new FileWriter(new File(directory, configFile)));
-                    while (configInput.available() > 0) {
-                      configOutput.write(configInput.read());
+      if (isProvisioned(cluster)) {
+        logger.logOperation("GetConfig", new CmServerLogSyncCommand() {
+          @Override
+          public void execute() throws IOException {
+            for (ApiService apiService : apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
+                .readServices(DataView.SUMMARY)) {
+              switch (CmServerServiceType.valueOfId(apiService.getType())) {
+              case HDFS:
+              case MAPREDUCE:
+              case HIVE:
+                ZipInputStream configInput = null;
+                try {
+                  configInput = new ZipInputStream(apiResourceRoot.getClustersResource()
+                      .getServicesResource(getName(cluster)).getClientConfig(apiService.getName()).getInputStream());
+                  ZipEntry configInputZipEntry = null;
+                  while ((configInputZipEntry = configInput.getNextEntry()) != null) {
+                    String configFile = configInputZipEntry.getName();
+                    if (configFile.contains(File.separator)) {
+                      configFile = configFile.substring(configFile.lastIndexOf(File.separator), configFile.length());
                     }
-                  } finally {
-                    configOutput.close();
+                    directory.mkdirs();
+                    BufferedWriter configOutput = null;
+                    try {
+                      int read;
+                      configOutput = new BufferedWriter(new FileWriter(new File(directory, configFile)));
+                      while (configInput.available() > 0) {
+                        if ((read = configInput.read()) != -1) {
+                          configOutput.write(read);
+                        }
+                      }
+                    } finally {
+                      configOutput.close();
+                    }
+                  }
+                } finally {
+                  if (configInput != null) {
+                    configInput.close();
                   }
                 }
-              } finally {
-                if (configInput != null) {
-                  configInput.close();
-                }
+                executed.set(true);
+                break;
+              default:
+                break;
               }
-              executed.set(true);
-              break;
-            default:
-              break;
             }
           }
-        }
-      });
+        });
+      }
 
     } catch (Exception e) {
-      throw new CmServerException("Failed to list cluster hosts", e);
+      throw new CmServerException("Failed to get cluster config", e);
     }
 
     return executed.get();
@@ -163,7 +169,7 @@ public class CmServerImpl implements CmServer {
         public void execute() {
           for (ApiHost host : apiResourceRoot.getHostsResource().readHosts(DataView.SUMMARY).getHosts()) {
             services.add(new CmServerServiceBuilder().host(host.getHostId()).ip(host.getIpAddress())
-                .status(CmServerServiceStatus.STARTED).build());
+                .ipInternal(host.getIpAddress()).status(CmServerServiceStatus.STARTED).build());
           }
         }
       });
@@ -191,8 +197,12 @@ public class CmServerImpl implements CmServer {
 
       for (CmServerService serviceTmp : services) {
         if ((service.getHost() != null && service.getHost().equals(serviceTmp.getHost()))
+            || (service.getHost() != null && service.getHost().equals(serviceTmp.getIp()))
+            || (service.getHost() != null && service.getHost().equals(serviceTmp.getIpInternal()))
             || (service.getIp() != null && service.getIp().equals(serviceTmp.getIp()))
-            || (service.geIpInternal() != null && service.geIpInternal().equals(serviceTmp.getIp()))) {
+            || (service.getIp() != null && service.getIp().equals(serviceTmp.getIpInternal()))
+            || (service.getIpInternal() != null && service.getIpInternal().equals(serviceTmp.getIp()))
+            || (service.getIpInternal() != null && service.getIpInternal().equals(serviceTmp.getIpInternal()))) {
           serviceFound = serviceTmp;
           break;
         }
@@ -202,12 +212,7 @@ public class CmServerImpl implements CmServer {
       throw new CmServerException("Failed to find service", e);
     }
 
-    if (serviceFound == null) {
-      throw new CmServerException("Failed to find service matching " + service);
-    } else {
-      return serviceFound;
-    }
-
+    return serviceFound;
   }
 
   @Override
@@ -215,31 +220,43 @@ public class CmServerImpl implements CmServer {
   public CmServerCluster getServices(final CmServerCluster cluster) throws CmServerException {
 
     final CmServerCluster clusterView = new CmServerCluster();
-    clusterView.setServer(cluster.getServer());
-    for (CmServerService service : getServiceHosts()) {
-      clusterView.addAgent(service.getIp());
-    }
     try {
 
-      logger.logOperation("GetServices", new CmServerLogSyncCommand() {
-        @Override
-        public void execute() throws IOException, CmServerException {
-          Map<String, String> hosts = new HashMap<String, String>();
-          for (ApiService apiService : apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
-              .readServices(DataView.SUMMARY)) {
-            for (ApiRole apiRole : apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
-                .getRolesResource(apiService.getName()).readRoles()) {
-              if (!hosts.containsKey(apiRole.getHostRef().getHostId())) {
-                hosts.put(apiRole.getHostRef().getHostId(),
-                    apiResourceRoot.getHostsResource().readHost(apiRole.getHostRef().getHostId()).getIpAddress());
+      clusterView.setServer(cluster.getServer());
+      List<CmServerService> services = getServiceHosts();
+      for (CmServerService server : cluster.getAgents()) {
+        if (getServiceHost(server, services) != null) {
+          clusterView.addAgent(getServiceHost(server, services));
+        }
+      }
+      if (isProvisioned(cluster)) {
+        logger.logOperation("GetServices", new CmServerLogSyncCommand() {
+          @Override
+          public void execute() throws IOException, CmServerException {
+            Map<String, String> ips = new HashMap<String, String>();
+            for (ApiService apiService : apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
+                .readServices(DataView.SUMMARY)) {                           
+              for (ApiRole apiRole : apiResourceRoot.getClustersResource().getServicesResource(getName(cluster))
+                  .getRolesResource(apiService.getName()).readRoles()) {
+                if (!ips.containsKey(apiRole.getHostRef().getHostId())) {
+                  ips.put(apiRole.getHostRef().getHostId(),
+                      apiResourceRoot.getHostsResource().readHost(apiRole.getHostRef().getHostId()).getIpAddress());
+                }
+                CmServerServiceStatus status = null;
+                try {
+                  status = CmServerServiceStatus.valueOf(apiRole.getRoleState().toString());
+                } catch (IllegalArgumentException exception) {
+                  status = CmServerServiceStatus.UNKNOWN;
+                }
+                clusterView.addService(new CmServerServiceBuilder().name(apiRole.getName())
+                    .host(apiRole.getHostRef().getHostId()).ip(ips.get(apiRole.getHostRef().getHostId()))
+                    .ipInternal(ips.get(apiRole.getHostRef().getHostId())).status(status).build());
               }
-              clusterView.addService(new CmServerServiceBuilder().name(apiRole.getName())
-                  .host(apiRole.getHostRef().getHostId()).ip(hosts.get(apiRole.getHostRef().getHostId()))
-                  .status(CmServerServiceStatus.valueOf(apiRole.getRoleState().toString())).build());
             }
           }
-        }
-      });
+        });
+
+      }
 
     } catch (Exception e) {
       throw new CmServerException("Failed to find services", e);
@@ -252,13 +269,8 @@ public class CmServerImpl implements CmServer {
   @Override
   public CmServerService getService(final CmServerCluster cluster, final CmServerServiceType type)
       throws CmServerException {
-
-    CmServerCluster clusterView = getServices(cluster, type);
-    if (clusterView.isEmpty()) {
-      throw new CmServerException("Failed to find service matching type [" + type + "]");
-    }
-
-    return clusterView.getService(type);
+        
+    return  getServices(cluster, type).getService(type);
 
   }
 
@@ -268,18 +280,18 @@ public class CmServerImpl implements CmServer {
 
     final CmServerCluster clusterView = new CmServerCluster();
     try {
-
+      
       for (CmServerService service : getServices(cluster).getServices(CmServerServiceType.CLUSTER)) {
         if (type.equals(CmServerServiceType.CLUSTER) || type.equals(service.getType().getParent())
             || type.equals(service.getType())) {
           clusterView.addService(service);
         }
       }
-
+      
     } catch (Exception e) {
       throw new CmServerException("Failed to find services", e);
     }
-
+    
     return clusterView;
 
   }
@@ -563,6 +575,7 @@ public class CmServerImpl implements CmServer {
   }
 
   @Override
+  @CmServerCommandMethod(name = "unprovision")
   public boolean unprovision(final CmServerCluster cluster) throws CmServerException {
 
     boolean executed = false;
@@ -980,6 +993,10 @@ public class CmServerImpl implements CmServer {
     while (true) {
       if (apiPollPeriods++ % apiPollPeriodLog == 0) {
         logger.logOperationInProgressAsync(label);
+        if (apiPollPeriodBackoffNumber-- == 0) {
+          apiPollPeriodLog += API_POLL_PERIOD_BACKOFF_INCRAMENT;
+          apiPollPeriodBackoffNumber = API_POLL_PERIOD_BACKOFF_NUMBER;
+        }
       }
       if (callback.poll()) {
         if (checkReturn && command != null
@@ -989,10 +1006,6 @@ public class CmServerImpl implements CmServer {
         }
         logger.logOperationFinishedAsync(label);
         return commandReturn;
-      }
-      if (apiPollPeriodBackoffNumber-- == 0) {
-        apiPollPeriodLog++;
-        apiPollPeriodBackoffNumber = API_POLL_PERIOD_BACKOFF_NUMBER;
       }
       Thread.sleep(API_POLL_PERIOD_MS);
     }

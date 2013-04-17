@@ -38,8 +38,8 @@ import com.cloudera.whirr.cm.handler.CmAgentHandler;
 import com.cloudera.whirr.cm.handler.CmNodeHandler;
 import com.cloudera.whirr.cm.handler.CmServerHandler;
 import com.cloudera.whirr.cm.handler.cdh.BaseHandlerCmCdh;
-import com.cloudera.whirr.cm.server.CmServerCluster;
 import com.cloudera.whirr.cm.server.CmServerBuilder;
+import com.cloudera.whirr.cm.server.CmServerCluster;
 import com.cloudera.whirr.cm.server.CmServerException;
 import com.cloudera.whirr.cm.server.CmServerServiceType;
 import com.google.common.base.Splitter;
@@ -67,6 +67,9 @@ public abstract class BaseCommandCmServer extends BaseCommand {
   public abstract int run(ClusterSpec specification, CmServerCluster cluster, CmServerBuilder serverCommand)
       throws Exception;
 
+  private OptionSpec<String> cmClusterName = parser.accepts("cm-cluster-name", "CM cluster name to target")
+      .withRequiredArg().ofType(String.class);
+
   private OptionSpec<String> rolesOption = isRoleFilterable() ? parser.accepts("roles", "Cluster roles to target")
       .withRequiredArg().ofType(String.class) : null;
 
@@ -84,8 +87,12 @@ public abstract class BaseCommandCmServer extends BaseCommand {
       }
     }
 
-    CmServerCluster cluster = CmServerClusterInstance.getCluster(specification,
+    CmServerCluster cluster = CmServerClusterInstance.getCluster(specification.getConfiguration(),
         clusterController.getInstances(specification, clusterStateStore), Collections.<String> emptySet(), roles);
+
+    if (optionSet.hasArgument(cmClusterName)) {
+      cluster.setName(optionSet.valueOf(cmClusterName));
+    }
 
     if (cluster.getServer() == null) {
       throw new CmServerException("Could not find " + CmServerHandler.ROLE + ".");
@@ -110,13 +117,10 @@ public abstract class BaseCommandCmServer extends BaseCommand {
 
   @Override
   public void printUsage(PrintStream stream) throws IOException {
-    if (isRoleFilterable()) {
-      stream.println("Usage: whirr " + getName() + " [OPTIONS] [--roles role1,role2]");
-      stream.println();
-      parser.printHelpOn(stream);
-    } else {
-      super.printUsage(stream);
-    }
+    stream.println("Usage: whirr " + getName() + " [OPTIONS] [--cm-cluster-name \"My cluster\"]"
+        + (isRoleFilterable() ? " [--roles role1,role2]" : ""));
+    stream.println();
+    parser.printHelpOn(stream);
   }
 
   public static Set<String> filterRoles(String rolesCsv) {

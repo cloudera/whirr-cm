@@ -18,39 +18,39 @@
 package com.cloudera.whirr.cm.cmd;
 
 import java.io.IOException;
-
 import org.apache.whirr.ClusterControllerFactory;
 import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.state.ClusterStateStoreFactory;
 
-import com.cloudera.whirr.cm.server.CmServerBuilder;
 import com.cloudera.whirr.cm.server.CmServerCluster;
+import com.cloudera.whirr.cm.server.CmServerBuilder;
 
-public class CmServerCreateServicesCommand extends BaseCommandCmServer {
+public class CmServerCleanClusterCommand extends BaseCommandCmServer {
 
-  public static final String NAME = "create-services";
-  public static final String DESCRIPTION = "Create the cluster services.";
+  public static final String NAME = "clean-cluster";
+  public static final String DESCRIPTION = "Terminate and cleanup resources for the cluster.";
 
-  public CmServerCreateServicesCommand() throws IOException {
+  public CmServerCleanClusterCommand() throws IOException {
     this(new ClusterControllerFactory());
   }
 
-  public CmServerCreateServicesCommand(ClusterControllerFactory factory) {
+  public CmServerCleanClusterCommand(ClusterControllerFactory factory) {
     this(factory, new ClusterStateStoreFactory());
   }
 
-  public CmServerCreateServicesCommand(ClusterControllerFactory factory, ClusterStateStoreFactory stateStoreFactory) {
+  public CmServerCleanClusterCommand(ClusterControllerFactory factory, ClusterStateStoreFactory stateStoreFactory) {
     super(NAME, DESCRIPTION, factory, stateStoreFactory);
   }
 
   @Override
   public boolean isRoleFilterable() {
-    return true;
+    return false;
   }
-
+  
   @Override
-  public int run(ClusterSpec specification, CmServerCluster cluster, CmServerBuilder serverCommand) throws Exception {
-    return serverCommand.command("configure").executeBoolean() ? 0 : -1;
+  public int run(ClusterSpec specification,  CmServerCluster cluster,
+      CmServerBuilder serverCommand) throws Exception {
+    return serverCommand.command("unprovision").executeBoolean() ? 0 : -1;
   }
 
 }

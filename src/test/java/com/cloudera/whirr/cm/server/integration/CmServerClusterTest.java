@@ -55,23 +55,10 @@ public class CmServerClusterTest extends BaseTestIntegrationServer {
         server.getServiceHost(
             new CmServerServiceBuilder().host("some-rubbish").ip("192.168.1.89")
                 .ipInternal(serviceHosts.get(2).getIp()).status(CmServerServiceStatus.UNKNOWN).build()).getHost());
-    boolean caught = false;
-    try {
-      Assert.assertEquals(
-          serviceHosts.get(2).getHost(),
-          server.getServiceHost(
-              new CmServerServiceBuilder().host("some-rubbish").ip("192.168.1.89").ipInternal("192.168.1.90")
-                  .status(CmServerServiceStatus.UNKNOWN).build()).getHost());
-    } catch (CmServerException e) {
-      caught = true;
-    }
-    Assert.assertTrue(caught);
     Assert.assertEquals(
-        serviceHosts.get(2).getHost(),
-        server.getServiceHost(
-            new CmServerServiceBuilder().host("some-rubbish").ip("192.168.1.89")
-                .ipInternal(serviceHosts.get(2).getIp()).status(CmServerServiceStatus.UNKNOWN).build(), serviceHosts)
-            .getHost());
+        null,
+        server.getServiceHost(new CmServerServiceBuilder().host("some-rubbish").ip("192.168.1.89")
+            .ipInternal("192.168.1.90").status(CmServerServiceStatus.UNKNOWN).build()));
   }
 
   @Test
@@ -86,11 +73,9 @@ public class CmServerClusterTest extends BaseTestIntegrationServer {
     Assert.assertTrue(server.getServices(cluster).isEmpty());
     Assert.assertTrue(server.configure(cluster));
     Assert.assertFalse(server.getServices(cluster).isEmpty());
-    Assert.assertEquals(
-        new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG)
-            .qualifier(CmServerService.NAME_QUALIFIER_DEFAULT)
-            .host(server.getService(cluster, CmServerServiceType.HDFS_NAMENODE).getHost()),
-        server.getService(cluster, CmServerServiceType.HDFS_NAMENODE));
+    Assert.assertEquals(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG)
+        .qualifier(CmServerService.NAME_QUALIFIER_DEFAULT).build().getName(),
+        server.getService(cluster, CmServerServiceType.HDFS_NAMENODE).getName());
   }
 
   @Test

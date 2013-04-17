@@ -34,11 +34,11 @@ public abstract class BaseTestIntegrationCommand extends BaseTestIntegration {
   @Before
   public void provisionCluster() throws Exception {
     super.provisionCluster();
-    command = new CmServerBuilder().host(CM_HOST_OR_IP).cluster(cluster).client(DIR_CLIENT_CONFIG.getAbsolutePath());
+    command = new CmServerBuilder().host(CM_IP).cluster(cluster).client(DIR_CLIENT_CONFIG.getAbsolutePath());
     Configuration configuration = new PropertiesConfiguration();
-    configuration.setProperty(CONFIG_WHIRR_USER, CLUSTER_USER);
-    configuration.setProperty(CONFIG_WHIRR_PRIV_KEY, FILE_KEY_PRIVATE.getAbsolutePath());
-    configuration.setProperty(CONFIG_WHIRR_PUB_KEY, FILE_KEY_PUBLIC.getAbsolutePath());
+    configuration.setProperty(ClusterSpec.Property.CLUSTER_USER.getConfigName(), CLUSTER_USER);
+    configuration.setProperty(ClusterSpec.Property.PRIVATE_KEY_FILE.getConfigName(), FILE_KEY_PRIVATE.getAbsolutePath());
+    configuration.setProperty(ClusterSpec.Property.PUBLIC_KEY_FILE.getConfigName(), FILE_KEY_PUBLIC.getAbsolutePath());
     specification = new ClusterSpec(configuration);
   }
 

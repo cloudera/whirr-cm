@@ -67,6 +67,7 @@ public class CmServerHandler extends BaseHandlerCm {
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
     try {
+      CmServerClusterInstance.setIsStandaloneCommand(false);
       CmServerClusterInstance.getCluster().setServer(getInstanceId());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
@@ -89,9 +90,9 @@ public class CmServerHandler extends BaseHandlerCm {
     }
     addStatement(event, call("configure_cm_server"));
     @SuppressWarnings("unchecked")
-    List<String> ports = getConfiguration(event.getClusterSpec()).getList(PROPERTY_PORTS);
-    ports.add(getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB));
-    ports.add(getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_COMMS));
+    List<String> ports = CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getList(PROPERTY_PORTS);
+    ports.add(CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB));
+    ports.add(CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_COMMS));
     for (String port : ports) {
       if (port != null && !"".equals(port))
         event.getFirewallManager().addRule(Rule.create().destination(role(ROLE)).port(Integer.parseInt(port)));
@@ -116,8 +117,25 @@ public class CmServerHandler extends BaseHandlerCm {
                 .getString(key));
           }
         }
-        boolean success = false;
         server.initialise(config);
+        return clusterInput;
+      }
+    }, false, true);
+    executeServer("CMClusterConfigure", event, null, new ServerCommand() {
+      @Override
+      public CmServerCluster execute(ClusterActionEvent event, CmServer server, CmServerCluster clusterInput)
+          throws Exception {
+        Map<String, String> config = new HashMap<String, String>();
+        @SuppressWarnings("unchecked")
+        Iterator<String> keys = event.getClusterSpec().getConfiguration().getKeys();
+        while (keys.hasNext()) {
+          String key = keys.next();
+          if (key.startsWith(CONFIG_WHIRR_CM_PREFIX)) {
+            config.put(key.replaceFirst(CONFIG_WHIRR_CM_PREFIX, ""), event.getClusterSpec().getConfiguration()
+                .getString(key));
+          }
+        }
+        boolean success = false;
         if (server.provision(clusterInput)) {
           if (server.configure(clusterInput)) {
             if (server.getServiceConfigs(clusterInput, event.getClusterSpec().getClusterDirectory())) {
@@ -126,17 +144,17 @@ public class CmServerHandler extends BaseHandlerCm {
           }
         }
         if (!success) {
-          throw new CmServerException("Unexepcted error attempting to provision cluster");
+          throw new CmServerException("Unexepcted error attempting to configure cluster");
         }
         return clusterInput;
       }
-    }, false);
+    }, false, false);
   }
 
   @Override
   protected void afterStart(ClusterActionEvent event) throws IOException, InterruptedException {
     super.afterStart(event);
-    executeServer("CMClusterStart", event, CmServerServiceStatus.STARTING, new ServerCommand() {
+    executeServer("CMClusterStarting", event, CmServerServiceStatus.STARTING, new ServerCommand() {
       @Override
       public CmServerCluster execute(ClusterActionEvent event, CmServer server, CmServerCluster clusterInput)
           throws Exception {
@@ -151,13 +169,13 @@ public class CmServerHandler extends BaseHandlerCm {
         }
         return clusterOutput;
       }
-    }, true);
+    }, true, false);
   }
 
   @Override
   protected void afterStop(ClusterActionEvent event) throws IOException, InterruptedException {
     super.afterStop(event);
-    executeServer("CMClusterStop", event, CmServerServiceStatus.STOPPING, new ServerCommand() {
+    executeServer("CMClusterStopping", event, CmServerServiceStatus.STOPPING, new ServerCommand() {
       @Override
       public CmServerCluster execute(ClusterActionEvent event, CmServer server, CmServerCluster clusterInput)
           throws Exception {
@@ -172,30 +190,44 @@ public class CmServerHandler extends BaseHandlerCm {
         }
         return clusterOutput;
       }
-    }, true);
+    }, true, false);
   }
 
   private void executeServer(String operation, ClusterActionEvent event, CmServerServiceStatus status,
-      ServerCommand command, boolean footer) throws IOException, InterruptedException {
+      ServerCommand command, boolean footer, boolean alwaysExecute) throws IOException, InterruptedException {
     super.afterStart(event);
     try {
       CmServerClusterInstance.logHeader(logger, operation);
       CmServerCluster cluster = getCluster(event, status);
       if (!cluster.isEmpty()) {
-        if (!event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
+        if (!alwaysExecute && !CmServerClusterInstance.isStandaloneCommand()
+            && !event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
           CmServerClusterInstance.logLineItem(logger, operation, "Warning, services found, but whirr property");
           CmServerClusterInstance.logLineItemDetail(logger, operation, "[" + CONFIG_WHIRR_AUTO_VARIABLE
               + "] is false so not executing");
-        } else if (event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
+        } else {
+          CmServerClusterInstance.logLineItem(
+              logger,
+              operation,
+              "follow live at http://"
+                  + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp()
+                  + ":"
+                  + CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(
+                      CmServerHandler.PROPERTY_PORT_WEB));
           CmServerClusterInstance.logLineItem(logger, operation);
           CmServer server = CmServerClusterInstance.getFactory().getCmServer(
-              event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp(), 7180, CM_USER, CM_PASSWORD,
-              new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API, false));
-          cluster = command.execute(event, server, cluster);
-          CmServerClusterInstance.logLineItemFooter(logger, operation);
-          CmServerClusterInstance.logLineItem(logger, operation);
-          CmServerClusterInstance.logCluster(logger, operation, event.getClusterSpec(), cluster);
-          CmServerClusterInstance.logLineItemFooter(logger, operation);
+              event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp(),
+              CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getInt(PROPERTY_PORT_WEB), CM_USER,
+              CM_PASSWORD, new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API, false));
+          try {
+            cluster = command.execute(event, server, cluster);
+          } finally {
+            CmServerClusterInstance.logLineItemFooter(logger, operation);
+            CmServerClusterInstance.logLineItem(logger, operation);
+            CmServerClusterInstance.logCluster(logger, operation,
+                CmServerClusterInstance.getConfiguration(event.getClusterSpec()), cluster);
+            CmServerClusterInstance.logLineItemFooter(logger, operation);
+          }
         }
       }
     } catch (Exception e) {
@@ -212,8 +244,9 @@ public class CmServerHandler extends BaseHandlerCm {
   private CmServerCluster getCluster(ClusterActionEvent event, CmServerServiceStatus status) throws CmServerException,
       IOException {
     CmServerCluster clusterStale = CmServerClusterInstance.getCluster();
-    CmServerCluster cluster, clusterCurrent = cluster = CmServerClusterInstance.getCluster(event.getClusterSpec(),
-        event.getCluster().getInstances(), getDataMounts(event));
+    CmServerCluster cluster, clusterCurrent = cluster = CmServerClusterInstance.getCluster(
+        CmServerClusterInstance.getConfiguration(event.getClusterSpec()), event.getCluster().getInstances(),
+        getDataMounts(event));
     if (status != null) {
       CmServerCluster clusterFiltered = CmServerClusterInstance.getCluster(clusterCurrent);
       for (CmServerServiceType type : clusterStale.getServiceTypes()) {
@@ -238,13 +271,13 @@ public class CmServerHandler extends BaseHandlerCm {
 
   private Set<String> getDataMounts(ClusterActionEvent event) throws IOException {
     Set<String> mounts = new HashSet<String>();
-    String overirdeMounts = getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_ROOT);
+    String overirdeMounts = CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_ROOT);
     if (overirdeMounts != null) {
       mounts.add(overirdeMounts);
     } else if (!getDeviceMappings(event).isEmpty()) {
       mounts.addAll(getDeviceMappings(event).keySet());
     } else {
-      mounts.add(getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_DEFAULT));
+      mounts.add(CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_DEFAULT));
     }
     return mounts;
   }

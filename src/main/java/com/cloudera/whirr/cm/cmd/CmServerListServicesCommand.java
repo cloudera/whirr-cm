@@ -24,8 +24,8 @@ import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.state.ClusterStateStoreFactory;
 
 import com.cloudera.whirr.cm.CmServerClusterInstance;
-import com.cloudera.whirr.cm.server.CmServerCluster;
 import com.cloudera.whirr.cm.server.CmServerBuilder;
+import com.cloudera.whirr.cm.server.CmServerCluster;
 
 public class CmServerListServicesCommand extends BaseCommandCmServer {
 
@@ -49,7 +49,8 @@ public class CmServerListServicesCommand extends BaseCommandCmServer {
     CmServerCluster clusterOutput = serverCommand.command("services").executeCluster();
     CmServerClusterInstance.logLineItemFooter(logger, getLabel());
     CmServerClusterInstance.logLineItem(logger, getLabel());
-    CmServerClusterInstance.logCluster(logger, getLabel(), specification, clusterOutput);
+    CmServerClusterInstance.logCluster(logger, getLabel(), CmServerClusterInstance.getConfiguration(specification),
+        clusterOutput);
     return 0;
   }
 }

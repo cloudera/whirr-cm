@@ -20,7 +20,7 @@ package com.cloudera.whirr.cm.server;
 public class CmServerService implements Comparable<CmServerService> {
 
   public enum CmServerServiceStatus {
-    STARTING, STARTED, STOPPING, STOPPED, UNKNOWN
+    STARTING, STARTED, STOPPING, STOPPED, BUSY, UNKNOWN
   }
 
   public static final String NAME_TOKEN_DELIM = "_";
@@ -41,7 +41,7 @@ public class CmServerService implements Comparable<CmServerService> {
 
   private String toString;
 
-  public CmServerService(String name, String host, String ip, String ipInternal, CmServerServiceStatus status) {
+  protected CmServerService(String name, String host, String ip, String ipInternal, CmServerServiceStatus status) {
     if (name == null) {
       throw new IllegalArgumentException("Illegal argumnents passed to constructor");
     }
@@ -62,7 +62,7 @@ public class CmServerService implements Comparable<CmServerService> {
     this.status = status;
   }
 
-  public CmServerService(CmServerServiceType type, String tag, String qualifier, String host, String ip,
+  protected CmServerService(CmServerServiceType type, String tag, String qualifier, String host, String ip,
       String ipInternal, CmServerServiceStatus status) {
     if (type == null || tag == null || tag.contains(NAME_TOKEN_DELIM) || qualifier == null
         || qualifier.contains(NAME_TOKEN_DELIM)) {
@@ -196,7 +196,7 @@ public class CmServerService implements Comparable<CmServerService> {
     return ip;
   }
 
-  public String geIpInternal() {
+  public String getIpInternal() {
     return ipInternal;
   }
 

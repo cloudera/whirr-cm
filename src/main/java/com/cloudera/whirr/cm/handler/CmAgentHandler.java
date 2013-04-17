@@ -27,6 +27,7 @@ import org.apache.whirr.service.ClusterActionEvent;
 
 import com.cloudera.whirr.cm.CmServerClusterInstance;
 import com.cloudera.whirr.cm.server.CmServerException;
+import com.cloudera.whirr.cm.server.CmServerServiceBuilder;
 
 public class CmAgentHandler extends CmNodeHandler {
 
@@ -46,7 +47,7 @@ public class CmAgentHandler extends CmNodeHandler {
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
     try {
-      CmServerClusterInstance.getCluster().addAgent(getInstanceId());
+      CmServerClusterInstance.getCluster().addAgent(new CmServerServiceBuilder().host(getInstanceId()).build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
     }
@@ -65,8 +66,8 @@ public class CmAgentHandler extends CmNodeHandler {
       addStatement(
           event,
           call("configure_cm_agent", "-h", event.getCluster().getInstanceMatching(role(CmServerHandler.ROLE))
-              .getPublicIp(), "-p",
-              getConfiguration(event.getClusterSpec()).getString(CmServerHandler.PROPERTY_PORT_COMMS)));
+              .getPrivateIp(), "-p",
+              CmServerClusterInstance. getConfiguration(event.getClusterSpec()).getString(CmServerHandler.PROPERTY_PORT_COMMS)));
     }
   }
 

@@ -20,7 +20,6 @@ package com.cloudera.whirr.cm.handler;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.service.ClusterActionEvent;
 import org.apache.whirr.service.ClusterActionHandlerSupport;
@@ -34,21 +33,17 @@ public abstract class BaseHandler extends ClusterActionHandlerSupport implements
 
   protected static final String CONFIG_IMPORT_PATH = "functions/cmf/";
 
-  private static final String PROPERTIES_FILE = "whirr-cm-default.properties";
-
-  protected Configuration getConfiguration(ClusterSpec spec) throws IOException {
-    return getConfiguration(spec, PROPERTIES_FILE);
-  }
-
   @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
     if (!CM_CLUSTER_NAME_REGEX.matcher(
-        event.getClusterSpec().getConfiguration().getString(CONFIG_WHIRR_NAME, CONFIG_WHIRR_NAME_DEFAULT)).matches()) {
+        event.getClusterSpec().getConfiguration()
+            .getString(ClusterSpec.Property.CLUSTER_NAME.getConfigName(), CONFIG_WHIRR_NAME_DEFAULT)).matches()) {
       throw new IOException("Illegal cluster name ["
-          + event.getClusterSpec().getConfiguration().getString(CONFIG_WHIRR_NAME, CONFIG_WHIRR_NAME_DEFAULT)
-          + "] passed in variable [" + CONFIG_WHIRR_NAME + "] with default [" + CONFIG_WHIRR_NAME_DEFAULT
-          + "]. Please use only alphanumeric characters.");
+          + event.getClusterSpec().getConfiguration()
+              .getString(ClusterSpec.Property.CLUSTER_NAME.getConfigName(), CONFIG_WHIRR_NAME_DEFAULT)
+          + "] passed in variable [" + ClusterSpec.Property.CLUSTER_NAME.getConfigName() + "] with default ["
+          + CONFIG_WHIRR_NAME_DEFAULT + "]. Please use only alphanumeric characters.");
     }
   }
 

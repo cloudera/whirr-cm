@@ -30,7 +30,7 @@ public class CmServerCommandTest extends BaseTestServer {
   public void setupCluster() throws CmServerException {
     cluster = new CmServerCluster();
     cluster.setServer("some-host");
-    cluster.addAgent("some-host");
+    cluster.addAgent(new CmServerServiceBuilder().host("some-host").build());
     cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG)
         .qualifier("1").host("host-1").build());
     cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_SECONDARY_NAMENODE).tag(CLUSTER_TAG)

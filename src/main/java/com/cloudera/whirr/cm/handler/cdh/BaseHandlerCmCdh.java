@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
+import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.service.ClusterActionEvent;
 import org.apache.whirr.service.ClusterActionHandler;
 
@@ -48,7 +49,7 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
       }
       CmServerClusterInstance.getCluster().addService(
           new CmServerServiceBuilder().type(getType())
-              .tag(event.getClusterSpec().getConfiguration().getString(CONFIG_WHIRR_NAME, CONFIG_WHIRR_NAME_DEFAULT))
+              .tag(event.getClusterSpec().getConfiguration().getString(ClusterSpec.Property.CLUSTER_NAME.getConfigName(), CONFIG_WHIRR_NAME_DEFAULT))
               .build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
@@ -81,7 +82,7 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
     try {
       CmServerClusterInstance.getCluster().addService(
           new CmServerServiceBuilder().type(getType())
-              .tag(event.getClusterSpec().getConfiguration().getString(CONFIG_WHIRR_NAME, CONFIG_WHIRR_NAME_DEFAULT))
+              .tag(event.getClusterSpec().getConfiguration().getString(ClusterSpec.Property.CLUSTER_NAME.getConfigName(), CONFIG_WHIRR_NAME_DEFAULT))
               .status(CmServerService.CmServerServiceStatus.STARTING).build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
@@ -94,7 +95,7 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
     try {
       CmServerClusterInstance.getCluster().addService(
           new CmServerServiceBuilder().type(getType())
-              .tag(event.getClusterSpec().getConfiguration().getString(CONFIG_WHIRR_NAME, CONFIG_WHIRR_NAME_DEFAULT))
+              .tag(event.getClusterSpec().getConfiguration().getString(ClusterSpec.Property.CLUSTER_NAME.getConfigName(), CONFIG_WHIRR_NAME_DEFAULT))
               .status(CmServerService.CmServerServiceStatus.STOPPING).build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
