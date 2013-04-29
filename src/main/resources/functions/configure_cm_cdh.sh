@@ -17,15 +17,31 @@
 
 set -x
 
-function install_cmcdh_hivemetastore() {
-  if which dpkg &> /dev/null; then
-    export DEBIAN_FRONTEND=noninteractive
-    retry_apt_get update
-    retry_apt_get -q -y install mysql-server-5.5 mysql-client-5.5 libmysql-java
-    service mysql start
-  elif which rpm &> /dev/null; then
-    retry_yum install -y mysql-server mysql-connector-java
-    service mysqld start
-    chkconfig mysqld on
+function configure_cm_cdh() {
+  local OPTIND
+  local OPTARG
+  CM_CDH_ROLE=
+  CM_CDH_DIRS="/data"
+  while getopts "r:d:" OPTION; do
+    case $OPTION in
+      r)
+        CM_CDH_ROLE="$OPTARG"
+        ;;
+      d)
+        CM_CDH_DIRS="$OPTARG"
+        ;;
+    esac
+  done
+  export IFS=, 
+  CM_CDH_DIRS_ARRAY=($CM_CDH_DIRS)
+  if [ "$CM_CDH_ROLE" = "cm-cdh-jobtracker" ]; then
+	mkdir -p "${CM_CDH_DIRS_ARRAY[0]}/mapreduce/jobtracker/history"
+	chmod 777 "${CM_CDH_DIRS_ARRAY[0]}/mapreduce/jobtracker/history"
+  elif [ "$CM_CDH_ROLE" = "cm-cdh-oozie-server" ]; then
+	if [ -f "/usr/share/java/mysql-connector-java.jar" ]; then
+	  mkdir -p /var/lib/oozie
+	  chmod 777 /var/lib/oozie
+	  ln -s /usr/share/java/mysql-connector-java.jar /var/lib/oozie/mysql-connector-java.jar
+    fi
   fi
 }

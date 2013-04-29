@@ -34,4 +34,9 @@ public class CmCdhOozieServerHandler extends BaseHandlerCmCdh {
     return TYPE;
   }
 
+  @Override
+  public boolean isDatabaseDependent() {
+    return true;
+  }
+
 }

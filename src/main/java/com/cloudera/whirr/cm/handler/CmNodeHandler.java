@@ -17,22 +17,21 @@
  */
 package com.cloudera.whirr.cm.handler;
 
-import static org.apache.whirr.RolePredicates.role;
 import static org.jclouds.scriptbuilder.domain.Statements.call;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.whirr.service.ClusterActionEvent;
-import org.apache.whirr.service.FirewallManager.Rule;
 
 import com.cloudera.whirr.cm.CmServerClusterInstance;
 import com.cloudera.whirr.cm.server.CmServerException;
 import com.cloudera.whirr.cm.server.CmServerServiceBuilder;
 
 public class CmNodeHandler extends BaseHandlerCm {
-  public static final String ROLE = "cm-node";
 
-  private static final String PROPERTY_PORTS = "cm-node.ports";
+  public static final String ROLE = "cm-node";
 
   @Override
   public String getRole() {
@@ -45,6 +44,13 @@ public class CmNodeHandler extends BaseHandlerCm {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
+  public Set<String> getPortsClient(ClusterActionEvent event) throws IOException {
+    return new HashSet<String>(CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getList(
+        ROLE + CONFIG_WHIRR_INTERNAL_PORTS_CLIENT_SUFFIX));
+  }
+
+  @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
     try {
@@ -53,18 +59,6 @@ public class CmNodeHandler extends BaseHandlerCm {
       throw new IOException("Unexpected error building cluster", e);
     }
     addStatement(event, call("install_cm"));
-  }
-
-  @Override
-  protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
-    super.beforeConfigure(event);
-
-    for (Object port : CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getList(PROPERTY_PORTS)) {
-      if (port != null && !"".equals(port))
-        event.getFirewallManager().addRule(
-            Rule.create().destination(role(getRole())).port(Integer.parseInt(port.toString())));
-    }
-    handleFirewallRules(event);
   }
 
 }

@@ -19,11 +19,10 @@ package com.cloudera.whirr.cm.server;
 
 import java.io.File;
 import java.util.List;
-import java.util.Map;
 
 public interface CmServer {
 
-  public boolean getServiceConfigs(CmServerCluster cluster, File directory) throws CmServerException;
+  public boolean getServiceConfigs(CmServerCluster cluster, File path) throws CmServerException;
 
   public List<CmServerService> getServiceHosts() throws CmServerException;
 
@@ -46,7 +45,7 @@ public interface CmServer {
 
   public boolean isStopped(CmServerCluster cluster) throws CmServerException;
 
-  public Map<String, String> initialise(Map<String, String> config) throws CmServerException;
+  public boolean initialise(CmServerCluster cluster) throws CmServerException;
 
   public boolean provision(CmServerCluster cluster) throws CmServerException;
 

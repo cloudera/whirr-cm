@@ -9,13 +9,13 @@ Run the following commands from you local machine.
 
 ### Set your AWS credentials:
 ```bash
-export AWS_ACCESS_KEY_ID=...
-export AWS_SECRET_ACCESS_KEY=...
+export WHIRR_CLOUD_PROVIDER_ID=...
+export WHIRR_CLOUD_PROVIDER_KEY=...
 ```
 
 ### Install Whirr:
 
-Install CDH repositotries, eg for CDH4:
+Install CDH repositories, eg for CDH4:
 
 http://www.cloudera.com/content/support/en/documentation/cdh4-documentation/cdh4-documentation-v4-latest.html#CDH4Installation-InstallingCDH4
 
@@ -52,15 +52,15 @@ A sample Whirr CM CDH EC2 config is available here:
 curl -O https://raw.github.com/cloudera/whirr-cm/master/cm-ec2.properties
 ```
 
-If you would like to upload a CM License as part of the instalation (Cloudera can provide this if you do not
+If you would like to upload a CM License as part of the installation (Cloudera can provide this if you do not
 have one), place the license in a file "cm-license.txt" on the whirr classpath (eg in $WHIRR_HOME/conf), eg
 
 ```bash
 mv -v eval_acme_20120925_cloudera_enterprise_license.txt $WHIRR_HOME/conf/cm-license.txt
 ```
 
-The following command will start a cluster with 4 nodes, 1 master and 3 slave nodes. To change the
-cluster topology, edit the cm-ec2.properties file.
+The following command will start a cluster with 5 nodes, 1 CM server, 1 master and 3 slave nodes. To change the
+cluster topology, edit the [cm-ec2.properties](https://raw.github.com/cloudera/whirr-cm/master/cm-ec2.properties) file.
 
 ```bash
 whirr launch-cluster --config cm-ec2.properties
@@ -91,7 +91,7 @@ Whirr Handler [CMClusterProvision]   http://37.188.114.234:7180
 Whirr Handler [CMClusterProvision]   ssh -o StrictHostKeyChecking=no -i /root/.ssh/whirr whirr@37.188.114.234
 ```
 
-You are able to log into the CM Web Console (or hosts) at any stage and observe proceedings.
+You are able to log into the CM Web Console (or hosts) at any stage and observe proceedings, via the async, real time UI.
 
 The default admin user credentials are: 
 
@@ -102,15 +102,15 @@ Password: admin
 
 ## Manage the CDH cluster with CM
 
-The Whirr property 'whirr.env.cmauto', as set in cm-ec2.properties:
+The Whirr property 'whirr.cm.auto', as set in [cm-ec2.properties](https://raw.github.com/cloudera/whirr-cm/master/cm-ec2.properties):
 
 ```bash
 # Switch to enable/disable the automatic setup of a cluster within Cloudera Manager,
 # its initialization and launch, defaults to true
-whirr.env.cmauto=true
+whirr.cm.auto=true
 ```
 
-determines whether the Whirr CM plugin provisions, initilialises and starts a new CDH cluster (true)
+determines whether the Whirr CM plugin provisions, initialises and starts a new CDH cluster (true)
 or merely provisions the CM Server and Agents to allow manual CDH cluster management through
 the CM Web Console (false).
 
@@ -118,6 +118,9 @@ In either case, once Whirr has completed, the CM infrastructure will be deployed
 use, fully documented here:
 
 http://www.cloudera.com/content/support/en/documentation/manager-enterprise/cloudera-manager-enterprise-v4-latest.html
+
+Other Whirr properties can be used to affect the cluster provision process, refer to the example 
+[cm-ec2.properties](https://raw.github.com/cloudera/whirr-cm/master/cm-ec2.properties) for more details.
 
 You can have Whirr report the currently running cluster nodes at any time:
 
@@ -134,6 +137,7 @@ whirr list-services --config cm-ec2.properties
 As well as listing services via the 'list-services' command, the Whirr CM plugin supports the
 following commands:
 
+* init-cluster
 * download-config 
 * create-services
 * start-services
@@ -146,7 +150,7 @@ following commands:
 
 Where appropriate, these commands can be filtered by role via the '--roles' command line switch,
 bearing in mind that 'cm-server' is a mandatory role (all operations require it) and all lifecycle
-commands operate on the service parent of the role to ensure consistency. For example, to issue
+commands operate on the parent of the role to ensure consistency. For example, to issue
 a HDFS service start:
 
 ```bash
@@ -160,7 +164,7 @@ For example, to clean the "My Cluster" from CM:
 whirr clean-cluster --cm-cluster-name "My Cluster" --config cm-ec2.properties
 ```
 
-Full command documentation is available as part of Whirr:
+Full command documentation is available as part of Whirr, for example:
 
 ```bash
 whirr
@@ -172,6 +176,14 @@ whirr help clean-cluster
 The host you have run Whirr from can be used as a CDH client, as long as it can see the cluster 
 nodes (host,forward/reverse DNS) and has the same version of CDH installed (although not necessarily
 via the same means, eg parcels/RPMs/.debs etc).
+
+The 'whirr.client-cidrs' can be used to ensure the clients IP ranges are accepted through the cloud
+providers security controls and host firewalls.
+
+```bash
+# List of client IP ranges that can access the CM and CDH web console and client servers
+whirr.client-cidrs=0.0.0.0/0
+```
 
 To download the CDH cluster client config to the whirr cluster working directory ($HOME/.whirr/whirr)
 
@@ -185,7 +197,7 @@ This will then allow the CDH clients to be executed, for example to list files i
 hadoop --config $HOME/.whirr/whirr fs -ls /
 ```
 
-Alternatively, you can interact with the cluster via a gateway node from within your cluster.
+Alternatively, you can interact with the cluster via a CM gateway node from within your cluster.
 
 
 ## Shutdown the cluster

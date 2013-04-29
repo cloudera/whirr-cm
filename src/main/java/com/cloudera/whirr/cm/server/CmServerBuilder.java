@@ -49,12 +49,13 @@ public class CmServerBuilder implements CmServerConstants {
     String name();
   }
 
-  private String host;
+  private String ip;
+  private String ipInternal;
   private int port = 7180;
   private String user = "admin";
   private String password = "admin";
 
-  private File client;
+  private File path;
   private String command;
 
   private CmServerCluster cluster;
@@ -107,13 +108,22 @@ public class CmServerBuilder implements CmServerConstants {
     return this;
   }
 
-  @CmServerCommandMethod(name = "host")
-  public CmServerBuilder host(String host) throws CmServerException {
-    if (host == null || host.equals("")) {
-      throw new CmServerException("Illegal host argument passed [" + host + "]");
+  @CmServerCommandMethod(name = "ip")
+  public CmServerBuilder ip(String ip) throws CmServerException {
+    if (ip == null || ip.equals("")) {
+      throw new CmServerException("Illegal IP argument passed [" + ip + "]");
     }
-    this.host = host;
+    this.ip = ip;
     this.server = null;
+    return this;
+  }
+
+  @CmServerCommandMethod(name = "ipInternal")
+  public CmServerBuilder ipInternal(String ipInternal) throws CmServerException {
+    if (ipInternal == null || ipInternal.equals("")) {
+      throw new CmServerException("Illegal IP argument passed [" + ipInternal + "]");
+    }
+    this.ip = ipInternal;
     return this;
   }
 
@@ -147,12 +157,12 @@ public class CmServerBuilder implements CmServerConstants {
     return this;
   }
 
-  @CmServerCommandMethod(name = "client")
-  public CmServerBuilder client(String client) throws CmServerException {
-    if (client == null) {
-      throw new CmServerException("Illegal client argument passed [" + client + "]");
+  @CmServerCommandMethod(name = "path")
+  public CmServerBuilder path(String path) throws CmServerException {
+    if (path == null) {
+      throw new CmServerException("Illegal path argument passed [" + path + "]");
     }
-    this.client = new File(client);
+    this.path = new File(path);
     return this;
   }
 
@@ -166,7 +176,7 @@ public class CmServerBuilder implements CmServerConstants {
   }
 
   public CmServerBuilder cluster(CmServerCluster cluster) throws CmServerException {
-    if (cluster == null || cluster.isEmpty()) {
+    if (cluster == null) {
       throw new CmServerException("Illegal cluster argument passed [" + cluster + "]");
     }
     this.cluster = cluster;
@@ -215,15 +225,15 @@ public class CmServerBuilder implements CmServerConstants {
   }
 
   private Object executeObject() throws CmServerException {
-    if (host == null) {
-      throw new CmServerException("Required paramater [host] not set");
+    if (ip == null) {
+      throw new CmServerException("Required paramater [ip] not set");
     }
     if (command == null) {
       throw new CmServerException("Required paramater [command] not set");
     }
     if (server == null) {
-      server = factory.getCmServer(host, port, user, password, new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API,
-          false));
+      server = factory.getCmServer(ip, ipInternal, port, user, password, new CmServerLog.CmServerLogSysOut(
+          LOG_TAG_CM_SERVER_API, false));
     }
     List<Object> paramaters = new ArrayList<Object>();
     for (Class<?> clazz : COMMANDS.get(command).getParameterTypes()) {
@@ -233,10 +243,10 @@ public class CmServerBuilder implements CmServerConstants {
         }
         paramaters.add(cluster);
       } else if (clazz.equals(File.class)) {
-        if (client == null) {
-          throw new CmServerException("Required paramater [client] not set");
+        if (path == null) {
+          throw new CmServerException("Required paramater [path] not set");
         }
-        paramaters.add(client);
+        paramaters.add(path);
       } else {
         throw new CmServerException("Unexpected paramater type [" + clazz.getName() + "]");
       }

@@ -21,11 +21,9 @@ function install_cm_server() {
   if which dpkg &> /dev/null; then
     export DEBIAN_FRONTEND=noninteractive
     retry_apt_get update
-    retry_apt_get -q -y install oracle-j2sdk1.6 cloudera-manager-server-db cloudera-manager-server cloudera-manager-daemons
+    retry_apt_get -q -y install oracle-j2sdk1.6 cloudera-manager-server cloudera-manager-daemons
   elif which rpm &> /dev/null; then
-    retry_yum install -y jdk cloudera-manager-server-db cloudera-manager-server cloudera-manager-daemons
+    retry_yum install -y jdk cloudera-manager-server cloudera-manager-daemons
   fi
-  service cloudera-scm-server-db initdb
-  service cloudera-scm-server-db start
-  service cloudera-scm-server start
+  rm -rvf /etc/cloudera-scm-server/db.mgmt.properties
 }

@@ -24,19 +24,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-
 public class CmServerCluster {
 
   private String name;
-  private String server;
   private boolean isParcel = true;
+  private CmServerService server;
   private Set<CmServerService> agents = new HashSet<CmServerService>();
   private Set<CmServerService> nodes = new HashSet<CmServerService>();
-  private Set<String> mounts = new HashSet<String>();
+  private Map<String, Map<String, String>> configuration = new HashMap<String, Map<String, String>>();
   private Map<CmServerServiceType, Set<CmServerService>> services = new HashMap<CmServerServiceType, Set<CmServerService>>();
 
   public CmServerCluster() {
@@ -53,6 +48,22 @@ public class CmServerCluster {
 
   public synchronized String setName(String name) {
     return this.name = name;
+  }
+
+  public synchronized void addServiceConfiguration(String group, String setting, String value) throws CmServerException {
+    if (configuration.get(group) == null) {
+      configuration.put(group, new HashMap<String, String>());
+    }
+    configuration.get(group).put(setting, value);
+  }
+
+  public synchronized void addServiceConfigurationAll(Map<String, Map<String, String>> configuration)
+      throws CmServerException {
+    for (String group : configuration.keySet()) {
+      for (String setting : configuration.get(group).keySet()) {
+        addServiceConfiguration(group, setting, configuration.get(group).get(setting));
+      }
+    }
   }
 
   public synchronized boolean addServiceType(CmServerServiceType type) throws CmServerException {
@@ -83,7 +94,7 @@ public class CmServerCluster {
     return true;
   }
 
-  public synchronized boolean setServer(String server) throws CmServerException {
+  public synchronized boolean setServer(CmServerService server) throws CmServerException {
     if (this.server != null) {
       throw new CmServerException("Invalid cluster topology: Attempt to add multiple servers");
     }
@@ -136,7 +147,6 @@ public class CmServerCluster {
   }
 
   public synchronized Set<CmServerService> getServices(CmServerServiceType type) {
-    // TODO: Do Deep Copy
     Set<CmServerService> servicesCopy = new TreeSet<CmServerService>();
     if (type.equals(CmServerServiceType.CLUSTER)) {
       for (CmServerServiceType serviceType : services.keySet()) {
@@ -174,7 +184,7 @@ public class CmServerCluster {
     throw new IOException("Cannot determine service name, cluster is empty");
   }
 
-  public synchronized String getServer() {
+  public synchronized CmServerService getServer() {
     return server;
   }
 
@@ -186,23 +196,12 @@ public class CmServerCluster {
     return new HashSet<CmServerService>(nodes);
   }
 
-  public synchronized void setMounts(Set<String> mounts) {
-    this.mounts.addAll(mounts);
-  }
-
-  public synchronized Set<String> getMounts() {
-    return ImmutableSet.copyOf(mounts);
-  }
-
-  public String getDataDirsForSuffix(final Set<String> defaults, final String suffix) throws IOException {
-    Set<String> mounts = getMounts();
-    return Joiner.on(',').join(
-        Lists.transform(Lists.newArrayList(mounts.isEmpty() ? defaults : mounts), new Function<String, String>() {
-          @Override
-          public String apply(String input) {
-            return input + suffix;
-          }
-        }));
+  public synchronized Map<String, Map<String, String>> getServiceConfiguration() {
+    Map<String, Map<String, String>> configuration = new HashMap<String, Map<String, String>>();
+    for (String key : this.configuration.keySet()) {
+      configuration.put(key, new HashMap<String, String>(this.configuration.get(key)));
+    }
+    return configuration;
   }
 
   public void setIsParcel(boolean isParcel) {

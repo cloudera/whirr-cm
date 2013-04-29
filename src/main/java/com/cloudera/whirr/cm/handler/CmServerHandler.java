@@ -23,23 +23,23 @@ import static org.jclouds.scriptbuilder.domain.Statements.createOrOverwriteFile;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.service.ClusterActionEvent;
-import org.apache.whirr.service.FirewallManager.Rule;
 
+import com.cloudera.whirr.cm.CmConstants;
 import com.cloudera.whirr.cm.CmServerClusterInstance;
 import com.cloudera.whirr.cm.server.CmServer;
 import com.cloudera.whirr.cm.server.CmServerCluster;
 import com.cloudera.whirr.cm.server.CmServerException;
 import com.cloudera.whirr.cm.server.CmServerService;
 import com.cloudera.whirr.cm.server.CmServerService.CmServerServiceStatus;
+import com.cloudera.whirr.cm.server.CmServerServiceBuilder;
 import com.cloudera.whirr.cm.server.CmServerServiceType;
+import com.cloudera.whirr.cm.server.CmServerServiceTypeCms;
 import com.cloudera.whirr.cm.server.impl.CmServerLog;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
@@ -52,15 +52,19 @@ public class CmServerHandler extends BaseHandlerCm {
 
   public static final String LICENSE_FILE = "cm-license.txt";
 
-  public static final String PROPERTY_PARCEL_PRODUCT = "cm-server.parcel.product";
-  public static final String PROPERTY_PARCEL_VERSION = "cm-server.parcel.version";
-  public static final String PROPERTY_PORTS = "cm-server.ports";
-  public static final String PROPERTY_PORT_WEB = "cm-server.port.web";
-  public static final String PROPERTY_PORT_COMMS = "cm-server.port.comms";
-
   @Override
   public String getRole() {
     return ROLE;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Set<String> getPortsClient(ClusterActionEvent event) throws IOException {
+    Set<String> ports = new HashSet<String>(CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getList(
+        ROLE + CONFIG_WHIRR_INTERNAL_PORTS_CLIENT_SUFFIX));
+    ports.add(CmServerClusterInstance.getConfiguration(event.getClusterSpec())
+        .getString(CONFIG_WHIRR_INTERNAL_PORT_WEB));
+    return ports;
   }
 
   @Override
@@ -68,9 +72,28 @@ public class CmServerHandler extends BaseHandlerCm {
     super.beforeBootstrap(event);
     try {
       CmServerClusterInstance.setIsStandaloneCommand(false);
-      CmServerClusterInstance.getCluster().setServer(getInstanceId());
+      CmServerClusterInstance.getCluster().setServer(new CmServerServiceBuilder().ip(getInstanceId()).build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
+    }
+    for (CmServerServiceTypeCms type : CmServerServiceTypeCms.values()) {
+      switch (type) {
+      case HOSTMONITOR:
+      case SERVICEMONITOR:
+      case ACTIVITYMONITOR:
+      case REPORTSMANAGER:
+      case NAVIGATOR:
+        addStatement(
+            event,
+            call("install_database", "-t", CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(),
+                getMounts(event), type.getId(), type.getParent() == null ? null : type.getParent().getId(),
+                CONFIG_CM_DB_SUFFIX_TYPE), "-d", CmServerClusterInstance.getClusterConfiguration(
+                event.getClusterSpec(), getMounts(event), type.getId(), type.getParent() == null ? null : type
+                    .getParent().getId(), "database_name")));
+        break;
+      default:
+        break;
+      }
     }
     addStatement(event, call("install_cm"));
     addStatement(event, call("install_cm_server"));
@@ -88,16 +111,10 @@ public class CmServerHandler extends BaseHandlerCm {
               Splitter.on('\n').split(
                   CharStreams.toString(Resources.newReaderSupplier(licenceConfigUri, Charsets.UTF_8)))));
     }
-    addStatement(event, call("configure_cm_server"));
-    @SuppressWarnings("unchecked")
-    List<String> ports = CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getList(PROPERTY_PORTS);
-    ports.add(CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_WEB));
-    ports.add(CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(PROPERTY_PORT_COMMS));
-    for (String port : ports) {
-      if (port != null && !"".equals(port))
-        event.getFirewallManager().addRule(Rule.create().destination(role(ROLE)).port(Integer.parseInt(port)));
-    }
-    handleFirewallRules(event);
+    addStatement(
+        event,
+        call("configure_cm_server", "-t", CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(),
+            getMounts(event), CmServerServiceTypeCms.CM.getId(), null, CONFIG_CM_DB_SUFFIX_TYPE)));
   }
 
   @Override
@@ -107,17 +124,7 @@ public class CmServerHandler extends BaseHandlerCm {
       @Override
       public CmServerCluster execute(ClusterActionEvent event, CmServer server, CmServerCluster clusterInput)
           throws Exception {
-        Map<String, String> config = new HashMap<String, String>();
-        @SuppressWarnings("unchecked")
-        Iterator<String> keys = event.getClusterSpec().getConfiguration().getKeys();
-        while (keys.hasNext()) {
-          String key = keys.next();
-          if (key.startsWith(CONFIG_WHIRR_CM_PREFIX)) {
-            config.put(key.replaceFirst(CONFIG_WHIRR_CM_PREFIX, ""), event.getClusterSpec().getConfiguration()
-                .getString(key));
-          }
-        }
-        server.initialise(config);
+        server.initialise(clusterInput);
         return clusterInput;
       }
     }, false, true);
@@ -125,16 +132,6 @@ public class CmServerHandler extends BaseHandlerCm {
       @Override
       public CmServerCluster execute(ClusterActionEvent event, CmServer server, CmServerCluster clusterInput)
           throws Exception {
-        Map<String, String> config = new HashMap<String, String>();
-        @SuppressWarnings("unchecked")
-        Iterator<String> keys = event.getClusterSpec().getConfiguration().getKeys();
-        while (keys.hasNext()) {
-          String key = keys.next();
-          if (key.startsWith(CONFIG_WHIRR_CM_PREFIX)) {
-            config.put(key.replaceFirst(CONFIG_WHIRR_CM_PREFIX, ""), event.getClusterSpec().getConfiguration()
-                .getString(key));
-          }
-        }
         boolean success = false;
         if (server.provision(clusterInput)) {
           if (server.configure(clusterInput)) {
@@ -201,9 +198,9 @@ public class CmServerHandler extends BaseHandlerCm {
       CmServerCluster cluster = getCluster(event, status);
       if (!cluster.isEmpty()) {
         if (!alwaysExecute && !CmServerClusterInstance.isStandaloneCommand()
-            && !event.getClusterSpec().getConfiguration().getBoolean(CONFIG_WHIRR_AUTO_VARIABLE, true)) {
+            && !CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getBoolean(CONFIG_WHIRR_AUTO, true)) {
           CmServerClusterInstance.logLineItem(logger, operation, "Warning, services found, but whirr property");
-          CmServerClusterInstance.logLineItemDetail(logger, operation, "[" + CONFIG_WHIRR_AUTO_VARIABLE
+          CmServerClusterInstance.logLineItemDetail(logger, operation, "[" + CONFIG_WHIRR_AUTO
               + "] is false so not executing");
         } else {
           CmServerClusterInstance.logLineItem(
@@ -213,19 +210,20 @@ public class CmServerHandler extends BaseHandlerCm {
                   + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp()
                   + ":"
                   + CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(
-                      CmServerHandler.PROPERTY_PORT_WEB));
+                      CmConstants.CONFIG_WHIRR_INTERNAL_PORT_WEB));
           CmServerClusterInstance.logLineItem(logger, operation);
-          CmServer server = CmServerClusterInstance.getFactory().getCmServer(
-              event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp(),
-              CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getInt(PROPERTY_PORT_WEB), CM_USER,
-              CM_PASSWORD, new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API, false));
+          Instance serverInstance = event.getCluster().getInstanceMatching(role(ROLE));
+          CmServer server = CmServerClusterInstance.getFactory().getCmServer(serverInstance.getPublicIp(),
+              serverInstance.getPrivateIp(),
+              CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getInt(CONFIG_WHIRR_INTERNAL_PORT_WEB),
+              CM_USER, CM_PASSWORD, new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API, false));
           try {
             cluster = command.execute(event, server, cluster);
           } finally {
             CmServerClusterInstance.logLineItemFooter(logger, operation);
             CmServerClusterInstance.logLineItem(logger, operation);
-            CmServerClusterInstance.logCluster(logger, operation,
-                CmServerClusterInstance.getConfiguration(event.getClusterSpec()), cluster);
+            CmServerClusterInstance.logCluster(logger, operation, CmServerClusterInstance.getConfiguration(event
+                .getClusterSpec()), cluster, event.getCluster().getInstances());
             CmServerClusterInstance.logLineItemFooter(logger, operation);
           }
         }
@@ -242,11 +240,11 @@ public class CmServerHandler extends BaseHandlerCm {
   }
 
   private CmServerCluster getCluster(ClusterActionEvent event, CmServerServiceStatus status) throws CmServerException,
-      IOException {
+      IOException, ConfigurationException {
     CmServerCluster clusterStale = CmServerClusterInstance.getCluster();
     CmServerCluster cluster, clusterCurrent = cluster = CmServerClusterInstance.getCluster(
         CmServerClusterInstance.getConfiguration(event.getClusterSpec()), event.getCluster().getInstances(),
-        getDataMounts(event));
+        getMounts(event));
     if (status != null) {
       CmServerCluster clusterFiltered = CmServerClusterInstance.getCluster(clusterCurrent);
       for (CmServerServiceType type : clusterStale.getServiceTypes()) {
@@ -267,19 +265,6 @@ public class CmServerHandler extends BaseHandlerCm {
     }
     CmServerClusterInstance.getCluster(true);
     return cluster;
-  }
-
-  private Set<String> getDataMounts(ClusterActionEvent event) throws IOException {
-    Set<String> mounts = new HashSet<String>();
-    String overirdeMounts = CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_ROOT);
-    if (overirdeMounts != null) {
-      mounts.add(overirdeMounts);
-    } else if (!getDeviceMappings(event).isEmpty()) {
-      mounts.addAll(getDeviceMappings(event).keySet());
-    } else {
-      mounts.add(CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(DATA_DIRS_DEFAULT));
-    }
-    return mounts;
   }
 
   public static abstract class ServerCommand {

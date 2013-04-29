@@ -19,14 +19,15 @@ package com.cloudera.whirr.cm.cmd;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
+import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.ClusterController;
 import org.apache.whirr.ClusterControllerFactory;
 import org.apache.whirr.ClusterSpec;
@@ -64,7 +65,7 @@ public abstract class BaseCommandCmServer extends BaseCommand {
     return "CM" + super.getLabel();
   }
 
-  public abstract int run(ClusterSpec specification, CmServerCluster cluster, CmServerBuilder serverCommand)
+  public abstract int run(ClusterSpec specification, Set<Instance> instances, CmServerCluster cluster, CmServerBuilder serverCommand)
       throws Exception;
 
   private OptionSpec<String> cmClusterName = parser.accepts("cm-cluster-name", "CM cluster name to target")
@@ -87,8 +88,9 @@ public abstract class BaseCommandCmServer extends BaseCommand {
       }
     }
 
+    Set<Instance> instances = clusterController.getInstances(specification, clusterStateStore);
     CmServerCluster cluster = CmServerClusterInstance.getCluster(specification.getConfiguration(),
-        clusterController.getInstances(specification, clusterStateStore), Collections.<String> emptySet(), roles);
+        instances, new TreeSet<String>(), roles);
 
     if (optionSet.hasArgument(cmClusterName)) {
       cluster.setName(optionSet.valueOf(cmClusterName));
@@ -100,14 +102,12 @@ public abstract class BaseCommandCmServer extends BaseCommand {
     if (cluster.getAgents().isEmpty() && cluster.getNodes().isEmpty()) {
       throw new CmServerException("Could not find any " + CmAgentHandler.ROLE + "'s or " + CmNodeHandler.ROLE + "'s.");
     }
-    if (cluster.isEmpty()) {
-      throw new CmServerException("Could not find any appropriate roles to target.");
-    }
 
-    CmServerBuilder command = new CmServerBuilder().host(cluster.getServer()).cluster(cluster)
-        .client(specification.getClusterDirectory().getAbsolutePath());
+    CmServerBuilder command = new CmServerBuilder().ip(cluster.getServer().getIp())
+        .ipInternal(cluster.getServer().getIpInternal()).cluster(cluster)
+        .path(specification.getClusterDirectory().getAbsolutePath());
 
-    int returnInt = run(specification, cluster, command);
+    int returnInt = run(specification, instances, cluster, command);
 
     CmServerClusterInstance.logLineItemFooter(logger, getLabel());
     CmServerClusterInstance.logLineItemFooterFinal(logger);

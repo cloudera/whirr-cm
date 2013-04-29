@@ -28,32 +28,32 @@ import org.apache.whirr.state.ClusterStateStoreFactory;
 import com.cloudera.whirr.cm.server.CmServerBuilder;
 import com.cloudera.whirr.cm.server.CmServerCluster;
 
-public class CmServerCreateServicesCommand extends BaseCommandCmServer {
+public class CmServerInitClusterCommand extends BaseCommandCmServer {
 
-  public static final String NAME = "create-services";
-  public static final String DESCRIPTION = "Create the cluster services.";
+  public static final String NAME = "init-cluster";
+  public static final String DESCRIPTION = "Intialise cluster for provisioning.";
 
-  public CmServerCreateServicesCommand() throws IOException {
+  public CmServerInitClusterCommand() throws IOException {
     this(new ClusterControllerFactory());
   }
 
-  public CmServerCreateServicesCommand(ClusterControllerFactory factory) {
+  public CmServerInitClusterCommand(ClusterControllerFactory factory) {
     this(factory, new ClusterStateStoreFactory());
   }
 
-  public CmServerCreateServicesCommand(ClusterControllerFactory factory, ClusterStateStoreFactory stateStoreFactory) {
+  public CmServerInitClusterCommand(ClusterControllerFactory factory, ClusterStateStoreFactory stateStoreFactory) {
     super(NAME, DESCRIPTION, factory, stateStoreFactory);
   }
 
   @Override
   public boolean isRoleFilterable() {
-    return true;
+    return false;
   }
 
   @Override
   public int run(ClusterSpec specification, Set<Instance> instances, CmServerCluster cluster,
       CmServerBuilder serverCommand) throws Exception {
-    return serverCommand.command("configure").executeBoolean() ? 0 : -1;
+    return serverCommand.command("initialise").executeBoolean() ? 0 : -1;
   }
 
 }

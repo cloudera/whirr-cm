@@ -17,6 +17,9 @@
  */
 package com.cloudera.whirr.cm.cmd.integration;
 
+import java.util.Collections;
+
+import org.apache.whirr.Cluster.Instance;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -24,6 +27,7 @@ import com.cloudera.whirr.cm.cmd.CmServerCleanClusterCommand;
 import com.cloudera.whirr.cm.cmd.CmServerCreateServicesCommand;
 import com.cloudera.whirr.cm.cmd.CmServerDestroyServicesCommand;
 import com.cloudera.whirr.cm.cmd.CmServerDownloadConfigCommand;
+import com.cloudera.whirr.cm.cmd.CmServerInitClusterCommand;
 import com.cloudera.whirr.cm.cmd.CmServerListServicesCommand;
 import com.cloudera.whirr.cm.server.CmServerServiceType;
 
@@ -35,47 +39,69 @@ public class CmServerCommandTest extends BaseTestIntegrationCommand {
   }
 
   @Test
+  public void testCommandInitCluster() throws Exception {
+    Assert.assertEquals(0, new CmServerInitClusterCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
+  }
+
+  @Test
   public void testCommandCreateServices() throws Exception {
-    Assert.assertEquals(0, new CmServerCreateServicesCommand(null, null).run(specification, cluster, command));
+    Assert.assertEquals(0, new CmServerCreateServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
   }
 
   @Test
   public void testCommandDestroyServices() throws Exception {
     Assert.assertTrue(serverBootstrap.configure(cluster));
-    Assert.assertEquals(0, new CmServerDestroyServicesCommand(null, null).run(specification, cluster, command));
+    Assert.assertEquals(0, new CmServerDestroyServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
   }
-  
+
   @Test
   public void testCommandDownloadConfig() throws Exception {
     Assert.assertTrue(serverBootstrap.configure(cluster));
     cluster.setName(cluster.getServiceName(CmServerServiceType.CLUSTER));
-    Assert.assertEquals(0, new CmServerDownloadConfigCommand(null, null).run(specification, cluster, command));
+    Assert.assertEquals(0, new CmServerDownloadConfigCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
   }
 
   @Test
   public void testListServices() throws Exception {
     Assert.assertTrue(serverBootstrap.configure(cluster));
-    Assert.assertEquals(0, new CmServerListServicesCommand(null, null).run(specification, cluster, command));
+    Assert.assertEquals(0, new CmServerListServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
   }
 
   @Test
   public void testCommandLifecycle() throws Exception {
-    Assert.assertEquals(0, new CmServerListServicesCommand(null, null).run(specification, cluster, command));
-    Assert.assertEquals(-1, new CmServerDestroyServicesCommand(null, null).run(specification, cluster, command));
-    Assert.assertEquals(-1, new CmServerDownloadConfigCommand(null, null).run(specification, cluster, command));
-    Assert.assertEquals(0, new CmServerCreateServicesCommand(null, null).run(specification, cluster, command));
-    Assert.assertEquals(-1, new CmServerCreateServicesCommand(null, null).run(specification, cluster, command));
-    Assert.assertEquals(0, new CmServerDownloadConfigCommand(null, null).run(specification, cluster, command));
-    Assert.assertEquals(0, new CmServerDestroyServicesCommand(null, null).run(specification, cluster, command));
-    Assert.assertEquals(0, new CmServerCreateServicesCommand(null, null).run(specification, cluster, command));
-    Assert.assertEquals(0, new CmServerListServicesCommand(null, null).run(specification, cluster, command));
-    Assert.assertEquals(0, new CmServerDestroyServicesCommand(null, null).run(specification, cluster, command));
-    Assert.assertEquals(-1, new CmServerDestroyServicesCommand(null, null).run(specification, cluster, command));
+    Assert.assertEquals(0, new CmServerListServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
+    Assert.assertEquals(-1, new CmServerDestroyServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
+    Assert.assertEquals(-1, new CmServerDownloadConfigCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
+    Assert.assertEquals(0, new CmServerCreateServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
+    Assert.assertEquals(-1, new CmServerCreateServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
+    Assert.assertEquals(0, new CmServerDownloadConfigCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
+    Assert.assertEquals(0, new CmServerDestroyServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
+    Assert.assertEquals(0, new CmServerCreateServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
+    Assert.assertEquals(0, new CmServerListServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
+    Assert.assertEquals(0, new CmServerDestroyServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
+    Assert.assertEquals(-1, new CmServerDestroyServicesCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
   }
 
   @Test
   public void testCommandCleanCluster() throws Exception {
-    Assert.assertEquals(0, new CmServerCleanClusterCommand(null, null).run(specification, cluster, command));
+    Assert.assertEquals(0, new CmServerCleanClusterCommand(null, null).run(specification,
+        Collections.<Instance> emptySet(), cluster, command));
   }
-  
+
 }

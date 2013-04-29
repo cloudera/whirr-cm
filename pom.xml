@@ -23,7 +23,14 @@
 	<packaging>jar</packaging>
 	<version>1.1-SNAPSHOT</version>
 	<name>whirr-cm</name>
-	<url>http://maven.apache.org</url>
+	<url>https://github.com/cloudera/whirr-cm</url>
+
+	<scm>
+		<connection>scm:git:git://github.com/cloudera/whirr-cm.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/cloudera/whirr-cm.git</developerConnection>
+		<url>https://github.com/cloudera/whirr-cm</url>
+	</scm>
+
 	<repositories>
 		<repository>
 			<id>cdh.repo</id>
@@ -34,8 +41,22 @@
 			</snapshots>
 		</repository>
 	</repositories>
+
+	<distributionManagement>
+		<repository>
+			<id>cloudera-releases</id>
+			<url>https://repository.cloudera.com/artifactory/libs-release-local</url>
+			<name>Cloudera Releases Repository</name>
+		</repository>
+		<snapshotRepository>
+			<id>cloudera-snapshots</id>
+			<url>https://repository.cloudera.com/artifactory/libs-snapshot-local</url>
+			<name>Cloudera Snapshots Repository</name>
+		</snapshotRepository>
+	</distributionManagement>
+
 	<properties>
-		<whirr.version>0.9.0-SNAPSHOT</whirr.version>
+		<whirr.version>0.8.2</whirr.version>
 		<cm.version>4.5.0</cm.version>
 		<log4j.version>1.2.16</log4j.version>
 		<slf4j.version>1.6.4</slf4j.version>
@@ -49,6 +70,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
+
 	<profiles>
 		<profile>
 			<id>integration</id>
@@ -87,6 +109,7 @@
 			</build>
 		</profile>
 	</profiles>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.cloudera.api</groupId>
@@ -230,6 +253,7 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -273,4 +297,5 @@
 			</plugin>
 		</plugins>
 	</build>
+	
 </project>

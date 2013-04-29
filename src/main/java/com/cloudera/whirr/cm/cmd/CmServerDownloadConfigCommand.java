@@ -18,12 +18,15 @@
 package com.cloudera.whirr.cm.cmd;
 
 import java.io.IOException;
+import java.util.Set;
+
+import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.ClusterControllerFactory;
 import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.state.ClusterStateStoreFactory;
 
-import com.cloudera.whirr.cm.server.CmServerCluster;
 import com.cloudera.whirr.cm.server.CmServerBuilder;
+import com.cloudera.whirr.cm.server.CmServerCluster;
 
 public class CmServerDownloadConfigCommand extends BaseCommandCmServer {
 
@@ -43,7 +46,7 @@ public class CmServerDownloadConfigCommand extends BaseCommandCmServer {
   }
 
   @Override
-  public int run(ClusterSpec specification,  CmServerCluster cluster,
+  public int run(ClusterSpec specification, Set<Instance> instances, CmServerCluster cluster,
       CmServerBuilder serverCommand) throws Exception {
     return serverCommand.command("client").executeBoolean() ? 0 : -1;
   }

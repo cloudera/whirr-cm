@@ -29,6 +29,16 @@ function wait_cm_server() {
 }
 
 function configure_cm_server() {
+  local OPTIND
+  local OPTARG
+  TYPE=mysql
+  while getopts "t:" OPTION; do
+    case $OPTION in
+	  t)
+	    TYPE="$OPTARG"
+	    ;;
+    esac
+  done
   if which dpkg &> /dev/null; then
     export DEBIAN_FRONTEND=noninteractive
     retry_apt_get update
@@ -36,6 +46,7 @@ function configure_cm_server() {
   elif which rpm &> /dev/null; then
     retry_yum install -y expect
   fi
+  /usr/share/cmf/schema/scm_prepare_database.sh -u root $TYPE cm cm cm
   service cloudera-scm-server start
   if wait_cm_server; then
     if [ ! -z "${CONFIGURE_KERBEROS_DONE+xxx}" ] && [ ! -z "${KERBEROS_REALM+xxx}" ]; then

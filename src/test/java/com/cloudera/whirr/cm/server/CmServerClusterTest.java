@@ -32,7 +32,7 @@ public class CmServerClusterTest extends BaseTestServer {
   @Before
   public void setupCluster() throws CmServerException {
     cluster = new CmServerCluster();
-    cluster.setServer("some-host");
+    cluster.setServer(new CmServerServiceBuilder().ip("192.168.0.1").build());
     cluster.addAgent(new CmServerServiceBuilder().host("some-host").build());
     cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_DATANODE).tag(CLUSTER_TAG)
         .qualifier("2").host("host-2").build());
@@ -112,7 +112,7 @@ public class CmServerClusterTest extends BaseTestServer {
     cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG)
         .qualifier("1").host("host-1").build());
     Assert.assertTrue(cluster.isEmpty());
-    cluster.setServer("some-host");
+    cluster.setServer(new CmServerServiceBuilder().ip("192.168.0.1").build());
     Assert.assertTrue(cluster.isEmpty());
     cluster.addAgent(new CmServerServiceBuilder().host("some-host").build());
     Assert.assertFalse(cluster.isEmpty());

@@ -79,8 +79,8 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
     CmServerClusterInstance.getFactory(factory);
 
     Mockito.when(
-        factory.getCmServer(Matchers.anyString(), Matchers.anyInt(), Matchers.anyString(), Matchers.anyString(),
-            Matchers.<CmServerLog> any())).thenReturn(new CmServer() {
+        factory.getCmServer(Matchers.anyString(), Matchers.anyString(), Matchers.anyInt(), Matchers.anyString(),
+            Matchers.anyString(), Matchers.<CmServerLog> any())).thenReturn(new CmServer() {
 
       private boolean isProvisioned = false;
       private boolean isConfigured = false;
@@ -144,9 +144,8 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
       }
 
       @Override
-      @SuppressWarnings("unchecked")
-      public Map<String, String> initialise(Map<String, String> config) throws CmServerException {
-        return any(Collections.emptyMap());
+      public boolean initialise(CmServerCluster cluster) throws CmServerException {
+        return any(true);
       }
 
       @Override
@@ -190,8 +189,8 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
   public ClusterSpec newClusterSpecForProperties(Map<String, String> properties) throws IOException,
       ConfigurationException, JSchException {
     ClusterSpec clusterSpec = super.newClusterSpecForProperties(ImmutableMap.<String, String> builder()
-        .putAll(properties).put(ClusterSpec.Property.CLUSTER_USER.getConfigName(), CLUSTER_USER).put(ClusterSpec.Property.CLUSTER_NAME.getConfigName(), CONFIG_WHIRR_NAME_DEFAULT)
-        .build());
+        .putAll(properties).put(ClusterSpec.Property.CLUSTER_USER.getConfigName(), CLUSTER_USER)
+        .put(ClusterSpec.Property.CLUSTER_NAME.getConfigName(), CONFIG_WHIRR_NAME_DEFAULT).build());
     clusterSpec.setPrivateKey(FILE_KEY_PRIVATE);
     clusterSpec.setPublicKey(FILE_KEY_PUBLIC);
     return clusterSpec;
@@ -199,7 +198,7 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
 
   @Before
   public void clearClusterSingleton() {
-    CmServerClusterInstance.getCluster(true);
+    CmServerClusterInstance.clear();
   }
 
   protected ClusterController getController(ClusterSpec clusterSpec) {
@@ -221,11 +220,6 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
   @SuppressWarnings("rawtypes")
   private static List any(List value) {
     return (List) any((Object) value);
-  }
-
-  @SuppressWarnings("rawtypes")
-  private static Map any(Map value) {
-    return (Map) any((Object) value);
   }
 
   private static CmServerService any(CmServerService value) {

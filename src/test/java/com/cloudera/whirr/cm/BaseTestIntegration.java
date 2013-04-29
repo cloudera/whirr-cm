@@ -17,11 +17,12 @@
  */
 package com.cloudera.whirr.cm;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -32,22 +33,22 @@ import com.cloudera.whirr.cm.server.CmServerException;
 import com.cloudera.whirr.cm.server.CmServerService;
 import com.cloudera.whirr.cm.server.CmServerServiceBuilder;
 import com.cloudera.whirr.cm.server.CmServerServiceType;
+import com.cloudera.whirr.cm.server.CmServerServiceTypeCms;
 import com.cloudera.whirr.cm.server.impl.CmServerFactory;
 import com.cloudera.whirr.cm.server.impl.CmServerLog;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 
-public class BaseTestIntegration implements BaseTest {
+public abstract class BaseTestIntegration implements BaseTest {
 
   // The CM Server and database host/IP and port
-  protected static String CM_IP = getSystemProperty("whirr.test.cm.ip", "31.222.181.138");
+  protected static String CM_IP = getSystemProperty("whirr.test.cm.ip", "31.222.137.179");
   protected static int CM_PORT = Integer.valueOf(getSystemProperty("whirr.test.cm.port", "7180"));
 
   // The CM Server config to be uploaded
-  protected static Map<String, String> CM_CONFIG = ImmutableMap.of("REMOTE_PARCEL_REPO_URLS",
-      getSystemProperty("whirr.test.cm.repos",
+  protected static Map<String, Map<String, String>> CM_CONFIG = ImmutableMap.of(CmServerServiceTypeCms.CM.getId(),
+      (Map<String, String>) ImmutableMap.of("remote_parcel_repo_urls", getSystemProperty("whirr.test.cm.repos",
           "http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/cdh4/parcels/4.2.0.10/" + ","
-              + "http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/impala/parcels/0.6.109/"));
+              + "http://10.178.197.160/tmph3l7m2vv103/cloudera-repos/impala/parcels/0.6.109/")));
 
   protected static CmServer serverBootstrap;
   protected static CmServerCluster cluster;
@@ -55,11 +56,12 @@ public class BaseTestIntegration implements BaseTest {
   protected static int clusterSize;
 
   @BeforeClass
-  public static void initialiseCluster() throws CmServerException {
+  public static void initialiseCluster() throws CmServerException, IOException {
     cluster = new CmServerCluster();
+    cluster.addServiceConfigurationAll(CM_CONFIG);
     Assert.assertNotNull(serverBootstrap = new CmServerFactory().getCmServer(CM_IP, CM_PORT, CmConstants.CM_USER,
         CmConstants.CM_PASSWORD, new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API_TEST, false)));
-    Assert.assertTrue(serverBootstrap.initialise(CM_CONFIG).size() > 0);
+    Assert.assertTrue(serverBootstrap.initialise(cluster));
     hosts = new HashSet<String>();
     for (CmServerService service : serverBootstrap.getServiceHosts()) {
       hosts.add(service.getIpInternal());
@@ -73,8 +75,9 @@ public class BaseTestIntegration implements BaseTest {
           + hosts);
     }
     String[] hostSlaves = hosts.toArray(new String[hosts.size()]);
-    cluster.setServer(CM_IP);
-    cluster.setMounts(ImmutableSet.<String> builder().add("/data/" + CLUSTER_TAG).build());
+    cluster.setServer(new CmServerServiceBuilder().ip(CM_IP).build());
+    cluster.addServiceConfigurationAll(CmServerClusterInstance.getClusterConfiguration(
+        CmServerClusterInstance.getConfiguration(null),new TreeSet<String>()));
     cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HIVE_METASTORE).tag(CLUSTER_TAG)
         .qualifier("1").ip(CM_IP).build());
     cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HUE_SERVER).tag(CLUSTER_TAG)
@@ -122,16 +125,6 @@ public class BaseTestIntegration implements BaseTest {
       e.printStackTrace();
     }
     Assert.assertTrue(serverBootstrap.isProvisioned(cluster));
-  }
-
-  @After
-  public void unconfigureCluster() throws CmServerException {
-    try {
-      serverBootstrap.unconfigure(cluster);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    Assert.assertFalse(serverBootstrap.isConfigured(cluster));
   }
 
   private static String getSystemProperty(String key, String value) {

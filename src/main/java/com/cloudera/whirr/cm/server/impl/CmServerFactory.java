@@ -23,11 +23,16 @@ import com.cloudera.whirr.cm.server.CmServerConstants;
 public class CmServerFactory implements CmServerConstants {
 
   public CmServer getCmServer(String ip, int port, String user, String password) {
-    return new CmServerImpl(ip, port, user, password, new CmServerLog.CmServerLogSlf4j(LOG_TAG_CM_SERVER_API, false));
+    return new CmServerImpl(ip, null, port, user, password, new CmServerLog.CmServerLogSlf4j(LOG_TAG_CM_SERVER_API,
+        false));
   }
 
   public CmServer getCmServer(String ip, int port, String user, String password, CmServerLog logger) {
-    return new CmServerImpl(ip, port, user, password, logger);
+    return new CmServerImpl(ip, null, port, user, password, logger);
+  }
+
+  public CmServer getCmServer(String ip, String ipInternal, int port, String user, String password, CmServerLog logger) {
+    return new CmServerImpl(ip, ipInternal, port, user, password, logger);
   }
 
 }

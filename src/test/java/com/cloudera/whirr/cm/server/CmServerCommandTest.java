@@ -29,7 +29,7 @@ public class CmServerCommandTest extends BaseTestServer {
   @Before
   public void setupCluster() throws CmServerException {
     cluster = new CmServerCluster();
-    cluster.setServer("some-host");
+    cluster.setServer(new CmServerServiceBuilder().ip("192.168.0.1").build());
     cluster.addAgent(new CmServerServiceBuilder().host("some-host").build());
     cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.HDFS_NAMENODE).tag(CLUSTER_TAG)
         .qualifier("1").host("host-1").build());
@@ -41,8 +41,8 @@ public class CmServerCommandTest extends BaseTestServer {
 
   @Test
   public void testGetValid1() throws CmServerException {
-    Assert.assertNotNull(new CmServerBuilder().host("host-1").cluster(cluster)
-        .client(DIR_CLIENT_CONFIG.getAbsolutePath()).command("client"));
+    Assert.assertNotNull(new CmServerBuilder().ip("host-1").cluster(cluster).path(DIR_CLIENT_CONFIG.getAbsolutePath())
+        .command("client"));
   }
 
   @Test
@@ -59,53 +59,52 @@ public class CmServerCommandTest extends BaseTestServer {
 
   @Test(expected = CmServerException.class)
   public void testGetException2() throws CmServerException {
-    Assert.assertNotNull(new CmServerBuilder().host(""));
+    Assert.assertNotNull(new CmServerBuilder().ip(""));
   }
 
   @Test(expected = CmServerException.class)
   public void testGetException3() throws CmServerException {
-    Assert.assertNotNull(new CmServerBuilder().host("").port(""));
+    Assert.assertNotNull(new CmServerBuilder().ip("").port(""));
   }
 
   @Test(expected = CmServerException.class)
   public void testGetException4() throws CmServerException {
-    Assert.assertNotNull(new CmServerBuilder().host("host-1").port(""));
+    Assert.assertNotNull(new CmServerBuilder().ip("host-1").port(""));
   }
 
   @Test(expected = CmServerException.class)
   public void testGetException5() throws CmServerException {
-    Assert.assertNotNull(new CmServerBuilder().host("host-1").command(""));
+    Assert.assertNotNull(new CmServerBuilder().ip("host-1").command(""));
   }
 
   @Test(expected = CmServerException.class)
   public void testGetException6() throws CmServerException {
-    Assert.assertNotNull(new CmServerBuilder().host("host-1").executeBoolean());
+    Assert.assertNotNull(new CmServerBuilder().ip("host-1").executeBoolean());
   }
 
   @Test(expected = CmServerException.class)
   public void testGetException7() throws CmServerException {
-    Assert.assertNotNull(new CmServerBuilder().host("host-1").command("").executeBoolean());
+    Assert.assertNotNull(new CmServerBuilder().ip("host-1").command("").executeBoolean());
   }
 
   @Test(expected = CmServerException.class)
   public void testGetException8() throws CmServerException {
-    Assert.assertNotNull(new CmServerBuilder().host("host-1").command("some-rubbish").executeBoolean());
+    Assert.assertNotNull(new CmServerBuilder().ip("host-1").command("some-rubbish").executeBoolean());
   }
 
   @Test(expected = CmServerException.class)
   public void testGetException9() throws CmServerException {
-    Assert.assertNotNull(new CmServerBuilder().host("host-1").command("client").executeBoolean());
+    Assert.assertNotNull(new CmServerBuilder().ip("host-1").command("client").executeBoolean());
   }
 
   @Test(expected = CmServerException.class)
   public void testGetException10() throws CmServerException {
-    Assert.assertNotNull(new CmServerBuilder().host("host-1").cluster(cluster).executeBoolean());
+    Assert.assertNotNull(new CmServerBuilder().ip("host-1").cluster(cluster).executeBoolean());
   }
 
   @Test(expected = CmServerException.class)
   public void testGetException11() throws CmServerException {
-    Assert.assertNotNull(new CmServerBuilder().host("host-1").client(DIR_CLIENT_CONFIG.getAbsolutePath())
-        .executeBoolean());
+    Assert.assertNotNull(new CmServerBuilder().ip("host-1").path(DIR_CLIENT_CONFIG.getAbsolutePath()).executeBoolean());
   }
 
   @Test(expected = CmServerException.class)

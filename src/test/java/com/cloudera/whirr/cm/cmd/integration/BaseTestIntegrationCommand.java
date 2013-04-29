@@ -34,7 +34,7 @@ public abstract class BaseTestIntegrationCommand extends BaseTestIntegration {
   @Before
   public void provisionCluster() throws Exception {
     super.provisionCluster();
-    command = new CmServerBuilder().host(CM_IP).cluster(cluster).client(DIR_CLIENT_CONFIG.getAbsolutePath());
+    command = new CmServerBuilder().ip(CM_IP).cluster(cluster).path(DIR_CLIENT_CONFIG.getAbsolutePath());
     Configuration configuration = new PropertiesConfiguration();
     configuration.setProperty(ClusterSpec.Property.CLUSTER_USER.getConfigName(), CLUSTER_USER);
     configuration.setProperty(ClusterSpec.Property.PRIVATE_KEY_FILE.getConfigName(), FILE_KEY_PRIVATE.getAbsolutePath());

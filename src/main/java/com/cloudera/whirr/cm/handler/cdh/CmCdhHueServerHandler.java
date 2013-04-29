@@ -34,4 +34,10 @@ public class CmCdhHueServerHandler extends BaseHandlerCmCdh {
     return TYPE;
   }
 
+  @Override
+  public boolean isDatabaseDependent() {
+    // Disable external DB for Hue until workaround CDH-6928
+    return false;
+  }
+
 }

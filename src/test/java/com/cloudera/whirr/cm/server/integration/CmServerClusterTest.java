@@ -80,7 +80,7 @@ public class CmServerClusterTest extends BaseTestIntegrationServer {
 
   @Test
   public void testInitialise() throws CmServerException {
-    Assert.assertTrue(server.initialise(CM_CONFIG).size() > 0);
+    Assert.assertTrue(server.initialise(cluster));
   }
 
   @Test

@@ -22,7 +22,8 @@ function configure_cm_agent() {
   local OPTARG
   CM_SERVER_HOST=localhost
   CM_SERVER_PORT=7180
-  while getopts "h:p:" OPTION; do
+  CM_AGENT_LOG_FILE=/var/log/cloudera-scm-agent
+  while getopts "h:p:l:" OPTION; do
     case $OPTION in
       h)
         CM_SERVER_HOST="$OPTARG"
@@ -30,9 +31,13 @@ function configure_cm_agent() {
 	  p)
 	    CM_SERVER_PORT="$OPTARG"
 	    ;;
+	  l)
+	    CM_AGENT_LOG_FILE="$OPTARG"
+	    ;;
 	  esac
   done
-  sed -i -e "s/server_host=.*/server_host=$CM_SERVER_HOST/" /etc/cloudera-scm-agent/config.ini
-  sed -i -e "s/server_port=.*/server_port=$CM_SERVER_PORT/" /etc/cloudera-scm-agent/config.ini
+  sed -i -e "s|server_host=.*|server_host=$CM_SERVER_HOST|" /etc/cloudera-scm-agent/config.ini
+  sed -i -e "s|server_port=.*|server_port=$CM_SERVER_PORT|" /etc/cloudera-scm-agent/config.ini
+  sed -i -e "s|# log_file=.*|log_file=$CM_AGENT_LOG_FILE|" /etc/cloudera-scm-agent/config.ini
   service cloudera-scm-agent start
 }
