@@ -862,6 +862,8 @@ public class CmServerImpl implements CmServer {
           case HIVE:
             apiServiceConfig.add(new ApiConfig("mapreduce_yarn_service", cluster
                 .getServiceName(CmServerServiceType.MAPREDUCE)));
+            apiServiceConfig.add(new ApiConfig("zookeeper_service", cluster
+                .getServiceName(CmServerServiceType.ZOOKEEPER)));
             break;
           case IMPALA:
             apiServiceConfig.add(new ApiConfig("hdfs_service", cluster.getServiceName(CmServerServiceType.HDFS)));

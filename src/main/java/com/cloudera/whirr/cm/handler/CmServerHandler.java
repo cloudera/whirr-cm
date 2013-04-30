@@ -50,8 +50,6 @@ public class CmServerHandler extends BaseHandlerCm {
 
   public static final String ROLE = "cm-server";
 
-  public static final String LICENSE_FILE = "cm-license.txt";
-
   @Override
   public String getRole() {
     return ROLE;
@@ -103,11 +101,11 @@ public class CmServerHandler extends BaseHandlerCm {
   protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeConfigure(event);
     URL licenceConfigUri = null;
-    if ((licenceConfigUri = CmServerHandler.class.getClassLoader().getResource(LICENSE_FILE)) != null) {
+    if ((licenceConfigUri = CmServerHandler.class.getClassLoader().getResource(CM_LICENSE_FILE)) != null) {
       addStatement(
           event,
           createOrOverwriteFile(
-              "/tmp/" + LICENSE_FILE,
+              "/tmp/" + CM_LICENSE_FILE,
               Splitter.on('\n').split(
                   CharStreams.toString(Resources.newReaderSupplier(licenceConfigUri, Charsets.UTF_8)))));
     }

@@ -179,6 +179,9 @@ public class CmServerHandlerTest extends BaseTestHandler {
                 + CmServerServiceType.HDFS_NAMENODE.getId().toLowerCase() + ".dfs_name_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
             .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+    Assert.assertNull(CmServerClusterInstance
+        .getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
+        .get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()).get(CONFIG_CM_TASKTRACKER_INSTRUMENTATION));
 
     configuration = CmServerClusterInstance.getConfiguration(newClusterSpecForProperties(ImmutableMap.of(
         "whirr.instance-templates", "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE,
@@ -186,7 +189,8 @@ public class CmServerHandlerTest extends BaseTestHandler {
             + CONFIG_CM_DB_SUFFIX_NAME, "cman", CONFIG_WHIRR_CM_CONFIG_PREFIX
             + CmServerServiceTypeCms.CM.getId().toLowerCase() + "." + CONFIG_CM_DB_SUFFIX_TYPE, "postgres",
         CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceType.HIVE.getId().toLowerCase() + ".hive_metastore_"
-            + CONFIG_CM_DB_SUFFIX_PORT, "9999")));
+            + CONFIG_CM_DB_SUFFIX_PORT, "9999", CONFIG_WHIRR_CM_CONFIG_PREFIX
+            + CmServerServiceType.CLUSTER.getId().toLowerCase() + "." + CONFIG_CM_LICENSE_PROVIDED, "true")));
     Assert.assertEquals(
         "/data1"
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
@@ -202,6 +206,10 @@ public class CmServerHandlerTest extends BaseTestHandler {
                 + CmServerServiceType.HDFS_NAMENODE.getId().toLowerCase() + ".dfs_name_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/data1", "/data2"))
             .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+    Assert.assertEquals(
+        "org.apache.hadoop.mapred.TaskTrackerCmonInst",
+        CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
+            .get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()).get(CONFIG_CM_TASKTRACKER_INSTRUMENTATION));
 
     configuration = CmServerClusterInstance.getConfiguration(newClusterSpecForProperties(ImmutableMap.of(
         "whirr.instance-templates", "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE,

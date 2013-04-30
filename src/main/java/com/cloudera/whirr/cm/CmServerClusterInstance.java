@@ -224,7 +224,9 @@ public class CmServerClusterInstance implements CmConstants {
   @SuppressWarnings("unchecked")
   public static Map<String, Map<String, String>> getClusterConfiguration(final Configuration configuration,
       SortedSet<String> mounts) throws IOException {
+
     Map<String, Map<String, String>> clusterConfiguration = new HashMap<String, Map<String, String>>();
+
     Iterator<String> keys = configuration.getKeys();
     while (keys.hasNext()) {
       String key = keys.next();
@@ -241,6 +243,7 @@ public class CmServerClusterInstance implements CmConstants {
         clusterConfiguration.get(keyTokens[0]).put(keyTokens[1], configuration.getString(key));
       }
     }
+
     keys = configuration.getKeys();
     while (keys.hasNext()) {
       final String key = keys.next();
@@ -273,6 +276,7 @@ public class CmServerClusterInstance implements CmConstants {
         }
       }
     }
+
     keys = configuration.getKeys();
     while (keys.hasNext()) {
       final String key = keys.next();
@@ -304,7 +308,31 @@ public class CmServerClusterInstance implements CmConstants {
         }
       }
     }
+
+    if (clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()) == null) {
+      clusterConfiguration.put(CmServerServiceType.CLUSTER.getId(), new HashMap<String, String>());
+    }
+    if (clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()).get(CONFIG_CM_LICENSE_PROVIDED) == null) {
+      if (CmServerClusterInstance.class.getClassLoader().getResource(CM_LICENSE_FILE) != null) {
+        clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()).put(CONFIG_CM_LICENSE_PROVIDED,
+            Boolean.TRUE.toString());
+      } else {
+        clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()).put(CONFIG_CM_LICENSE_PROVIDED,
+            Boolean.FALSE.toString());
+      }
+    }
+
+    if (clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()).get(CONFIG_CM_LICENSE_PROVIDED)
+        .equals(Boolean.TRUE.toString())) {
+      if (clusterConfiguration.get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()) == null) {
+        clusterConfiguration.put(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId(), new HashMap<String, String>());
+      }
+      clusterConfiguration.get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()).put(
+          CONFIG_CM_TASKTRACKER_INSTRUMENTATION, "org.apache.hadoop.mapred.TaskTrackerCmonInst");
+    }
+
     return clusterConfiguration;
+
   }
 
   public static boolean logCluster(CmServerLog logger, String label, Configuration configuration,

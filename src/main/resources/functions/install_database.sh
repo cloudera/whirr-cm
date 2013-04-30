@@ -18,21 +18,21 @@
 set -x
 
 function install_mysql() {
-  if ! command -v mysql &> /dev/null; then
-	if which dpkg &> /dev/null; then
-	  export DEBIAN_FRONTEND=noninteractive
-	  retry_apt_get update
-	  sleep $[ ( $RANDOM % 30 )  + 1 ]s
-	  retry_apt_get update
-	  retry_apt_get -q -y install expect mysql-server-5.5 libmysql-java
-	  service mysql stop
-	  MYSQL_CONF="/etc/mysql/my.cnf"
-	elif which rpm &> /dev/null; then
-	  retry_yum install -y expect mysql-server mysql-connector-java
-	  MYSQL_CONF="/etc/my.cnf"
-	fi
-	rm -rf /var/lib/mysql/ib_logfile*
-	echo '
+  if [ "$INSTALL_DATABASE" != "1" ]; then
+    if which dpkg &> /dev/null; then
+      export DEBIAN_FRONTEND=noninteractive
+      retry_apt_get update
+      sleep $[ ( $RANDOM % 30 )  + 1 ]s
+      retry_apt_get update
+      retry_apt_get -q -y install expect mysql-server-5.5 libmysql-java
+      service mysql stop
+      MYSQL_CONF="/etc/mysql/my.cnf"
+    elif which rpm &> /dev/null; then
+      retry_yum install -y expect mysql-server mysql-connector-java
+      MYSQL_CONF="/etc/my.cnf"
+    fi
+    rm -rf /var/lib/mysql/ib_logfile*
+    echo '
 [mysqld]
 
 datadir=/var/lib/mysql
@@ -74,12 +74,12 @@ log_error=/var/log/mysqld.log
 pid_file=/var/run/mysqld/mysqld.pid
 
 ' > $MYSQL_CONF
-	if which dpkg &> /dev/null; then
-	  service mysql start
-	elif which rpm &> /dev/null; then
-	  service mysqld start
-	fi
-	cat >> mysql_setup <<END
+    if which dpkg &> /dev/null; then
+      service mysql start
+    elif which rpm &> /dev/null; then
+      service mysqld start
+    fi
+    cat >> mysql_setup <<END
 #!/usr/bin/expect -f
 set timeout 5000
 spawn mysql_secure_installation 
@@ -100,6 +100,7 @@ END
     chmod +x mysql_setup
     ./mysql_setup
     rm -rf ./mysql_setup
+    INSTALL_DATABASE=1
   fi
   mysql -u root -e "CREATE DATABASE $1 DEFAULT CHARACTER SET utf8"
   mysql -u root -e "CREATE USER '$1'@'localhost' IDENTIFIED BY '$1'"
@@ -115,17 +116,17 @@ function install_database() {
   DATABASE=database
   while getopts "t:d:" OPTION; do
     case $OPTION in
-	  t)
-	    TYPE="$OPTARG"
-	    ;;
-	  d)
-	    DATABASE="$OPTARG"
-	    ;;
-	esac
+      t)
+        TYPE="$OPTARG"
+        ;;
+      d)
+        DATABASE="$OPTARG"
+        ;;
+    esac
   done
   if [ "$TYPE" == "mysql" ]; then
-	install_mysql $DATABASE
+    install_mysql $DATABASE
   else
-	echo "Unknown database type [$TYPE]."
+    echo "Unknown database type [$TYPE]."
   fi 
 }

@@ -27,6 +27,8 @@ public interface CmConstants extends CmServerConstants {
   public static final String CM_USER = "admin";
   public static final String CM_PASSWORD = "admin";
 
+  public static final String CM_LICENSE_FILE = "cm-license.txt";
+  
   public static final String CONFIG_WHIRR_AUTO = "whirr.cm.auto";
   public static final String CONFIG_WHIRR_USE_PACKAGES = "whirr.cm.use.packages";
   public static final String CONFIG_WHIRR_DATA_DIRS_ROOT = "whirr.cm.data.dirs.root";
@@ -51,6 +53,9 @@ public interface CmConstants extends CmServerConstants {
   public static final String CONFIG_CM_DB_SUFFIX_HOST = "database_host";
   public static final String CONFIG_CM_DB_SUFFIX_PORT = "database_port";
   public static final String CONFIG_CM_DB_SUFFIX_NAME = "database_name";
+
+  public static final String CONFIG_CM_LICENSE_PROVIDED = "license_provided";
+  public static final String CONFIG_CM_TASKTRACKER_INSTRUMENTATION = "mapred_tasktracker_instrumentation";
 
   public static final String LOG_TAG_WHIRR_HANDLER = "Whirr Handler";
   public static final String LOG_TAG_WHIRR_COMMAND = "Whirr Command";
