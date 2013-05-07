@@ -18,7 +18,7 @@
 set -x
 
 function wait_cm_server() {
-  for ID in {180..1}; do
+  for ID in {720..1}; do
     if [ $(curl -sI -u admin:admin "http://localhost:7180" | grep "HTTP/1.1 200 OK" | wc -l) -gt 0 ]; then
         echo "CM Server up"
         return 0
