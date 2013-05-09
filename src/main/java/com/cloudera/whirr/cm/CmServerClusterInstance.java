@@ -46,23 +46,36 @@ import com.cloudera.whirr.cm.server.CmServerServiceBuilder;
 import com.cloudera.whirr.cm.server.CmServerServiceType;
 import com.cloudera.whirr.cm.server.impl.CmServerFactory;
 import com.cloudera.whirr.cm.server.impl.CmServerLog;
+
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 
 public class CmServerClusterInstance implements CmConstants {
 
   private static CmServerFactory factory;
-  private static CmServerCluster cluster;
   private static boolean isStandaloneCommand = true;
   private static Map<ClusterActionEvent, Set<Integer>> ports = new HashMap<ClusterActionEvent, Set<Integer>>();
 
   private CmServerClusterInstance() {
   }
 
+  private static final LoadingCache<Key, CmServerCluster> clusterCache = CacheBuilder.newBuilder().build(
+        new CacheLoader<Key, CmServerCluster>(){
+               
+        @Override
+        public CmServerCluster load(Key arg0) {
+          return new CmServerCluster();
+        }
+        });
+  
   public static synchronized void clear() {
+    clusterCache.invalidateAll();
     ports.clear();
-    getCluster(true);
   }
 
   public synchronized static Configuration getConfiguration(ClusterSpec clusterSpec) throws IOException {
@@ -120,27 +133,30 @@ public class CmServerClusterInstance implements CmConstants {
     return CmServerClusterInstance.factory = factory;
   }
 
-  public static synchronized CmServerCluster getCluster() {
-    return getCluster(false);
+  public static synchronized CmServerCluster getCluster(ClusterSpec spec) {
+    return clusterCache.getUnchecked(new Key(spec));
   }
 
-  public static synchronized CmServerCluster getCluster(boolean clear) {
-    return clear ? (cluster = new CmServerCluster()) : (cluster == null ? (cluster = new CmServerCluster()) : cluster);
+  public static synchronized void getCluster(ClusterSpec spec, boolean clear) {
+    if (clear) {
+      clusterCache.invalidate(new Key(spec));
+    }
   }
 
-  public static synchronized CmServerCluster getCluster(Configuration configuration, Set<Instance> instances)
+  public static synchronized CmServerCluster getCluster(ClusterSpec spec, Configuration configuration, Set<Instance> instances)
       throws CmServerException, IOException {
-    return getCluster(configuration, instances, new TreeSet<String>(), Collections.<String> emptySet());
+    return getCluster(spec, configuration, instances, new TreeSet<String>(), Collections.<String> emptySet());
   }
 
-  public static synchronized CmServerCluster getCluster(Configuration configuration, Set<Instance> instances,
+  public static synchronized CmServerCluster getCluster(ClusterSpec spec, Configuration configuration, Set<Instance> instances,
       SortedSet<String> mounts) throws CmServerException, IOException {
-    return getCluster(configuration, instances, mounts, Collections.<String> emptySet());
+    return getCluster(spec, configuration, instances, mounts, Collections.<String> emptySet());
   }
 
-  public static synchronized CmServerCluster getCluster(Configuration configuration, Set<Instance> instances,
+  public static synchronized CmServerCluster getCluster(ClusterSpec spec, Configuration configuration, Set<Instance> instances,
       SortedSet<String> mounts, Set<String> roles) throws CmServerException, IOException {
-    cluster = new CmServerCluster();
+    CmServerCluster cluster = new CmServerCluster();
+    clusterCache.put(new Key(spec), cluster);
     cluster.setIsParcel(!configuration.getBoolean(CONFIG_WHIRR_USE_PACKAGES, false));
     cluster.addServiceConfigurationAll(getClusterConfiguration(configuration, mounts));
     for (Instance instance : instances) {
@@ -435,4 +451,54 @@ public class CmServerClusterInstance implements CmConstants {
     logger.logOperation(operation, message);
   }
 
+  private static class Key {
+    private String provider;
+    private String endpoint;
+    private String identity;
+    private String clusterName;
+    private String version;
+
+    private final String key;
+    
+    public Key(ClusterSpec spec) {
+      provider = spec.getProvider();
+      endpoint = spec.getEndpoint();
+      identity = spec.getIdentity();
+      clusterName = spec.getClusterName();
+      version = spec.getVersion();
+
+      key = Objects.toStringHelper("").omitNullValues()
+        .add("provider", provider)
+        .add("endpoint", endpoint)
+        .add("identity", identity)
+        .add("clusterName", clusterName)
+        .add("version", version).toString();
+    }
+
+ 
+    @Override
+    public boolean equals(Object that) {
+      if (that instanceof Key) {
+        return Objects.equal(this.key, ((Key)that).key);
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(key);
+    }
+    
+    @Override
+    public String toString() {
+      return Objects.toStringHelper(this)
+        .add("provider", provider)
+        .add("endpoint", identity)
+        .add("identity", identity)
+        .add("clusterName", clusterName)
+        .add("version", version)
+        .toString();
+    }
+  }
+  
 }

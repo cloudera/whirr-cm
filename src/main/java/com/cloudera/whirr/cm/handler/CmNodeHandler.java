@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.service.ClusterActionEvent;
 
 import com.cloudera.whirr.cm.CmServerClusterInstance;
@@ -39,8 +40,8 @@ public class CmNodeHandler extends BaseHandlerCm {
   }
 
   @Override
-  protected String getInstanceId() {
-    return super.getInstanceId() + "-" + (CmServerClusterInstance.getCluster().getNodes().size() + 1);
+  protected String getInstanceId(ClusterSpec spec) {
+    return super.getInstanceId(spec) + "-" + (CmServerClusterInstance.getCluster(spec).getNodes().size() + 1);
   }
 
   @Override
@@ -54,7 +55,7 @@ public class CmNodeHandler extends BaseHandlerCm {
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
     try {
-      CmServerClusterInstance.getCluster().addNode(new CmServerServiceBuilder().host(getInstanceId()).build());
+      CmServerClusterInstance.getCluster(event.getClusterSpec()).addNode(new CmServerServiceBuilder().host(getInstanceId(event.getClusterSpec())).build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
     }

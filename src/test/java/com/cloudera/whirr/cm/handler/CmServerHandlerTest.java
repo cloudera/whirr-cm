@@ -338,6 +338,23 @@ public class CmServerHandlerTest extends BaseTestHandler {
   }
 
   @Test
+  public void testNodesAndAgentsAndClusterBootstrapMultiCluster() throws Exception {
+    ClusterSpec clusterSpec = newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
+        WHIRR_INSTANCE_TEMPLATE_ALL));
+    ClusterController controller = getController(clusterSpec);
+    Cluster cluster = controller.bootstrapCluster(clusterSpec);
+
+    ClusterSpec clusterSpecTwo = newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
+        WHIRR_INSTANCE_TEMPLATE_ALL));
+    clusterSpecTwo.setVersion("different-version");
+    ClusterController controllerTwo = getController(clusterSpecTwo);
+    Cluster clusterTwo = controllerTwo.bootstrapCluster(clusterSpecTwo);
+
+    Assert.assertNotNull(cluster);
+    Assert.assertNotNull(clusterTwo);
+  }
+
+  @Test
   public void testNodesAndAgentsAndClusterLifecycleFilteredHdfs() throws Exception {
     ClusterSpec clusterSpec = newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
         WHIRR_INSTANCE_TEMPLATE_ALL));

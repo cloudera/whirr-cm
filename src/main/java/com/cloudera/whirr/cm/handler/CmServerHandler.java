@@ -70,7 +70,7 @@ public class CmServerHandler extends BaseHandlerCm {
     super.beforeBootstrap(event);
     try {
       CmServerClusterInstance.setIsStandaloneCommand(false);
-      CmServerClusterInstance.getCluster().setServer(new CmServerServiceBuilder().ip(getInstanceId()).build());
+      CmServerClusterInstance.getCluster(event.getClusterSpec()).setServer(new CmServerServiceBuilder().ip(getInstanceId(event.getClusterSpec())).build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
     }
@@ -230,7 +230,7 @@ public class CmServerHandler extends BaseHandlerCm {
       CmServerClusterInstance.logException(logger, operation,
           "Failed to execute (see above), log into the web console to resolve", e);
     } finally {
-      CmServerClusterInstance.getCluster(true);
+      CmServerClusterInstance.getCluster(event.getClusterSpec(), true);
     }
     if (footer) {
       CmServerClusterInstance.logLineItemFooterFinal(logger);
@@ -239,9 +239,10 @@ public class CmServerHandler extends BaseHandlerCm {
 
   private CmServerCluster getCluster(ClusterActionEvent event, CmServerServiceStatus status) throws CmServerException,
       IOException, ConfigurationException {
-    CmServerCluster clusterStale = CmServerClusterInstance.getCluster();
+    CmServerCluster clusterStale = CmServerClusterInstance.getCluster(event.getClusterSpec());
     CmServerCluster cluster, clusterCurrent = cluster = CmServerClusterInstance.getCluster(
-        CmServerClusterInstance.getConfiguration(event.getClusterSpec()), event.getCluster().getInstances(),
+        event.getClusterSpec(), CmServerClusterInstance.getConfiguration(event.getClusterSpec()),
+        event.getCluster().getInstances(),
         getMounts(event));
     if (status != null) {
       CmServerCluster clusterFiltered = CmServerClusterInstance.getCluster(clusterCurrent);
@@ -261,7 +262,7 @@ public class CmServerHandler extends BaseHandlerCm {
       }
       cluster = clusterFiltered;
     }
-    CmServerClusterInstance.getCluster(true);
+    CmServerClusterInstance.getCluster(event.getClusterSpec(),true);
     return cluster;
   }
 

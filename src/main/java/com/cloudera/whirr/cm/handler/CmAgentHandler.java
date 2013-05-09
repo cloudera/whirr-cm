@@ -22,6 +22,7 @@ import static org.jclouds.scriptbuilder.domain.Statements.call;
 
 import java.io.IOException;
 
+import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.service.ClusterActionEvent;
 
@@ -40,15 +41,15 @@ public class CmAgentHandler extends CmNodeHandler {
   }
 
   @Override
-  protected String getInstanceId() {
-    return super.getInstanceId() + "-" + (CmServerClusterInstance.getCluster().getAgents().size() + 1);
+  protected String getInstanceId(ClusterSpec spec) {
+    return super.getInstanceId(spec) + "-" + (CmServerClusterInstance.getCluster(spec).getAgents().size() + 1);
   }
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
     try {
-      CmServerClusterInstance.getCluster().addAgent(new CmServerServiceBuilder().host(getInstanceId()).build());
+      CmServerClusterInstance.getCluster(event.getClusterSpec()).addAgent(new CmServerServiceBuilder().host(getInstanceId(event.getClusterSpec())).build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
     }

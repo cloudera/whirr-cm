@@ -21,6 +21,7 @@ import static org.jclouds.scriptbuilder.domain.Statements.call;
 
 import java.io.IOException;
 
+import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.service.ClusterActionEvent;
 import org.apache.whirr.service.hadoop.VolumeManager;
 
@@ -31,7 +32,7 @@ public abstract class BaseHandlerCm extends BaseHandler {
 
   protected static final CmServerLog logger = new CmServerLog.CmServerLogSysOut(LOG_TAG_WHIRR_HANDLER, false);
 
-  protected String getInstanceId() {
+  protected String getInstanceId(ClusterSpec spec) {
     return getRole() + "-instance-id";
   }
 

@@ -63,7 +63,7 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
       if (!event.getInstanceTemplate().getRoles().contains(CmAgentHandler.ROLE)) {
         throw new CmServerException("Role [" + getRole() + "] requires colocated role [" + CmAgentHandler.ROLE + "]");
       }
-      CmServerClusterInstance.getCluster().addService(
+      CmServerClusterInstance.getCluster(event.getClusterSpec()).addService(
           new CmServerServiceBuilder()
               .type(getType())
               .tag(
@@ -91,11 +91,11 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
   protected void afterBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.afterBootstrap(event);
     try {
-      if (CmServerClusterInstance.getCluster().getServer() == null) {
+      if (CmServerClusterInstance.getCluster(event.getClusterSpec()).getServer() == null) {
         throw new CmServerException("Role [" + getRole() + "] requires cluster to have role [" + CmAgentHandler.ROLE
             + "]");
       }
-      if (CmServerClusterInstance.getCluster().isEmpty()) {
+      if (CmServerClusterInstance.getCluster(event.getClusterSpec()).isEmpty()) {
         throw new CmServerException("Cluster is not consistent");
       }
     } catch (CmServerException e) {
@@ -121,7 +121,7 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
   protected void beforeStart(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeStart(event);
     try {
-      CmServerClusterInstance.getCluster().addService(
+      CmServerClusterInstance.getCluster(event.getClusterSpec()).addService(
           new CmServerServiceBuilder()
               .type(getType())
               .tag(
@@ -137,7 +137,7 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
   protected void beforeStop(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeStop(event);
     try {
-      CmServerClusterInstance.getCluster().addService(
+      CmServerClusterInstance.getCluster(event.getClusterSpec()).addService(
           new CmServerServiceBuilder()
               .type(getType())
               .tag(
