@@ -67,6 +67,8 @@ public class CmServerHandler extends BaseHandlerCm {
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
+    CmServerClusterInstance.logHeader(logger, "HostBootstrap");
+    CmServerClusterInstance.logLineItemAsync(logger, "HostBootstrapInit");
     super.beforeBootstrap(event);
     try {
       CmServerClusterInstance.setIsStandaloneCommand(false);
@@ -95,10 +97,20 @@ public class CmServerHandler extends BaseHandlerCm {
     }
     addStatement(event, call("install_cm"));
     addStatement(event, call("install_cm_server"));
+    CmServerClusterInstance.logLineItemFooterAsync(logger, "HostBootstrapInit");
+    CmServerClusterInstance.logLineItemAsync(logger, "HostBootstrapExecute");
+  }
+
+  @Override
+  protected void afterBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
+    super.afterBootstrap(event);
+    CmServerClusterInstance.logLineItemFooterAsync(logger, "HostBootstrapExecute");
   }
 
   @Override
   protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
+    CmServerClusterInstance.logHeader(logger, "HostConfigure");
+    CmServerClusterInstance.logLineItemAsync(logger, "HostConfigureInit");
     super.beforeConfigure(event);
     URL licenceConfigUri = null;
     if ((licenceConfigUri = CmServerHandler.class.getClassLoader().getResource(CM_LICENSE_FILE)) != null) {
@@ -113,11 +125,14 @@ public class CmServerHandler extends BaseHandlerCm {
         event,
         call("configure_cm_server", "-t", CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(),
             getMounts(event), CmServerServiceTypeCms.CM.getId(), null, CONFIG_CM_DB_SUFFIX_TYPE)));
+    CmServerClusterInstance.logLineItemFooterAsync(logger, "HostConfigureInit");
+    CmServerClusterInstance.logLineItemAsync(logger, "HostConfigureExecute");
   }
 
   @Override
   protected void afterConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
     super.afterConfigure(event);
+    CmServerClusterInstance.logLineItemFooterAsync(logger, "HostConfigureExecute");
     executeServer("CMClusterProvision", event, null, new ServerCommand() {
       @Override
       public CmServerCluster execute(ClusterActionEvent event, CmServer server, CmServerCluster clusterInput)
@@ -205,10 +220,11 @@ public class CmServerHandler extends BaseHandlerCm {
               logger,
               operation,
               "follow live at http://"
-                  + event.getCluster().getInstanceMatching(role(ROLE)).getPublicIp()
+                  + event.getCluster().getInstanceMatching(role(ROLE)).getPublicHostName()
                   + ":"
                   + CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(
                       CmConstants.CONFIG_WHIRR_INTERNAL_PORT_WEB));
+          CmServerClusterInstance.logLineItem(logger, operation, "");
           CmServerClusterInstance.logLineItem(logger, operation);
           Instance serverInstance = event.getCluster().getInstanceMatching(role(ROLE));
           CmServer server = CmServerClusterInstance.getFactory().getCmServer(serverInstance.getPublicIp(),
@@ -219,6 +235,7 @@ public class CmServerHandler extends BaseHandlerCm {
             cluster = command.execute(event, server, cluster);
           } finally {
             CmServerClusterInstance.logLineItemFooter(logger, operation);
+            CmServerClusterInstance.logLineItem(logger, operation, "");
             CmServerClusterInstance.logLineItem(logger, operation);
             CmServerClusterInstance.logCluster(logger, operation, CmServerClusterInstance.getConfiguration(event
                 .getClusterSpec()), cluster, event.getCluster().getInstances());

@@ -228,7 +228,6 @@ public class CmServerImpl implements CmServer {
 
     final CmServerCluster clusterView = new CmServerCluster();
     try {
-
       clusterView.setServer(cluster.getServer());
       List<CmServerService> services = getServiceHosts();
       for (CmServerService server : cluster.getAgents()) {

@@ -38,44 +38,18 @@ public abstract class BaseHandlerCm extends BaseHandler {
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
-    logHeaderHandler("HostPreBootstrap");
     super.beforeBootstrap(event);
     addStatement(event, call("configure_hostnames"));
     addStatement(event, call("retry_helpers"));
-    logFooterHandler("HostPreBootstrap");
-  }
-
-  @Override
-  protected void afterBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
-    logHeaderHandler("HostPostBootstrap");
-    super.afterBootstrap(event);
-    logFooterHandler("HostPostBootstrap");
   }
 
   @Override
   protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
-    logHeaderHandler("HostPreConfigure");
     super.beforeConfigure(event);
     addStatement(event, call("retry_helpers"));
     if (CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getList(CONFIG_WHIRR_DATA_DIRS_ROOT).isEmpty()) {
       addStatement(event, call("prepare_all_disks", "'" + VolumeManager.asString(getDeviceMappings(event)) + "'"));
     }
-    logFooterHandler("HostPreConfigure");
-  }
-
-  @Override
-  protected void afterConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
-    super.afterConfigure(event);
-  }
-
-  protected void logHeaderHandler(String operation) {
-    CmServerClusterInstance.logHeader(logger, operation);
-    CmServerClusterInstance.logLineItem(logger, operation);
-    CmServerClusterInstance.logLineItemDetail(logger, operation, "Role " + getRole());
-  }
-
-  protected void logFooterHandler(String operation) {
-    CmServerClusterInstance.logLineItemFooter(logger, operation);
   }
 
 }

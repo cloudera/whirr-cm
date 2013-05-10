@@ -26,6 +26,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
@@ -59,7 +62,13 @@ public class CmServerClusterInstance implements CmConstants {
 
   private static CmServerFactory factory;
   private static boolean isStandaloneCommand = true;
+  private static Future<?> logExecutorFuture;
+  private static ExecutorService logExecutor = Executors.newSingleThreadScheduledExecutor();
   private static Map<ClusterActionEvent, Set<Integer>> ports = new HashMap<ClusterActionEvent, Set<Integer>>();
+
+  private static int LOG_POLL_PERIOD_MS = 7500;
+  private static int LOG_POLL_PERIOD_BACKOFF_NUMBER = 3;
+  private static int LOG_POLL_PERIOD_BACKOFF_INCRAMENT = 2;
 
   private CmServerClusterInstance() {
   }
@@ -162,8 +171,8 @@ public class CmServerClusterInstance implements CmConstants {
     for (Instance instance : instances) {
       for (String role : instance.getRoles()) {
         if (role.equals(CmServerHandler.ROLE)) {
-          cluster.setServer(new CmServerServiceBuilder().ip(instance.getPublicIp()).ipInternal(instance.getPrivateIp())
-              .build());
+          cluster.setServer(new CmServerServiceBuilder().host(instance.getPublicHostName()).ip(instance.getPublicIp())
+              .ipInternal(instance.getPrivateIp()).build());
         } else if (role.equals(CmAgentHandler.ROLE)) {
           cluster.addAgent(new CmServerServiceBuilder().ip(instance.getPublicIp()).ipInternal(instance.getPrivateIp())
               .build());
@@ -360,9 +369,7 @@ public class CmServerClusterInstance implements CmConstants {
             + instance.getPublicIp() + "@" + instance.getPrivateIp());
       }
     }
-    if (cluster.getServiceTypes(CmServerServiceType.CLUSTER).isEmpty()) {
-      logger.logOperationInProgressSync(label, "NO CDH SERVICES");
-    } else {
+    if (!cluster.getServiceTypes(CmServerServiceType.CLUSTER).isEmpty()) {
       for (CmServerServiceType type : cluster.getServiceTypes()) {
         logger.logOperationInProgressSync(label, "CDH " + type.toString() + " SERVICE");
         for (CmServerService service : cluster.getServices(type)) {
@@ -399,7 +406,7 @@ public class CmServerClusterInstance implements CmConstants {
     if (cluster.getServer() != null) {
       logger.logOperationInProgressSync(
           label,
-          "  http://" + cluster.getServer().getIp() + ":"
+          "  http://" + cluster.getServer().getHost() + ":"
               + configuration.getString(CmConstants.CONFIG_WHIRR_INTERNAL_PORT_WEB));
       logger.logOperationInProgressSync(
           label,
@@ -418,16 +425,38 @@ public class CmServerClusterInstance implements CmConstants {
     logger.logSpacerDashed();
     logger.logOperation(operation, "");
     logger.logSpacerDashed();
+    logger.logSpacer();
   }
 
   public static void logLineItem(CmServerLog logger, String operation) {
-    logger.logSpacer();
     logger.logOperationStartedSync(operation);
   }
 
   public static void logLineItem(CmServerLog logger, String operation, String detail) {
-    logger.logSpacer();
     logger.logOperationInProgressSync(operation, detail);
+  }
+
+  public static void logLineItemAsync(final CmServerLog logger, final String operation) {
+    logger.logOperationStartedAsync(operation);
+    logExecutorFuture = logExecutor.submit(new Runnable() {
+      @Override
+      public void run() {
+        int sleep = LOG_POLL_PERIOD_MS;
+        int sleepBackoffNumber = LOG_POLL_PERIOD_BACKOFF_NUMBER;
+        while (true) {
+          try {
+            logger.logOperationInProgressAsync(operation);
+            if (sleepBackoffNumber-- == 0) {
+              sleep += LOG_POLL_PERIOD_BACKOFF_INCRAMENT;
+              sleepBackoffNumber = LOG_POLL_PERIOD_BACKOFF_NUMBER;
+            }
+            Thread.sleep(sleep);
+          } catch (InterruptedException e) {
+            return;
+          }
+        }
+      }
+    });
   }
 
   public static void logLineItemDetail(CmServerLog logger, String operation, String detail) {
@@ -438,6 +467,13 @@ public class CmServerClusterInstance implements CmConstants {
     logger.logOperationFinishedSync(operation);
   }
 
+  public static void logLineItemFooterAsync(CmServerLog logger, String operation) {
+    if (logExecutorFuture != null) {
+      logExecutorFuture.cancel(true);
+    }
+    logger.logOperationFinishedAsync(operation);
+  }
+
   public static void logLineItemFooterFinal(CmServerLog logger) {
     logger.logSpacer();
     logger.logSpacerDashed();
@@ -445,6 +481,9 @@ public class CmServerClusterInstance implements CmConstants {
   }
 
   public static void logException(CmServerLog logger, String operation, String message, Throwable throwable) {
+    if (logExecutorFuture != null) {
+      logExecutorFuture.cancel(true);
+    }
     logger.logOperationInProgressSync(operation, "failed");
     logger.logOperationStackTrace(operation, throwable);
     logger.logSpacer();
