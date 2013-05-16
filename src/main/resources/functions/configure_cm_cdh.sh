@@ -39,13 +39,15 @@ function configure_cm_cdh() {
     chmod 777 $i
   done
   if [ "$CM_CDH_ROLE" = "cm-cdh-jobtracker" ]; then
-  mkdir -p "${CM_CDH_DIRS_ARRAY[0]}/mapreduce/jobtracker/history"
-  chmod 777 "${CM_CDH_DIRS_ARRAY[0]}/mapreduce/jobtracker/history"
+    mkdir -p "${CM_CDH_DIRS_ARRAY[0]}/mapreduce/jobtracker/history"
+    chmod 777 "${CM_CDH_DIRS_ARRAY[0]}/mapreduce/jobtracker/history"
   elif [ "$CM_CDH_ROLE" = "cm-cdh-oozie-server" ]; then
-  if [ -f "/usr/share/java/mysql-connector-java.jar" ]; then
     mkdir -p /var/lib/oozie
-    chmod 777 /var/lib/oozie
-    ln -s /usr/share/java/mysql-connector-java.jar /var/lib/oozie/mysql-connector-java.jar
+    if [ -f "/usr/share/java/mysql-connector-java.jar" ]; then
+      chmod 777 /var/lib/oozie
+      ln -s /usr/share/java/mysql-connector-java.jar /var/lib/oozie/mysql-connector-java.jar
     fi
+    wget http://extjs.com/deploy/ext-2.2.zip
+    unzip ext-2.2.zip -d /var/lib/oozie
   fi
 }
