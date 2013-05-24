@@ -38,6 +38,7 @@ import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.service.ClusterActionEvent;
 
+import com.cloudera.whirr.cm.Utils;
 import com.cloudera.whirr.cm.handler.CmAgentHandler;
 import com.cloudera.whirr.cm.handler.CmNodeHandler;
 import com.cloudera.whirr.cm.handler.CmServerHandler;
@@ -338,7 +339,7 @@ public class CmServerClusterInstance implements CmConstants {
       clusterConfiguration.put(CmServerServiceType.CLUSTER.getId(), new HashMap<String, String>());
     }
     if (clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()).get(CONFIG_CM_LICENSE_PROVIDED) == null) {
-      if (CmServerClusterInstance.class.getClassLoader().getResource(CM_LICENSE_FILE) != null) {
+      if (Utils.urlForURI(configuration.getString(CONFIG_WHIRR_CM_LICENSE_URI)) != null) {
         clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()).put(CONFIG_CM_LICENSE_PROVIDED,
             Boolean.TRUE.toString());
       } else {

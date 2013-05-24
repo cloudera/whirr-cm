@@ -35,6 +35,7 @@ public interface CmConstants extends CmServerConstants {
   public static final String CONFIG_WHIRR_FIREWALL_ENABLE = "whirr.cm.firewall.enable";
   public static final String CONFIG_WHIRR_DB_TYPE = "whirr.cm.db.type";
   public static final String CONFIG_WHIRR_CM_CONFIG_PREFIX = "whirr.cm.config.";
+  public static final String CONFIG_WHIRR_CM_LICENSE_URI = "whirr.cm.license.uri";
 
   public static final String CONFIG_WHIRR_INTERNAL_AGENT_LOG_FILE = "whirr.cm.agent.log.file";
   public static final String CONFIG_WHIRR_INTERNAL_DATA_DIRS_DEFAULT = "whirr.cm.data.dirs.root.default";

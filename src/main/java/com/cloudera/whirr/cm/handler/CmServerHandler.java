@@ -32,6 +32,7 @@ import org.apache.whirr.service.ClusterActionEvent;
 
 import com.cloudera.whirr.cm.CmConstants;
 import com.cloudera.whirr.cm.CmServerClusterInstance;
+import com.cloudera.whirr.cm.Utils;
 import com.cloudera.whirr.cm.server.CmServer;
 import com.cloudera.whirr.cm.server.CmServerCluster;
 import com.cloudera.whirr.cm.server.CmServerException;
@@ -113,7 +114,7 @@ public class CmServerHandler extends BaseHandlerCm {
     CmServerClusterInstance.logLineItemAsync(logger, "HostConfigureInit");
     super.beforeConfigure(event);
     URL licenceConfigUri = null;
-    if ((licenceConfigUri = CmServerHandler.class.getClassLoader().getResource(CM_LICENSE_FILE)) != null) {
+    if ((licenceConfigUri = Utils.urlForURI(CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(CONFIG_WHIRR_CM_LICENSE_URI))) != null) {
       addStatement(
           event,
           createOrOverwriteFile(
