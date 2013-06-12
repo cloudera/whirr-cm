@@ -42,7 +42,7 @@ import com.cloudera.whirr.cm.server.impl.CmServerLog;
 public abstract class BaseTestIntegration implements BaseTest {
 
   protected static CmServer serverBootstrap;
-  protected static CmServerCluster cluster; 
+  protected static CmServerCluster cluster;
   private static boolean setupAndTearDownCluster = false;
 
   @BeforeClass
@@ -50,9 +50,9 @@ public abstract class BaseTestIntegration implements BaseTest {
     setupAndTearDownCluster = !clusterInitialised();
     clusterBootstrap();
     cluster = clusterTopology();
-    Assert.assertNotNull(serverBootstrap = new CmServerFactory().getCmServer(cluster.getServer().getIp(), CM_PORT,
-        CmConstants.CM_USER, CmConstants.CM_PASSWORD, new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API_TEST,
-            false)));
+    Assert.assertNotNull(serverBootstrap = new CmServerFactory().getCmServer(cluster.getServer().getIp(), cluster
+        .getServer().getIpInternal(), CM_PORT, CmConstants.CM_USER, CmConstants.CM_PASSWORD,
+        new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API_TEST, false)));
     Assert.assertTrue(serverBootstrap.initialise(cluster));
   }
 
@@ -68,7 +68,7 @@ public abstract class BaseTestIntegration implements BaseTest {
     } catch (Exception e) {
       e.printStackTrace();
     }
-    Assert.assertTrue(serverBootstrap.isProvisioned(cluster));    
+    Assert.assertTrue(serverBootstrap.isProvisioned(cluster));
   }
 
   @AfterClass

@@ -220,7 +220,7 @@ mvn test -Dmaven.assembly.skip=true
 The smoke integration test can be launched against Amazon EC2 via:
 
 ```bash
-mvn integration-test -Pintegration -Dtest=CmServerSmokeTest#testCleanClusterLifecycle -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
+mvn test -Pintegration -Dtest=CmServerSmokeTest#testCleanClusterLifecycle -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
 ```
 
 The full set of integration tests can be laucnhed against Amazon EC2 via:

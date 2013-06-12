@@ -201,7 +201,6 @@ public class CmServerImpl implements CmServer {
 
     CmServerService serviceFound = null;
     try {
-
       for (CmServerService serviceTmp : services) {
         if ((service.getHost() != null && service.getHost().equals(serviceTmp.getHost()))
             || (service.getHost() != null && service.getHost().equals(serviceTmp.getIp()))
