@@ -38,7 +38,7 @@ public class CmServerClusterTest extends BaseTestIntegrationServer {
   @Test
   public void testGetServiceHost() throws CmServerException {
     List<CmServerService> serviceHosts = server.getServiceHosts();
-    Assert.assertEquals(clusterSize, serviceHosts.size());
+    Assert.assertEquals(5, serviceHosts.size());
     Assert.assertTrue(serviceHosts.size() > 2);
     Assert.assertEquals(serviceHosts.get(2).getHost(),
         server.getServiceHost(new CmServerServiceBuilder().host(serviceHosts.get(2).getHost()).build()).getHost());

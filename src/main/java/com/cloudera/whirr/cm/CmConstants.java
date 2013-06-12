@@ -24,11 +24,12 @@ public interface CmConstants extends CmServerConstants {
 
   public static final String PROPERTIES_FILE = "whirr-cm-default.properties";
 
+  public static final int CM_PORT = 7180;
   public static final String CM_USER = "admin";
   public static final String CM_PASSWORD = "admin";
 
   public static final String CM_LICENSE_FILE = "cm-license.txt";
-  
+
   public static final String CONFIG_WHIRR_AUTO = "whirr.cm.auto";
   public static final String CONFIG_WHIRR_USE_PACKAGES = "whirr.cm.use.packages";
   public static final String CONFIG_WHIRR_DATA_DIRS_ROOT = "whirr.cm.data.dirs.root";

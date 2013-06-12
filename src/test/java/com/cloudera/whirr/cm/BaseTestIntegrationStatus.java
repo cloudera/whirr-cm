@@ -17,20 +17,22 @@
  */
 package com.cloudera.whirr.cm;
 
-import java.io.File;
+public class BaseTestIntegrationStatus {
 
-import org.junit.Assert;
-import org.junit.Test;
-
-public class UtilsTest implements BaseTest {
-
-  @Test
-  public void testUrlForURI() throws Exception {
-    Assert.assertNull(Utils.urlForURI("classpath:///file-that-does-not-exist-we-hope"));
-    Assert.assertNull(Utils.urlForURI("http://www.exmaple.com/non-existant-url"));
-    Assert.assertEquals(Utils.urlForURI("classpath:///whirr-cm-default.properties"), UtilsTest.class.getClassLoader()
-        .getResource("whirr-cm-default.properties"));
-    File pom = new File("pom.xml");
-    Assert.assertEquals(Utils.urlForURI("file://" + pom.getAbsolutePath()), pom.toURI().toURL());
+  public static void main(String[] args) {
+    int returnValue = 0;
+    try {
+      if (BaseTestIntegration.clusterInitialised()) {
+        System.out.println("\n\nIntegration cluster available, CM Server at: http://"
+            + BaseTestIntegration.clusterTopology().getServer().getIp() + ":" + CmConstants.CM_PORT + "\n\n");
+      } else {
+        System.out.println("\n\nIntegration cluster not available\n\n");
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      returnValue = 1;
+    }
+    System.exit(returnValue);
   }
+
 }

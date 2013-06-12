@@ -208,3 +208,35 @@ that all data and state stored on the cluster will be lost.
 ```bash
 whirr destroy-cluster --config cm-ec2.properties
 ```
+
+## Unit and Integration Tests
+
+This project includes a full suit of unit tests, launchable via:
+
+```bash
+mvn test -Dmaven.assembly.skip=true
+```
+
+The smoke integration test can be launched against Amazon EC2 via:
+
+```bash
+mvn integration-test -Pintegration -Dtest=CmServerSmokeTest#testCleanClusterLifecycle -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
+```
+
+The full set of integration tests can be laucnhed against Amazon EC2 via:
+
+```bash
+mvn integration-test -Pintegration -Dmaven.test.skip=true -Dmaven.assembly.skip=true -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
+```
+
+The integration tests setup and teardown a cluster automatically, if you would like to launch and persist a cluster between integration tests for iterative testing minus the cluster bootstrap costs, a cluster can be launched via:
+
+```bash
+mvn exec:java -Dexec.mainClass="com.cloudera.whirr.cm.BaseTestIntegrationBoostrap" -Dexec.classpathScope="test" -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
+```
+
+and then destroyed via:
+
+```bash
+mvn exec:java -Dexec.mainClass="com.cloudera.whirr.cm.BaseTestIntegrationDestroy" -Dexec.classpathScope="test" -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
+```

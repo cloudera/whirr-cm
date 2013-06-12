@@ -75,14 +75,14 @@ public class CmServerClusterInstance implements CmConstants {
   }
 
   private static final LoadingCache<Key, CmServerCluster> clusterCache = CacheBuilder.newBuilder().build(
-        new CacheLoader<Key, CmServerCluster>(){
-               
+      new CacheLoader<Key, CmServerCluster>() {
+
         @Override
         public CmServerCluster load(Key arg0) {
           return new CmServerCluster();
         }
-        });
-  
+      });
+
   public static synchronized void clear() {
     clusterCache.invalidateAll();
     ports.clear();
@@ -153,18 +153,18 @@ public class CmServerClusterInstance implements CmConstants {
     }
   }
 
-  public static synchronized CmServerCluster getCluster(ClusterSpec spec, Configuration configuration, Set<Instance> instances)
-      throws CmServerException, IOException {
+  public static synchronized CmServerCluster getCluster(ClusterSpec spec, Configuration configuration,
+      Set<Instance> instances) throws CmServerException, IOException {
     return getCluster(spec, configuration, instances, new TreeSet<String>(), Collections.<String> emptySet());
   }
 
-  public static synchronized CmServerCluster getCluster(ClusterSpec spec, Configuration configuration, Set<Instance> instances,
-      SortedSet<String> mounts) throws CmServerException, IOException {
+  public static synchronized CmServerCluster getCluster(ClusterSpec spec, Configuration configuration,
+      Set<Instance> instances, SortedSet<String> mounts) throws CmServerException, IOException {
     return getCluster(spec, configuration, instances, mounts, Collections.<String> emptySet());
   }
 
-  public static synchronized CmServerCluster getCluster(ClusterSpec spec, Configuration configuration, Set<Instance> instances,
-      SortedSet<String> mounts, Set<String> roles) throws CmServerException, IOException {
+  public static synchronized CmServerCluster getCluster(ClusterSpec spec, Configuration configuration,
+      Set<Instance> instances, SortedSet<String> mounts, Set<String> roles) throws CmServerException, IOException {
     CmServerCluster cluster = new CmServerCluster();
     clusterCache.put(new Key(spec), cluster);
     cluster.setIsParcel(!configuration.getBoolean(CONFIG_WHIRR_USE_PACKAGES, false));
@@ -499,7 +499,7 @@ public class CmServerClusterInstance implements CmConstants {
     private String version;
 
     private final String key;
-    
+
     public Key(ClusterSpec spec) {
       provider = spec.getProvider();
       endpoint = spec.getEndpoint();
@@ -507,19 +507,14 @@ public class CmServerClusterInstance implements CmConstants {
       clusterName = spec.getClusterName();
       version = spec.getVersion();
 
-      key = Objects.toStringHelper("").omitNullValues()
-        .add("provider", provider)
-        .add("endpoint", endpoint)
-        .add("identity", identity)
-        .add("clusterName", clusterName)
-        .add("version", version).toString();
+      key = Objects.toStringHelper("").omitNullValues().add("provider", provider).add("endpoint", endpoint)
+          .add("identity", identity).add("clusterName", clusterName).add("version", version).toString();
     }
 
- 
     @Override
     public boolean equals(Object that) {
       if (that instanceof Key) {
-        return Objects.equal(this.key, ((Key)that).key);
+        return Objects.equal(this.key, ((Key) that).key);
       }
       return false;
     }
@@ -528,17 +523,12 @@ public class CmServerClusterInstance implements CmConstants {
     public int hashCode() {
       return Objects.hashCode(key);
     }
-    
+
     @Override
     public String toString() {
-      return Objects.toStringHelper(this)
-        .add("provider", provider)
-        .add("endpoint", identity)
-        .add("identity", identity)
-        .add("clusterName", clusterName)
-        .add("version", version)
-        .toString();
+      return Objects.toStringHelper(this).add("provider", provider).add("endpoint", identity).add("identity", identity)
+          .add("clusterName", clusterName).add("version", version).toString();
     }
   }
-  
+
 }
