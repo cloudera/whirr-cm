@@ -123,7 +123,7 @@ public class CmServerBuilder implements CmServerConstants {
     if (ipInternal == null || ipInternal.equals("")) {
       throw new CmServerException("Illegal IP argument passed [" + ipInternal + "]");
     }
-    this.ip = ipInternal;
+    this.ipInternal = ipInternal;
     return this;
   }
 

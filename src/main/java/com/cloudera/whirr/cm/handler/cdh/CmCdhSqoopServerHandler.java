@@ -15,10 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.whirr.cm.server;
+package com.cloudera.whirr.cm.handler.cdh;
 
-public enum CmServerServiceTypeRepo {
+import com.cloudera.whirr.cm.server.CmServerServiceType;
 
-  CDH, IMPALA, SOLR
+public class CmCdhSqoopServerHandler extends BaseHandlerCmCdh {
 
-};
+  public static final String ROLE = "cm-cdh-sqoop-server";
+  public static final CmServerServiceType TYPE = CmServerServiceType.SQOOP_SERVER;
+
+  @Override
+  public String getRole() {
+    return ROLE;
+  }
+
+  @Override
+  public CmServerServiceType getType() {
+    return TYPE;
+  }
+
+}

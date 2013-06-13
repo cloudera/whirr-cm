@@ -232,11 +232,18 @@ mvn integration-test -Pintegration -Dmaven.test.skip=true -Dmaven.assembly.skip=
 The integration tests setup and teardown a cluster automatically, if you would like to launch and persist a cluster between integration tests for iterative testing minus the cluster bootstrap costs, a cluster can be launched via:
 
 ```bash
-mvn exec:java -Dexec.mainClass="com.cloudera.whirr.cm.BaseTestIntegrationBoostrap" -Dexec.classpathScope="test" -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
+mvn exec:java -Dexec.mainClass=com.cloudera.whirr.cm.BaseTestIntegrationBoostrap -Dexec.classpathScope=test -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
 ```
 
 and then destroyed via:
 
 ```bash
-mvn exec:java -Dexec.mainClass="com.cloudera.whirr.cm.BaseTestIntegrationDestroy" -Dexec.classpathScope="test" -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
+mvn exec:java -Dexec.mainClass=com.cloudera.whirr.cm.BaseTestIntegrationDestroy -Dexec.classpathScope=test -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
+```
+
+The status of the standalone launched cluster can be queried via:
+
+
+```bash
+mvn exec:java -Dexec.mainClass=com.cloudera.whirr.cm.BaseTestIntegrationStatus -Dexec.classpathScope=test -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
 ```

@@ -39,7 +39,9 @@ import com.cloudera.whirr.cm.handler.cdh.CmCdhHBaseRegionServerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsDataNodeHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsNameNodeHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsSecondaryNameNodeHandler;
+import com.cloudera.whirr.cm.handler.cdh.CmCdhHiveHCatalogHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHiveMetaStoreHandler;
+import com.cloudera.whirr.cm.handler.cdh.CmCdhHiveServer2Handler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHueBeeswaxServerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHueServerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhImpalaDaemonHandler;
@@ -47,6 +49,8 @@ import com.cloudera.whirr.cm.handler.cdh.CmCdhImpalaStateStoreHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhMapReduceJobTrackerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhMapReduceTaskTrackerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhOozieServerHandler;
+import com.cloudera.whirr.cm.handler.cdh.CmCdhSolrServerHandler;
+import com.cloudera.whirr.cm.handler.cdh.CmCdhSqoopServerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhZookeeperServerHandler;
 import com.cloudera.whirr.cm.server.CmServerServiceType;
 import com.cloudera.whirr.cm.server.CmServerServiceTypeCms;
@@ -56,15 +60,28 @@ import com.google.common.collect.ImmutableSortedSet;
 
 public class CmServerHandlerTest extends BaseTestHandler {
 
-  private static final String WHIRR_INSTANCE_TEMPLATE_ALL = "1 " + CmServerHandler.ROLE + "+" + CmAgentHandler.ROLE
-      + ",1 " + CmAgentHandler.ROLE + "+" + CmCdhHdfsNameNodeHandler.ROLE + "+"
-      + CmCdhHdfsSecondaryNameNodeHandler.ROLE + "+" + CmCdhHueServerHandler.ROLE + "+"
-      + CmCdhHueBeeswaxServerHandler.ROLE + "+" + CmCdhMapReduceJobTrackerHandler.ROLE + "+" + ",1 "
-      + CmAgentHandler.ROLE + "+" + CmCdhHBaseMasterHandler.ROLE + "+" + CmCdhHiveMetaStoreHandler.ROLE + "+"
-      + CmCdhImpalaStateStoreHandler.ROLE + "+" + CmCdhOozieServerHandler.ROLE + ",3 " + CmAgentHandler.ROLE + "+"
-      + CmCdhHdfsDataNodeHandler.ROLE + "+" + CmCdhMapReduceTaskTrackerHandler.ROLE + "+"
-      + CmCdhZookeeperServerHandler.ROLE + "+" + CmCdhHBaseRegionServerHandler.ROLE + "+"
-      + CmCdhImpalaDaemonHandler.ROLE + "+" + CmCdhFlumeAgentHandler.ROLE;
+  private static final int WHIRR_INSTANCE_TEMPLATE_NUM_SLAVES = 3;
+  private static final String[] WHIRR_INSTANCE_TEMPLATE_ROLES_MASTER = { CmCdhHdfsNameNodeHandler.ROLE,
+      CmCdhHdfsSecondaryNameNodeHandler.ROLE, CmCdhHueServerHandler.ROLE, CmCdhHueBeeswaxServerHandler.ROLE,
+      CmCdhMapReduceJobTrackerHandler.ROLE, CmCdhHBaseMasterHandler.ROLE, CmCdhHiveMetaStoreHandler.ROLE,
+      CmCdhImpalaStateStoreHandler.ROLE, CmCdhOozieServerHandler.ROLE, CmCdhHiveServer2Handler.ROLE,
+      CmCdhHiveHCatalogHandler.ROLE, CmCdhSqoopServerHandler.ROLE, CmCdhSolrServerHandler.ROLE };
+  private static final String[] WHIRR_INSTANCE_TEMPLATE_ROLES_SLAVES = { CmCdhHdfsDataNodeHandler.ROLE,
+      CmCdhMapReduceTaskTrackerHandler.ROLE, CmCdhZookeeperServerHandler.ROLE, CmCdhHBaseRegionServerHandler.ROLE,
+      CmCdhImpalaDaemonHandler.ROLE, CmCdhFlumeAgentHandler.ROLE };
+  private static final int WHIRR_INSTANCE_TEMPLATE_NUM_ROLES = WHIRR_INSTANCE_TEMPLATE_ROLES_MASTER.length
+      + WHIRR_INSTANCE_TEMPLATE_NUM_SLAVES * WHIRR_INSTANCE_TEMPLATE_ROLES_SLAVES.length;
+  private static String WHIRR_INSTANCE_TEMPLATE_ALL = "1 " + CmServerHandler.ROLE + "+" + CmAgentHandler.ROLE + ",1 "
+      + CmAgentHandler.ROLE;
+  static {
+    for (String role : WHIRR_INSTANCE_TEMPLATE_ROLES_MASTER) {
+      WHIRR_INSTANCE_TEMPLATE_ALL += ("+" + role);
+    }
+    WHIRR_INSTANCE_TEMPLATE_ALL += ("," + WHIRR_INSTANCE_TEMPLATE_NUM_SLAVES + " " + CmAgentHandler.ROLE);
+    for (String role : WHIRR_INSTANCE_TEMPLATE_ROLES_SLAVES) {
+      WHIRR_INSTANCE_TEMPLATE_ALL += ("+" + role);
+    }
+  }
 
   @Override
   protected Set<String> getInstanceRoles() {
@@ -211,13 +228,14 @@ public class CmServerHandlerTest extends BaseTestHandler {
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
             .get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()).get(CONFIG_CM_TASKTRACKER_INSTRUMENTATION));
 
-    configuration = CmServerClusterInstance.getConfiguration(newClusterSpecForProperties(ImmutableMap.of(
-        "whirr.instance-templates", "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE,
-        CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceTypeCms.CM.getId().toLowerCase() + "."
-            + CONFIG_CM_DB_SUFFIX_NAME, "cman", CONFIG_WHIRR_CM_CONFIG_PREFIX
-            + CmServerServiceTypeCms.CM.getId().toLowerCase() + "." + CONFIG_CM_DB_SUFFIX_TYPE, "postgres",
-        CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceType.HIVE.getId().toLowerCase() + ".hive_metastore_"
-        + CONFIG_CM_DB_SUFFIX_PORT, "9999", CONFIG_WHIRR_CM_LICENSE_URI, "classpath:///whirr-cm-default.properties")));
+    configuration = CmServerClusterInstance.getConfiguration(newClusterSpecForProperties(ImmutableMap
+        .of("whirr.instance-templates", "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE,
+            CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceTypeCms.CM.getId().toLowerCase() + "."
+                + CONFIG_CM_DB_SUFFIX_NAME, "cman", CONFIG_WHIRR_CM_CONFIG_PREFIX
+                + CmServerServiceTypeCms.CM.getId().toLowerCase() + "." + CONFIG_CM_DB_SUFFIX_TYPE, "postgres",
+            CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceType.HIVE.getId().toLowerCase() + ".hive_metastore_"
+                + CONFIG_CM_DB_SUFFIX_PORT, "9999", CONFIG_WHIRR_CM_LICENSE_URI,
+            "classpath:///whirr-cm-default.properties")));
     Assert.assertEquals(
         "/data1"
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
@@ -238,9 +256,8 @@ public class CmServerHandlerTest extends BaseTestHandler {
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
             .get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()).get(CONFIG_CM_TASKTRACKER_INSTRUMENTATION));
     Assert.assertEquals("classpath:///whirr-cm-default.properties",
-                        configuration.getString(CONFIG_WHIRR_CM_LICENSE_URI));
-                        
-    
+        configuration.getString(CONFIG_WHIRR_CM_LICENSE_URI));
+
     configuration = CmServerClusterInstance.getConfiguration(newClusterSpecForProperties(ImmutableMap.of(
         "whirr.instance-templates", "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE,
         CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceTypeCms.CM.getId().toLowerCase() + "."
@@ -348,7 +365,8 @@ public class CmServerHandlerTest extends BaseTestHandler {
   public void testNodesAndAgentsAndCluster() throws Exception {
     Assert.assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
         WHIRR_INSTANCE_TEMPLATE_ALL))));
-    Assert.assertTrue(countersAssertAndReset(27, 27, 27, 0));
+    Assert.assertTrue(countersAssertAndReset(WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, WHIRR_INSTANCE_TEMPLATE_NUM_ROLES,
+        WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, 0));
   }
 
   @Test
@@ -358,13 +376,14 @@ public class CmServerHandlerTest extends BaseTestHandler {
     ClusterController controller = getController(clusterSpec);
     Cluster cluster = launchWithClusterSpecAndWithController(clusterSpec, controller);
     Assert.assertNotNull(cluster);
-    Assert.assertTrue(countersAssertAndReset(27, 27, 27, 0));
+    Assert.assertTrue(countersAssertAndReset(WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, WHIRR_INSTANCE_TEMPLATE_NUM_ROLES,
+        WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, 0));
     Assert.assertNotNull(controller.startServices(clusterSpec, cluster));
-    Assert.assertTrue(countersAssertAndReset(0, 0, 27, 0));
+    Assert.assertTrue(countersAssertAndReset(0, 0, WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, 0));
     Assert.assertNotNull(controller.stopServices(clusterSpec, cluster));
-    Assert.assertTrue(countersAssertAndReset(0, 0, 0, 27));
+    Assert.assertTrue(countersAssertAndReset(0, 0, 0, WHIRR_INSTANCE_TEMPLATE_NUM_ROLES));
     Assert.assertNotNull(controller.stopServices(clusterSpec, cluster));
-    Assert.assertTrue(countersAssertAndReset(0, 0, 0, 27));
+    Assert.assertTrue(countersAssertAndReset(0, 0, 0, WHIRR_INSTANCE_TEMPLATE_NUM_ROLES));
   }
 
   @Test
@@ -392,7 +411,8 @@ public class CmServerHandlerTest extends BaseTestHandler {
     ClusterController controller = getController(clusterSpec);
     Cluster cluster = launchWithClusterSpecAndWithController(clusterSpec, controller);
     Assert.assertNotNull(cluster);
-    Assert.assertTrue(countersAssertAndReset(27, 27, 27, 0));
+    Assert.assertTrue(countersAssertAndReset(WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, WHIRR_INSTANCE_TEMPLATE_NUM_ROLES,
+        WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, 0));
     Assert.assertNotNull(controller.startServices(clusterSpec, cluster, roles, new TreeSet<String>()));
     Assert.assertTrue(countersAssertAndReset(0, 0, 5, 0));
     Assert.assertNotNull(controller.stopServices(clusterSpec, cluster, roles, new TreeSet<String>()));
@@ -419,7 +439,8 @@ public class CmServerHandlerTest extends BaseTestHandler {
     Assert.assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
         WHIRR_INSTANCE_TEMPLATE_ALL, CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceType.HDFS.getId().toLowerCase()
             + ".some_setting", "some_value"))));
-    Assert.assertTrue(countersAssertAndReset(27, 27, 27, 0));
+    Assert.assertTrue(countersAssertAndReset(WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, WHIRR_INSTANCE_TEMPLATE_NUM_ROLES,
+        WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, 0));
   }
 
   @Test
@@ -427,7 +448,8 @@ public class CmServerHandlerTest extends BaseTestHandler {
     Assert.assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
         WHIRR_INSTANCE_TEMPLATE_ALL, CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceType.HDFS.getId().toLowerCase()
             + ".dfs_block_local_path_access_user", "someuser"))));
-    Assert.assertTrue(countersAssertAndReset(27, 27, 27, 0));
+    Assert.assertTrue(countersAssertAndReset(WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, WHIRR_INSTANCE_TEMPLATE_NUM_ROLES,
+        WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, 0));
   }
 
   @Test

@@ -51,7 +51,14 @@ public enum CmServerServiceType {
   // Hive
   HIVE(CLUSTER, "HIVE", CmServerServiceTypeRepo.CDH), HIVE_GATEWAY(HIVE, "HIVE_GATEWAY", CmServerServiceTypeRepo.CDH), HIVE_METASTORE(
       HIVE, "HIVEMETASTORE", CmServerServiceTypeRepo.CDH), HIVE_SERVER2(HIVE, "HIVESERVER2",
-      CmServerServiceTypeRepo.CDH),
+      CmServerServiceTypeRepo.CDH), HIVE_HCATALOG(HIVE, "WEBHCAT", CmServerServiceTypeRepo.CDH),
+
+  // Solr
+  SOLR(CLUSTER, "SOLR", CmServerServiceTypeRepo.SOLR), SOLR_SERVER(SOLR, "SOLR_SERVER",
+      CmServerServiceTypeRepo.SOLR),
+
+  // Sqoop
+  SQOOP(CLUSTER, "SQOOP", CmServerServiceTypeRepo.CDH), SQOOP_SERVER(SQOOP, "SQOOP_SERVER", CmServerServiceTypeRepo.CDH),
 
   // Hue
   HUE(CLUSTER, "HUE", CmServerServiceTypeRepo.CDH), HUE_SERVER(HUE, "HUE_SERVER", CmServerServiceTypeRepo.CDH), HUE_BEESWAX_SERVER(
