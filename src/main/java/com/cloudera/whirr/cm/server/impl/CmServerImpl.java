@@ -662,13 +662,11 @@ public class CmServerImpl implements CmServer {
 
     boolean cmsProvisionRequired = false;
     try {
-      if (apiResourceRoot.getClouderaManagerResource().readLicense() != null) {
-        try {
-          cmsProvisionRequired = apiResourceRoot.getClouderaManagerResource().getMgmtServiceResource()
-              .readService(DataView.SUMMARY) == null;
-        } catch (ServerWebApplicationException exception) {
-          cmsProvisionRequired = true;
-        }
+      try {
+        cmsProvisionRequired = apiResourceRoot.getClouderaManagerResource().getMgmtServiceResource()
+            .readService(DataView.SUMMARY) == null;
+      } catch (ServerWebApplicationException exception) {
+        cmsProvisionRequired = true;
       }
     } catch (ServerWebApplicationException exception) {
       // ignore
@@ -678,6 +676,14 @@ public class CmServerImpl implements CmServer {
 
       final ApiHostRef cmServerHostRefApi = new ApiHostRef(getServiceHost(host).getHost());
 
+      boolean licenseDeployed = false;
+      try {
+        licenseDeployed = apiResourceRoot.getClouderaManagerResource().readLicense() != null;
+      } catch (Exception e) {
+        // ignore
+      }
+      final boolean enterpriseDeployed = licenseDeployed;
+
       logger.logOperation("CreateManagementServices", new CmServerLogSyncCommand() {
         @Override
         public void execute() throws IOException, CmServerException, InterruptedException {
@@ -686,7 +692,7 @@ public class CmServerImpl implements CmServer {
           cmsServiceApi.setName(CmServerServiceTypeCms.MANAGEMENT.getName());
           cmsServiceApi.setType(CmServerServiceTypeCms.MANAGEMENT.getId());
           for (CmServerServiceTypeCms type : CmServerServiceTypeCms.values()) {
-            if (type.getParent() != null) {
+            if (type.getParent() != null && (!type.getEnterprise() || enterpriseDeployed)) {
               ApiRole cmsRoleApi = new ApiRole();
               cmsRoleApi.setName(type.getName());
               cmsRoleApi.setType(type.getId());
@@ -703,23 +709,25 @@ public class CmServerImpl implements CmServer {
             try {
 
               CmServerServiceTypeCms type = CmServerServiceTypeCms.valueOf(cmsRoleConfigGroupApi.getRoleType());
-              ApiRoleConfigGroup cmsRoleConfigGroupApiNew = new ApiRoleConfigGroup();
-              ApiServiceConfig cmsServiceConfigApi = new ApiServiceConfig();
-              if (cluster.getServiceConfiguration().get(type.getId()) != null) {
-                for (String setting : cluster.getServiceConfiguration().get(type.getId()).keySet()) {
-                  cmsServiceConfigApi.add(new ApiConfig(setting, cluster.getServiceConfiguration().get(type.getId())
-                      .get(setting)));
+              if (!type.getEnterprise() || enterpriseDeployed) {
+                ApiRoleConfigGroup cmsRoleConfigGroupApiNew = new ApiRoleConfigGroup();
+                ApiServiceConfig cmsServiceConfigApi = new ApiServiceConfig();
+                if (cluster.getServiceConfiguration().get(type.getId()) != null) {
+                  for (String setting : cluster.getServiceConfiguration().get(type.getId()).keySet()) {
+                    cmsServiceConfigApi.add(new ApiConfig(setting, cluster.getServiceConfiguration().get(type.getId())
+                        .get(setting)));
+                  }
                 }
+                cmsRoleConfigGroupApiNew.setConfig(cmsServiceConfigApi);
+
+                apiResourceRoot
+                    .getClouderaManagerResource()
+                    .getMgmtServiceResource()
+                    .getRoleConfigGroupsResource()
+                    .updateRoleConfigGroup(cmsRoleConfigGroupApi.getName(), cmsRoleConfigGroupApiNew,
+                        CM_CONFIG_UPDATE_MESSAGE);
+
               }
-              cmsRoleConfigGroupApiNew.setConfig(cmsServiceConfigApi);
-
-              apiResourceRoot
-                  .getClouderaManagerResource()
-                  .getMgmtServiceResource()
-                  .getRoleConfigGroupsResource()
-                  .updateRoleConfigGroup(cmsRoleConfigGroupApi.getName(), cmsRoleConfigGroupApiNew,
-                      CM_CONFIG_UPDATE_MESSAGE);
-
             } catch (IllegalArgumentException e) {
               // ignore
             }

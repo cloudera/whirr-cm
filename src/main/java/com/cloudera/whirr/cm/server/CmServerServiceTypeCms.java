@@ -20,38 +20,40 @@ package com.cloudera.whirr.cm.server;
 public enum CmServerServiceTypeCms {
 
   // Management
-  CM(null, "CM"),
+  CM(null, "CM", false),
 
   // Management
-  MANAGEMENT(null, "MGMT"),
+  MANAGEMENT(null, "MGMT", false),
 
   // Host Monitor
-  HOSTMONITOR(MANAGEMENT, "HOSTMONITOR"),
+  HOSTMONITOR(MANAGEMENT, "HOSTMONITOR", false),
 
   // Service Monitor
-  SERVICEMONITOR(MANAGEMENT, "SERVICEMONITOR"),
+  SERVICEMONITOR(MANAGEMENT, "SERVICEMONITOR", false),
 
   // Activity Monitor
-  ACTIVITYMONITOR(MANAGEMENT, "ACTIVITYMONITOR"),
-
-  // Reports Manager
-  REPORTSMANAGER(MANAGEMENT, "REPORTSMANAGER"),
-
-  // Event Server
-  EVENTSERVER(MANAGEMENT, "EVENTSERVER"),
+  ACTIVITYMONITOR(MANAGEMENT, "ACTIVITYMONITOR", false),
 
   // Alerts Publisher
-  ALERTPUBLISHER(MANAGEMENT, "ALERTPUBLISHER"),
+  ALERTPUBLISHER(MANAGEMENT, "ALERTPUBLISHER", false),
 
+  // Event Server
+  EVENTSERVER(MANAGEMENT, "EVENTSERVER", false),
+
+  // Reports Manager
+  REPORTSMANAGER(MANAGEMENT, "REPORTSMANAGER", true),
+  
   // Navigator
-  NAVIGATOR(MANAGEMENT, "NAVIGATOR");
+  NAVIGATOR(MANAGEMENT, "NAVIGATOR", true);
 
   private CmServerServiceTypeCms parent;
   private String id;
+  private boolean enterprise;
 
-  private CmServerServiceTypeCms(CmServerServiceTypeCms parent, String id) {
+  private CmServerServiceTypeCms(CmServerServiceTypeCms parent, String id, boolean enterprise) {
     this.parent = parent;
     this.id = id;
+    this.enterprise = enterprise;
   }
 
   public CmServerServiceTypeCms getParent() {
@@ -60,6 +62,10 @@ public enum CmServerServiceTypeCms {
 
   public String getId() {
     return id;
+  }
+  
+  public boolean getEnterprise() {
+    return enterprise;
   }
 
   public String getName() {

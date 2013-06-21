@@ -1,4 +1,4 @@
-# Launching Cloudera Manager with Whirr
+# Whirr Cloudera Manager plugin
 
 Follow these instructions to start a cluster on Amazon EC2 running Cloudera Manager (CM),
 allowing you to install, run and manage a CDH cluster.
@@ -33,14 +33,16 @@ export PATH=$WHIRR_HOME/bin:$PATH
 ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa_cm
 ```
 
-## Install the Whirr Cloudera Manager Plugin
+## Install the Whirr Cloudera Manager Plugin (optional)
 
-Download the Whirr CM plugin source, build and install into the lib directory of your Whirr installation.
+As of CDH 4.2, whirr ships with the whirr CM plugin, but in the event that you would like to replace this, you can follow
+these instructions (take note of any files copied during the 'mvn dependency:copy-dependencies' command, this may indicate old versions remain and should be deleted from $WHIRR_HOME/lib)
 
 ```bash
 git clone https://github.com/cloudera/whirr-cm.git
 cd whirr-cm
-mvn clean install -Dmaven.test.skip=true
+mvn clean install -Dmaven.test.skip=true -Dmaven.assembly.skip=true
+mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=$WHIRR_HOME/lib
 cp -rvf target/whirr-cm-*.jar $WHIRR_HOME/lib
 ```
 
@@ -59,7 +61,7 @@ have one), place the license in a file "cm-license.txt" on the whirr classpath (
 mv -v eval_acme_20120925_cloudera_enterprise_license.txt $WHIRR_HOME/conf/cm-license.txt
 ```
 
-The following command will start a cluster with 5 nodes, 1 CM server, 1 master and 3 slave nodes. To change the
+The following command will start a cluster with 7 nodes, 1 CM server, 3 master and 3 slave nodes. To change the
 cluster topology, edit the [cm-ec2.properties](https://raw.github.com/cloudera/whirr-cm/master/cm-ec2.properties) file.
 
 ```bash
@@ -87,7 +89,7 @@ Whirr Handler [CMClusterProvision]   ssh -o StrictHostKeyChecking=no -i /root/.s
 Whirr Handler [CMClusterProvision]   ssh -o StrictHostKeyChecking=no -i /root/.ssh/whirr whirr@37.188.114.225
 Whirr Handler [CMClusterProvision]   ssh -o StrictHostKeyChecking=no -i /root/.ssh/whirr whirr@37.188.114.234
 Whirr Handler [CMClusterProvision] CM SERVER
-Whirr Handler [CMClusterProvision]   http://37.188.114.234:7180
+Whirr Handler [CMClusterProvision]   http://ec2-54-216-175-183.eu-west-1.compute.amazonaws.com:7180
 Whirr Handler [CMClusterProvision]   ssh -o StrictHostKeyChecking=no -i /root/.ssh/whirr whirr@37.188.114.234
 ```
 
