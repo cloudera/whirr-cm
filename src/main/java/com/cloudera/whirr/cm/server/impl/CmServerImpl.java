@@ -253,9 +253,16 @@ public class CmServerImpl implements CmServer {
                 } catch (IllegalArgumentException exception) {
                   status = CmServerServiceStatus.UNKNOWN;
                 }
-                clusterView.addService(new CmServerServiceBuilder().name(apiRole.getName())
-                    .host(apiRole.getHostRef().getHostId()).ip(ips.get(apiRole.getHostRef().getHostId()))
-                    .ipInternal(ips.get(apiRole.getHostRef().getHostId())).status(status).build());
+                try {
+                  CmServerService service = new CmServerServiceBuilder().name(apiRole.getName())
+                      .host(apiRole.getHostRef().getHostId()).ip(ips.get(apiRole.getHostRef().getHostId()))
+                      .ipInternal(ips.get(apiRole.getHostRef().getHostId())).status(status).build();
+                  if (service.getType().isConcrete()) {
+                    clusterView.addService(service);
+                  }
+                } catch (IllegalArgumentException exception) {
+                  // ignore
+                }
               }
             }
           }

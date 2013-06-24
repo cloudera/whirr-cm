@@ -84,19 +84,29 @@ public class CmServerService implements Comparable<CmServerService> {
   }
 
   private static String _getTag(String name) {
+    String tag;
     try {
-      return name.substring(0, name.indexOf(NAME_TOKEN_DELIM));
+      tag = name.substring(0, name.indexOf(NAME_TOKEN_DELIM));
     } catch (Exception e) {
       throw new IllegalArgumentException("Illegal name [" + name + "]");
     }
+    if (tag.contains(NAME_TOKEN_DELIM)) {
+      throw new IllegalArgumentException("Illegal name [" + name + "]");
+    }
+    return tag;
   }
 
   private static String _getQualifier(String name) {
+    String qualifier;
     try {
-      return name.substring(name.lastIndexOf(NAME_TOKEN_DELIM) + 1, name.length());
+      qualifier = name.substring(name.lastIndexOf(NAME_TOKEN_DELIM) + 1, name.length());
     } catch (Exception e) {
       throw new IllegalArgumentException("Illegal name [" + name + "]");
     }
+    if (qualifier.contains(NAME_TOKEN_DELIM)) {
+      throw new IllegalArgumentException("Illegal name [" + name + "]");
+    }
+    return qualifier;
   }
 
   private static CmServerServiceType _getType(String name) {

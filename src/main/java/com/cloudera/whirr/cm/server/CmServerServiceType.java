@@ -54,8 +54,7 @@ public enum CmServerServiceType {
       CmServerServiceTypeRepo.CDH), HIVE_HCATALOG(HIVE, "WEBHCAT", CmServerServiceTypeRepo.CDH),
 
   // Solr
-  SOLR(CLUSTER, "SOLR", CmServerServiceTypeRepo.SOLR), SOLR_SERVER(SOLR, "SOLR_SERVER",
-      CmServerServiceTypeRepo.SOLR),
+  SOLR(CLUSTER, "SOLR", CmServerServiceTypeRepo.SOLR), SOLR_SERVER(SOLR, "SOLR_SERVER", CmServerServiceTypeRepo.SOLR),
 
   // Sqoop
   SQOOP(CLUSTER, "SQOOP", CmServerServiceTypeRepo.CDH), SQOOP_SERVER(SQOOP, "SQOOP_SERVER", CmServerServiceTypeRepo.CDH),
@@ -97,6 +96,10 @@ public enum CmServerServiceType {
 
   public CmServerServiceTypeRepo getRepository() {
     return respository;
+  }
+
+  public boolean isConcrete() {
+    return getParent() != null && !getParent().equals(CLUSTER);
   }
 
   public static CmServerServiceType valueOfId(String id) {
