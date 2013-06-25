@@ -22,8 +22,8 @@ import static org.jclouds.scriptbuilder.domain.Statements.call;
 
 import java.io.IOException;
 
-import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.Cluster.Instance;
+import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.service.ClusterActionEvent;
 
 import com.cloudera.whirr.cm.CmConstants;
@@ -49,7 +49,8 @@ public class CmAgentHandler extends CmNodeHandler {
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
     try {
-      CmServerClusterInstance.getCluster(event.getClusterSpec()).addAgent(new CmServerServiceBuilder().host(getInstanceId(event.getClusterSpec())).build());
+      CmServerClusterInstance.getCluster(event.getClusterSpec()).addAgent(
+          new CmServerServiceBuilder().host(getInstanceId(event.getClusterSpec())).build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
     }
@@ -65,6 +66,7 @@ public class CmAgentHandler extends CmNodeHandler {
     } catch (Exception exception) {
     }
     if (cmServerInstance != null) {
+      String firstMount = getMounts(event).iterator().next();
       addStatement(
           event,
           call(
@@ -75,9 +77,13 @@ public class CmAgentHandler extends CmNodeHandler {
               CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(
                   CmConstants.CONFIG_WHIRR_INTERNAL_PORT_COMMS),
               "-l",
-              getMounts(event).iterator().next()
+              firstMount
                   + CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(
-                      CONFIG_WHIRR_INTERNAL_AGENT_LOG_FILE)));
+                      CONFIG_WHIRR_INTERNAL_AGENT_LOG_FILE),
+              "-r",
+              firstMount
+                  + CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(
+                      CONFIG_WHIRR_INTERNAL_AGENT_PARCELS_DIR)));
     }
   }
 

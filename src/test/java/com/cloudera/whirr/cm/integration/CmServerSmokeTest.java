@@ -20,9 +20,15 @@ public class CmServerSmokeTest extends BaseTestIntegration {
 
   @BeforeClass
   public static void initialiseServer() throws CmServerException {
-    Assert.assertNotNull(server = new CmServerFactory().getCmServer(cluster.getServer().getIp(), cluster
-        .getServer().getIpInternal(),CM_PORT,
-        CmConstants.CM_USER, CmConstants.CM_PASSWORD, new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API, false)));
+    Assert.assertNotNull(server = new CmServerFactory().getCmServer(cluster.getServer().getIp(), cluster.getServer()
+        .getIpInternal(), CM_PORT, CmConstants.CM_USER, CmConstants.CM_PASSWORD, new CmServerLog.CmServerLogSysOut(
+        LOG_TAG_CM_SERVER_API, false)));
+  }
+
+  @Test
+  public void testCleanClusterStart() throws ConfigurationException, IOException, InterruptedException,
+      CmServerException {
+    Assert.assertTrue(server.start(cluster));
   }
 
   @Test

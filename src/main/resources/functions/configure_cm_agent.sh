@@ -23,7 +23,8 @@ function configure_cm_agent() {
   CM_SERVER_HOST=localhost
   CM_SERVER_PORT=7180
   CM_AGENT_LOG_FILE=/var/log/cloudera-scm-agent
-  while getopts "h:p:l:" OPTION; do
+  CM_AGENT_PARCEL_DIR=/opt/cloudera/parcels
+  while getopts "h:p:l:r:" OPTION; do
     case $OPTION in
       h)
         CM_SERVER_HOST="$OPTARG"
@@ -34,10 +35,16 @@ function configure_cm_agent() {
 	  l)
 	    CM_AGENT_LOG_FILE="$OPTARG"
 	    ;;
+	  r)
+	    CM_AGENT_PARCEL_DIR="$OPTARG"
+	    ;;
 	  esac
   done
   sed -i -e "s|server_host=.*|server_host=$CM_SERVER_HOST|" /etc/cloudera-scm-agent/config.ini
   sed -i -e "s|server_port=.*|server_port=$CM_SERVER_PORT|" /etc/cloudera-scm-agent/config.ini
   sed -i -e "s|# log_file=.*|log_file=$CM_AGENT_LOG_FILE|" /etc/cloudera-scm-agent/config.ini
+  sed -i -e "s|# parcel_dir=.*|parcel_dir=$CM_AGENT_PARCEL_DIR|" /etc/cloudera-scm-agent/config.ini
+  mkdir -p $CM_AGENT_PARCEL_DIR
+  mkdir -p $CM_AGENT_PARCEL_DIR/../parcel-cache
   service cloudera-scm-agent start
 }
