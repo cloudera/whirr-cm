@@ -1,4 +1,4 @@
-# Whirr Cloudera Manager plugin
+# Whirr Cloudera Manager Plugin
 
 Follow these instructions to start a cluster on Amazon EC2 running Cloudera Manager (CM),
 allowing you to install, run and manage a CDH cluster.
