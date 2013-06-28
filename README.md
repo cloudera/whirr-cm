@@ -43,6 +43,7 @@ git clone https://github.com/cloudera/whirr-cm.git
 cd whirr-cm
 mvn clean install -Dmaven.test.skip=true -Dmaven.assembly.skip=true
 mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=$WHIRR_HOME/lib
+rm -rf $WHIRR_HOME/lib/whirr-cm-*
 cp -rvf target/whirr-cm-*.jar $WHIRR_HOME/lib
 ```
 
