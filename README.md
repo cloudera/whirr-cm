@@ -42,8 +42,8 @@ these instructions (take note of any files copied during the 'mvn dependency:cop
 git clone https://github.com/cloudera/whirr-cm.git
 cd whirr-cm
 mvn clean install -Dmaven.test.skip=true -Dmaven.assembly.skip=true
-mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=$WHIRR_HOME/lib
-rm -rf $WHIRR_HOME/lib/whirr-cm-*
+mvn dependency:copy-dependencies -DincludeScope=runtime -DoverWriteIfNewer=false -DoutputDirectory=$WHIRR_HOME/lib
+rm -rf $WHIRR_HOME/lib/whirr-cdh-* $WHIRR_HOME/lib/whirr-cm-*
 cp -rvf target/whirr-cm-*.jar $WHIRR_HOME/lib
 ```
 
@@ -230,6 +230,12 @@ The full set of integration tests can be laucnhed against Amazon EC2 via:
 
 ```bash
 mvn integration-test -Pintegration -Dmaven.test.skip=true -Dmaven.assembly.skip=true -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
+```
+
+You can optionally specifiy a target platform (Unbuntu and CentOS currently supported) by providing the 'test.platform' property:
+
+```bash
+mvn integration-test -Pintegration -Dmaven.test.skip=true -Dmaven.assembly.skip=true -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dtest.platform=centos
 ```
 
 The integration tests setup and teardown a cluster automatically, if you would like to launch and persist a cluster between integration tests for iterative testing minus the cluster bootstrap costs, a cluster can be launched via:

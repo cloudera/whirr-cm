@@ -18,6 +18,7 @@
 package com.cloudera.whirr.cm.handler;
 
 import static org.apache.whirr.RolePredicates.role;
+import static org.jclouds.scriptbuilder.domain.Statements.call;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -63,6 +64,10 @@ public abstract class BaseHandler extends ClusterActionHandlerSupport implements
   @Override
   protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeConfigure(event);
+    addStatement(event, call("retry_helpers"));
+    if (CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getList(CONFIG_WHIRR_DATA_DIRS_ROOT).isEmpty()) {
+      addStatement(event, call("prepare_all_disks", "'" + VolumeManager.asString(getDeviceMappings(event)) + "'"));
+    }
     if (CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getBoolean(CONFIG_WHIRR_FIREWALL_ENABLE)) {
       Set<Integer> ports = CmServerClusterInstance.portsPush(event, getPortsClient(event));
       if (!ports.isEmpty()) {

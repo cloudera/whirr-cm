@@ -23,9 +23,7 @@ import java.io.IOException;
 
 import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.service.ClusterActionEvent;
-import org.apache.whirr.service.hadoop.VolumeManager;
 
-import com.cloudera.whirr.cm.CmServerClusterInstance;
 import com.cloudera.whirr.cm.server.impl.CmServerLog;
 
 public abstract class BaseHandlerCm extends BaseHandler {
@@ -41,15 +39,6 @@ public abstract class BaseHandlerCm extends BaseHandler {
     super.beforeBootstrap(event);
     addStatement(event, call("configure_hostnames"));
     addStatement(event, call("retry_helpers"));
-  }
-
-  @Override
-  protected void beforeConfigure(ClusterActionEvent event) throws IOException, InterruptedException {
-    super.beforeConfigure(event);
-    addStatement(event, call("retry_helpers"));
-    if (CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getList(CONFIG_WHIRR_DATA_DIRS_ROOT).isEmpty()) {
-      addStatement(event, call("prepare_all_disks", "'" + VolumeManager.asString(getDeviceMappings(event)) + "'"));
-    }
   }
 
 }

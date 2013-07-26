@@ -49,7 +49,7 @@ public abstract class BaseTestIntegration implements BaseTest {
   public static void setupCluster() throws Exception {
     setupAndTearDownCluster = !clusterInitialised();
     clusterBootstrap();
-    cluster = clusterTopology();
+    Assert.assertNotNull(cluster = clusterTopology());
     Assert.assertNotNull(serverBootstrap = new CmServerFactory().getCmServer(cluster.getServer().getIp(), cluster
         .getServer().getIpInternal(), CM_PORT, CmConstants.CM_USER, CmConstants.CM_PASSWORD,
         new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API_TEST, false)));
@@ -87,7 +87,10 @@ public abstract class BaseTestIntegration implements BaseTest {
     if (System.getProperty("config") != null) {
       config.addConfiguration(new PropertiesConfiguration(System.getProperty("config")));
     }
-    config.addConfiguration(new PropertiesConfiguration("cm.properties"));
+    config.addConfiguration(new PropertiesConfiguration("test-whirrcm-" + System.getProperty("test.platform", "default")
+        + ".properties"));
+    config.addConfiguration(new PropertiesConfiguration("test-whirrcm.properties"));
+    config.addConfiguration(new PropertiesConfiguration("cm-ec2.properties"));
     return config;
   }
 
