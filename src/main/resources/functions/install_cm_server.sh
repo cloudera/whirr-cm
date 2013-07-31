@@ -26,6 +26,6 @@ function install_cm_server() {
     retry_yum install -y jdk cloudera-manager-server cloudera-manager-daemons
   fi
   rm -rvf /etc/cloudera-scm-server/db.mgmt.properties
-  mkdir -p /data/manager/parcels/parcel-repository
-  chown cloudera-scm.cloudera-scm /data/manager/parcels/parcel-repository
+  mkdir -p /data0/manager/parcels/parcel-repository
+  chown cloudera-scm.cloudera-scm /data0/manager/parcels/parcel-repository
 }

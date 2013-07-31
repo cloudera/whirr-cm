@@ -335,7 +335,7 @@ public class CmServerHandlerTest extends BaseTestHandler {
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
             .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
     Assert.assertEquals(
-        "/data"
+        "/data0"
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceType.HDFS_SECONDARY_NAMENODE.getId().toLowerCase() + ".fs_checkpoint_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>())
