@@ -31,24 +31,26 @@ function install_cm() {
   CM_VERSION=$(echo $REPOCM | sed -e 's/cm\([0-9][0-9]*\)/\1/')
   OS_CODENAME=$(lsb_release -sc)
   OS_DISTID=$(lsb_release -si | tr '[A-Z]' '[a-z]')
-  CM_REPO_ROOT=${CM_REPO_ROOT:-http://$CM_REPO_HOST/cm$CM_MAJOR_VERSION}
   
+  CM_REPO_ROOT=${CM_REPO_ROOT:-http://$CM_REPO_HOST/cm$CM_MAJOR_VERSION}
+
   if [ $CM_MAJOR_VERSION -ge 4 ]; then
-	  if which dpkg &> /dev/null; then
-        cat > /etc/apt/sources.list.d/cloudera-$REPOCM.list <<EOF
+      if which dpkg &> /dev/null; then
+          cat > /etc/apt/sources.list.d/cloudera-$REPOCM.list <<EOF
 deb [arch=amd64] $CM_REPO_ROOT/$OS_DISTID/$OS_CODENAME/amd64/cm $OS_CODENAME-$REPOCM contrib
 deb-src $CM_REPO_ROOT/$OS_DISTID/$OS_CODENAME/amd64/cm $OS_CODENAME-$REPOCM contrib
 EOF
-        curl -s $CM_REPO_ROOT/$OS_DISTID/$OS_CODENAME/amd64/cm/archive.key | apt-key add -
-	  elif which rpm &> /dev/null; then
-        cat > /etc/yum.repos.d/cloudera-$REPOCM.repo <<EOF
+          curl -s $CM_REPO_ROOT/$OS_DISTID/$OS_CODENAME/amd64/cm/archive.key | apt-key add -
+      elif which rpm &> /dev/null; then
+          RHEL_VERSION=$(lsb_release -sr | sed -e 's/\([0-9]*\)\..*/\1/')
+          cat > /etc/yum.repos.d/cloudera-$REPOCM.repo <<EOF
 [cloudera-manager-$REPOCM]
 name=Cloudera Manager, Version $CM_VERSION
 baseurl=$CM_REPO_ROOT/redhat/\$releasever/\$basearch/cm/$CM_VERSION/
 gpgkey=$CM_REPO_ROOT/redhat/\$releasever/\$basearch/cm/RPM-GPG-KEY-cloudera
 gpgcheck=1
 EOF
-        rpm --import $CM_REPO_ROOT/redhat/$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))/$(rpm -q --qf "%{ARCH}" $(rpm -q --whatprovides redhat-release))/cm/RPM-GPG-KEY-cloudera
-	  fi
+          rpm --import $CM_REPO_ROOT/redhat/${RHEL_VERSION}/$(rpm -q --qf "%{ARCH}" $(rpm -q --whatprovides redhat-release))/cm/RPM-GPG-KEY-cloudera
+      fi
   fi
 }

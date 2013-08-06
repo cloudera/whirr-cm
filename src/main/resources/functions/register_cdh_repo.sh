@@ -39,6 +39,7 @@ EOF
         curl -s $IMPALA_REPO_ROOT/$OS_DISTID/$OS_CODENAME/amd64/impala/archive.key | apt-key add -
         retry_apt_get -y update
     elif which rpm &> /dev/null; then
+        RHEL_VERSION=$(lsb_release -sr | sed -e 's/\([0-9]*\)\..*/\1/')
         cat > /etc/yum.repos.d/cloudera-$REPOCDH.repo <<EOF
 [cloudera-$REPOCDH]
 name=Cloudera's Distribution for Hadoop, Version $CDH_VERSION
@@ -46,7 +47,7 @@ baseurl=$CDH_REPO_ROOT/redhat/\$releasever/\$basearch/cdh/$CDH_VERSION/
 gpgkey=$CDH_REPO_ROOT/redhat/\$releasever/\$basearch/cdh/RPM-GPG-KEY-cloudera
 gpgcheck=1
 EOF
-        rpm --import $CDH_REPO_ROOT/redhat/$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))/$(rpm -q --qf "%{ARCH}" $(rpm -q --whatprovides redhat-release))/cdh/RPM-GPG-KEY-cloudera
+        rpm --import $CDH_REPO_ROOT/redhat/${RHEL_VERSION}/$(rpm -q --qf "%{ARCH}" $(rpm -q --whatprovides redhat-release))/cdh/RPM-GPG-KEY-cloudera
         cat > /etc/yum.repos.d/cloudera-impala.repo <<EOF
 [cloudera-impala]
 name=Cloudera Impala, version $IMPALA_VERSION
@@ -54,7 +55,7 @@ baseurl=$IMPALA_REPO_ROOT/redhat/\$releasever/\$basearch/impala/$IMPALA_VERSION/
 gpgkey=$IMPALA_REPO_ROOT/redhat/\$releasever/\$basearch/impala/RPM-GPG-KEY-cloudera
 gpgcheck=1
 EOF
-        rpm --import $IMPALA_REPO_ROOT/redhat/$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))/$(rpm -q --qf "%{ARCH}" $(rpm -q --whatprovides redhat-release))/impala/RPM-GPG-KEY-cloudera
+        rpm --import $IMPALA_REPO_ROOT/redhat/${RHEL_VERSION}/$(rpm -q --qf "%{ARCH}" $(rpm -q --whatprovides redhat-release))/impala/RPM-GPG-KEY-cloudera
         
         retry_yum update -y retry_yum
     fi
