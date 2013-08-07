@@ -46,8 +46,8 @@ EOF
           cat > /etc/yum.repos.d/cloudera-$REPOCM.repo <<EOF
 [cloudera-manager-$REPOCM]
 name=Cloudera Manager, Version $CM_VERSION
-baseurl=$CM_REPO_ROOT/redhat/\$releasever/\$basearch/cm/$CM_VERSION/
-gpgkey=$CM_REPO_ROOT/redhat/\$releasever/\$basearch/cm/RPM-GPG-KEY-cloudera
+baseurl=$CM_REPO_ROOT/redhat/$RHEL_VERSION/\$basearch/cm/$CM_VERSION/
+gpgkey=$CM_REPO_ROOT/redhat/$RHEL_VERSION/\$basearch/cm/RPM-GPG-KEY-cloudera
 gpgcheck=1
 EOF
           rpm --import $CM_REPO_ROOT/redhat/${RHEL_VERSION}/$(rpm -q --qf "%{ARCH}" $(rpm -q --whatprovides redhat-release))/cm/RPM-GPG-KEY-cloudera
