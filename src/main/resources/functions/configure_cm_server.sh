@@ -39,6 +39,8 @@ function configure_cm_server() {
 	    ;;
     esac
   done
+  mkdir -p /data0/manager/parcels/parcel-repository
+  chown cloudera-scm.cloudera-scm /data0/manager/parcels/parcel-repository
   if which dpkg &> /dev/null; then
     export DEBIAN_FRONTEND=noninteractive
     retry_apt_get update
