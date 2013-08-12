@@ -86,9 +86,12 @@ public abstract class CmServerLog {
   public void logOperationStackTrace(String operation, Throwable throwable) {
     if (!quiet) {
       StringWriter stringWriter = new StringWriter();
-      throwable.printStackTrace(new PrintWriter(stringWriter));
-      for (String stackTraceLine : stringWriter.toString().split(System.getProperty("line.separator"))) {
-        logOperation(operation, stackTraceLine);
+      while (throwable != null) {
+        throwable.printStackTrace(new PrintWriter(stringWriter));
+        for (String stackTraceLine : stringWriter.toString().split(System.getProperty("line.separator"))) {
+          logOperation(operation, stackTraceLine);
+        }
+        throwable = throwable.getCause();
       }
     }
   }

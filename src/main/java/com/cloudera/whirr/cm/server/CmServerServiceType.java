@@ -20,69 +20,75 @@ package com.cloudera.whirr.cm.server;
 public enum CmServerServiceType {
 
   // Cluster
-  CLUSTER(null, "CLUSTER", CmServerServiceTypeRepo.CDH),
+  CLUSTER(null, "CLUSTER", 3, CmServerServiceTypeRepo.CDH),
 
   // Gateway
-  GATEWAY(null, "GATEWAY", CmServerServiceTypeRepo.CDH),
+  GATEWAY(null, "GATEWAY", 3, CmServerServiceTypeRepo.CDH),
 
   // HDFS
-  HDFS(CLUSTER, "HDFS", CmServerServiceTypeRepo.CDH), HDFS_GATEWAY(HDFS, "HDFS_GATEWAY", CmServerServiceTypeRepo.CDH), HDFS_NAMENODE(
-      HDFS, "NAMENODE", CmServerServiceTypeRepo.CDH), HDFS_SECONDARY_NAMENODE(HDFS, "SECONDARYNAMENODE",
-      CmServerServiceTypeRepo.CDH), HDFS_BALANCER(HDFS, "BALANCER", CmServerServiceTypeRepo.CDH), HDFS_FAILOVER_CONTROLLER(
-      HDFS, "FAILOVERCONTROLLER", CmServerServiceTypeRepo.CDH), HDFS_JOURNALNODE(HDFS, "JOURNALNODE",
-      CmServerServiceTypeRepo.CDH), HDFS_HTTP_FS(HDFS, "HTTPFS", CmServerServiceTypeRepo.CDH), HDFS_DATANODE(HDFS,
-      "DATANODE", CmServerServiceTypeRepo.CDH),
+  HDFS(CLUSTER, "HDFS", 3, CmServerServiceTypeRepo.CDH), HDFS_GATEWAY(HDFS, "HDFS_GATEWAY", 3,
+      CmServerServiceTypeRepo.CDH), HDFS_NAMENODE(HDFS, "NAMENODE", 3, CmServerServiceTypeRepo.CDH), HDFS_SECONDARY_NAMENODE(
+      HDFS, "SECONDARYNAMENODE", 3, CmServerServiceTypeRepo.CDH), HDFS_BALANCER(HDFS, "BALANCER", 3,
+      CmServerServiceTypeRepo.CDH), HDFS_FAILOVER_CONTROLLER(HDFS, "FAILOVERCONTROLLER", 3, CmServerServiceTypeRepo.CDH), HDFS_JOURNALNODE(
+      HDFS, "JOURNALNODE", 3, CmServerServiceTypeRepo.CDH), HDFS_HTTP_FS(HDFS, "HTTPFS", 3, CmServerServiceTypeRepo.CDH), HDFS_DATANODE(
+      HDFS, "DATANODE", 3, CmServerServiceTypeRepo.CDH),
 
   // MapReduce
-  MAPREDUCE(CLUSTER, "MAPREDUCE", CmServerServiceTypeRepo.CDH), MAPREDUCE_GATEWAY(MAPREDUCE, "MAPREDUCE_GATEWAY",
-      CmServerServiceTypeRepo.CDH), MAPREDUCE_JOB_TRACKER(MAPREDUCE, "JOBTRACKER", CmServerServiceTypeRepo.CDH), MAPREDUCE_TASK_TRACKER(
-      MAPREDUCE, "TASKTRACKER", CmServerServiceTypeRepo.CDH),
+  MAPREDUCE(CLUSTER, "MAPREDUCE", 3, CmServerServiceTypeRepo.CDH), MAPREDUCE_GATEWAY(MAPREDUCE, "MAPREDUCE_GATEWAY", 3,
+      CmServerServiceTypeRepo.CDH), MAPREDUCE_JOB_TRACKER(MAPREDUCE, "JOBTRACKER", 3, CmServerServiceTypeRepo.CDH), MAPREDUCE_TASK_TRACKER(
+      MAPREDUCE, "TASKTRACKER", 3, CmServerServiceTypeRepo.CDH),
 
   // Zookeeper
-  ZOOKEEPER(CLUSTER, "ZOOKEEPER", CmServerServiceTypeRepo.CDH), ZOOKEEPER_SERVER(ZOOKEEPER, "SERVER",
+  ZOOKEEPER(CLUSTER, "ZOOKEEPER", 3, CmServerServiceTypeRepo.CDH), ZOOKEEPER_SERVER(ZOOKEEPER, "SERVER", 3,
       CmServerServiceTypeRepo.CDH),
 
   // HBase
-  HBASE(CLUSTER, "HBASE", CmServerServiceTypeRepo.CDH), HBASE_GATEWAY(HBASE, "HBASE_GATEWAY",
-      CmServerServiceTypeRepo.CDH), HBASE_MASTER(HBASE, "MASTER", CmServerServiceTypeRepo.CDH), HBASE_THRIFT_SERVER(
-      HBASE, "HBASETHRIFTSERVER", CmServerServiceTypeRepo.CDH), HBASE_REST_SERVER(HBASE, "HBASERESTSERVER",
-      CmServerServiceTypeRepo.CDH), HBASE_REGIONSERVER(HBASE, "REGIONSERVER", CmServerServiceTypeRepo.CDH),
+  HBASE(CLUSTER, "HBASE", 3, CmServerServiceTypeRepo.CDH), HBASE_GATEWAY(HBASE, "HBASE_GATEWAY", 3,
+      CmServerServiceTypeRepo.CDH), HBASE_MASTER(HBASE, "MASTER", 3, CmServerServiceTypeRepo.CDH), HBASE_THRIFT_SERVER(
+      HBASE, "HBASETHRIFTSERVER", 3, CmServerServiceTypeRepo.CDH), HBASE_REST_SERVER(HBASE, "HBASERESTSERVER", 3,
+      CmServerServiceTypeRepo.CDH), HBASE_REGIONSERVER(HBASE, "REGIONSERVER", 3, CmServerServiceTypeRepo.CDH),
 
   // Hive
-  HIVE(CLUSTER, "HIVE", CmServerServiceTypeRepo.CDH), HIVE_GATEWAY(HIVE, "HIVE_GATEWAY", CmServerServiceTypeRepo.CDH), HIVE_METASTORE(
-      HIVE, "HIVEMETASTORE", CmServerServiceTypeRepo.CDH), HIVE_SERVER2(HIVE, "HIVESERVER2",
-      CmServerServiceTypeRepo.CDH), HIVE_HCATALOG(HIVE, "WEBHCAT", CmServerServiceTypeRepo.CDH),
+  HIVE(CLUSTER, "HIVE", 3, CmServerServiceTypeRepo.CDH), HIVE_GATEWAY(HIVE, "HIVE_GATEWAY", 3,
+      CmServerServiceTypeRepo.CDH), HIVE_METASTORE(HIVE, "HIVEMETASTORE", 3, CmServerServiceTypeRepo.CDH), HIVE_SERVER2(
+      HIVE, "HIVESERVER2", 4, CmServerServiceTypeRepo.CDH), HIVE_HCATALOG(HIVE, "WEBHCAT", 4,
+      CmServerServiceTypeRepo.CDH),
 
   // Solr
-  SOLR(CLUSTER, "SOLR", CmServerServiceTypeRepo.SOLR), SOLR_SERVER(SOLR, "SOLR_SERVER", CmServerServiceTypeRepo.SOLR),
+  SOLR(CLUSTER, "SOLR", 4, CmServerServiceTypeRepo.SOLR), SOLR_SERVER(SOLR, "SOLR_SERVER", 4,
+      CmServerServiceTypeRepo.SOLR),
 
   // Sqoop
-  SQOOP(CLUSTER, "SQOOP", CmServerServiceTypeRepo.CDH), SQOOP_SERVER(SQOOP, "SQOOP_SERVER", CmServerServiceTypeRepo.CDH),
+  SQOOP(CLUSTER, "SQOOP", 4, CmServerServiceTypeRepo.CDH), SQOOP_SERVER(SQOOP, "SQOOP_SERVER", 4,
+      CmServerServiceTypeRepo.CDH),
 
   // Hue
-  HUE(CLUSTER, "HUE", CmServerServiceTypeRepo.CDH), HUE_SERVER(HUE, "HUE_SERVER", CmServerServiceTypeRepo.CDH), HUE_BEESWAX_SERVER(
-      HUE, "BEESWAX_SERVER", CmServerServiceTypeRepo.CDH),
+  HUE(CLUSTER, "HUE", 3, CmServerServiceTypeRepo.CDH), HUE_SERVER(HUE, "HUE_SERVER", 3, CmServerServiceTypeRepo.CDH), HUE_BEESWAX_SERVER(
+      HUE, "BEESWAX_SERVER", 3, CmServerServiceTypeRepo.CDH),
 
   // Oozie
-  OOZIE(CLUSTER, "OOZIE", CmServerServiceTypeRepo.CDH), OOZIE_SERVER(OOZIE, "OOZIE_SERVER", CmServerServiceTypeRepo.CDH),
+  OOZIE(CLUSTER, "OOZIE", 3, CmServerServiceTypeRepo.CDH), OOZIE_SERVER(OOZIE, "OOZIE_SERVER", 3,
+      CmServerServiceTypeRepo.CDH),
 
   // Impala
-  IMPALA(CLUSTER, "IMPALA", CmServerServiceTypeRepo.IMPALA), IMPALA_STATE_STORE(IMPALA, "STATESTORE",
-      CmServerServiceTypeRepo.IMPALA), IMPALA_DAEMON(IMPALA, "IMPALAD", CmServerServiceTypeRepo.IMPALA),
+  IMPALA(CLUSTER, "IMPALA", 3, CmServerServiceTypeRepo.IMPALA), IMPALA_STATE_STORE(IMPALA, "STATESTORE", 3,
+      CmServerServiceTypeRepo.IMPALA), IMPALA_DAEMON(IMPALA, "IMPALAD", 3, CmServerServiceTypeRepo.IMPALA),
 
   // Flume
-  FLUME(CLUSTER, "FLUME", CmServerServiceTypeRepo.CDH), FLUME_AGENT(FLUME, "AGENT", CmServerServiceTypeRepo.CDH),
+  FLUME(CLUSTER, "FLUME", 3, CmServerServiceTypeRepo.CDH), FLUME_AGENT(FLUME, "AGENT", 3, CmServerServiceTypeRepo.CDH),
 
   // Client
-  CLIENT(CLUSTER, "GATEWAY", CmServerServiceTypeRepo.CDH);
+  CLIENT(CLUSTER, "GATEWAY", 3, CmServerServiceTypeRepo.CDH);
 
   private CmServerServiceType parent;
   private String id;
+  private int version;
   private CmServerServiceTypeRepo respository;
 
-  private CmServerServiceType(CmServerServiceType parent, String id, CmServerServiceTypeRepo respository) {
+  private CmServerServiceType(CmServerServiceType parent, String id, int version, CmServerServiceTypeRepo respository) {
     this.parent = parent;
     this.id = id;
+    this.version = version;
     this.respository = respository;
   }
 
@@ -92,6 +98,10 @@ public enum CmServerServiceType {
 
   public String getId() {
     return id;
+  }
+
+  public int getVersion() {
+    return version;
   }
 
   public CmServerServiceTypeRepo getRepository() {

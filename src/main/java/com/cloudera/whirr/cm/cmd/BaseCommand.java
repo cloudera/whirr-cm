@@ -28,7 +28,6 @@ import org.apache.whirr.ClusterController;
 import org.apache.whirr.ClusterControllerFactory;
 import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.command.AbstractClusterCommand;
-import org.apache.whirr.state.ClusterStateStore;
 import org.apache.whirr.state.ClusterStateStoreFactory;
 
 import com.cloudera.whirr.cm.CmConstants;
@@ -47,8 +46,8 @@ public abstract class BaseCommand extends AbstractClusterCommand implements CmCo
     super(name, description, factory);
   }
 
-  public abstract int run(OptionSet optionSet, ClusterSpec specification, ClusterStateStore clusterStateStore,
-      ClusterController clusterController) throws Exception;
+  public abstract int run(ClusterSpec specification, ClusterController clusterController, OptionSet optionSet)
+      throws Exception;
 
   public String getLabel() {
     return WordUtils.capitalize(getName().replace("-", " ").replace("_", " ")).replace(" ", "");
@@ -68,8 +67,7 @@ public abstract class BaseCommand extends AbstractClusterCommand implements CmCo
       ClusterSpec specification = getClusterSpec(optionSet);
       printProviderInfo(out, err, specification, optionSet);
 
-      return run(optionSet, specification, createClusterStateStore(specification),
-          createClusterController(specification.getServiceName()));
+      return run(specification, createClusterController(specification.getServiceName()), optionSet);
 
     } catch (Exception e) {
       printErrorAndHelpHint(err, e);

@@ -71,7 +71,7 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
   }
 
   @Before
-  public void mockCmServer() {
+  public void mockCmServer() throws CmServerException {
 
     countersReset();
 
@@ -79,8 +79,9 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
     CmServerClusterInstance.getFactory(factory);
 
     Mockito.when(
-        factory.getCmServer(Matchers.anyString(), Matchers.anyString(), Matchers.anyInt(), Matchers.anyString(),
-            Matchers.anyString(), Matchers.<CmServerLog> any())).thenReturn(new CmServer() {
+        factory.getCmServer(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString(),
+            Matchers.anyString(), Matchers.anyInt(), Matchers.anyString(), Matchers.anyString(),
+            Matchers.<CmServerLog> any())).thenReturn(new CmServer() {
 
       private boolean isProvisioned = false;
       private boolean isConfigured = false;
@@ -181,6 +182,22 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
       public boolean unprovision(CmServerCluster cluster) throws CmServerException {
         return any(isProvisioned = false);
       }
+
+      @Override
+      public String getVersion() {
+        return "4";
+      }
+
+      @Override
+      public int getVersionApi() {
+        return 1;
+      }
+
+      @Override
+      public String getVersionCdh() {
+        return "CDH4";
+      }
+
     });
 
   }

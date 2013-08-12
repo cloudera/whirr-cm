@@ -86,8 +86,8 @@ public class CmServerCommandTest extends BaseTestCommand {
 
     Map<String, File> keys = KeyPair.generateTemporaryFiles();
     int rc = clusterCommand.run(null, System.out, err, Lists.newArrayList("--instance-templates", "1 noop",
-        "--service-name", "test-service", "--cluster-name", "test-cluster", "--identity", "myusername", "--quiet",
-        "--private-key-file", keys.get("private").getAbsolutePath()));
+        "--service-name", "test-service", "--cluster-name", "test-cluster", "--cluster-user", "whirr", "--identity",
+        "myusername", "--quiet", "--private-key-file", keys.get("private").getAbsolutePath()));
 
     assertThat(rc, is(-1));
     assertThat(errBytes.toString(), containsString("Could not find cm-server."));
@@ -112,8 +112,8 @@ public class CmServerCommandTest extends BaseTestCommand {
 
     Map<String, File> keys = KeyPair.generateTemporaryFiles();
     int rc = clusterCommand.run(null, System.out, System.err, Lists.newArrayList("--instance-templates", "1 noop",
-        "--service-name", "test-service", "--cluster-name", "test-cluster", "--identity", "myusername", "--quiet",
-        "--private-key-file", keys.get("private").getAbsolutePath()));
+        "--service-name", "test-service", "--cluster-name", "test-cluster", "--cluster-user", "whirr", "--identity",
+        "myusername", "--quiet", "--private-key-file", keys.get("private").getAbsolutePath()));
 
     assertThat(rc, is(0));
     verify(factory).create("test-service");
@@ -139,8 +139,8 @@ public class CmServerCommandTest extends BaseTestCommand {
 
     Map<String, File> keys = KeyPair.generateTemporaryFiles();
     int rc = clusterCommand.run(null, System.out, System.err, Lists.newArrayList("--instance-templates", "1 noop",
-        "--service-name", "test-service", "--cluster-name", "test-cluster", "--identity", "myusername", "--quiet",
-        "--private-key-file", keys.get("private").getAbsolutePath()));
+        "--service-name", "test-service", "--cluster-name", "test-cluster", "--cluster-user", "whirr", "--identity",
+        "myusername", "--quiet", "--private-key-file", keys.get("private").getAbsolutePath()));
 
     assertThat(rc, is(0));
     verify(factory).create("test-service");
@@ -167,9 +167,10 @@ public class CmServerCommandTest extends BaseTestCommand {
     };
 
     Map<String, File> keys = KeyPair.generateTemporaryFiles();
-    int rc = clusterCommand.run(null, System.out, System.err, Lists.newArrayList("--instance-templates", "1 noop",
-        "--service-name", "test-service", "--cluster-name", "test-cluster", "--identity", "myusername",
-        "--cm-cluster-name", name, "--quiet", "--private-key-file", keys.get("private").getAbsolutePath()));
+    int rc = clusterCommand.run(null, System.out, System.err, Lists
+        .newArrayList("--instance-templates", "1 noop", "--service-name", "test-service", "--cluster-name",
+            "test-cluster", "--cluster-user", "whirr", "--identity", "myusername", "--cm-cluster-name", name,
+            "--quiet", "--private-key-file", keys.get("private").getAbsolutePath()));
 
     assertThat(rc, is(0));
     verify(factory).create("test-service");
@@ -198,8 +199,9 @@ public class CmServerCommandTest extends BaseTestCommand {
 
     Map<String, File> keys = KeyPair.generateTemporaryFiles();
     int rc = clusterCommand.run(null, System.out, err, Lists.newArrayList("--instance-templates", "1 noop",
-        "--service-name", "test-service", "--cluster-name", "test-cluster", "--identity", "myusername", "--roles",
-        "some-fake-role", "--quiet", "--private-key-file", keys.get("private").getAbsolutePath()));
+        "--service-name", "test-service", "--cluster-name", "test-cluster", "--cluster-user", "whirr", "--identity",
+        "myusername", "--roles", "some-fake-role", "--quiet", "--private-key-file", keys.get("private")
+            .getAbsolutePath()));
 
     assertThat(rc, is(-1));
     assertThat(errBytes.toString(), containsString("'roles' is not a recognized option"));
@@ -230,8 +232,9 @@ public class CmServerCommandTest extends BaseTestCommand {
 
     Map<String, File> keys = KeyPair.generateTemporaryFiles();
     int rc = clusterCommand.run(null, System.out, System.err, Lists.newArrayList("--instance-templates", "1 noop",
-        "--service-name", "test-service", "--cluster-name", "test-cluster", "--identity", "myusername", "--roles",
-        CmCdhHdfsDataNodeHandler.ROLE, "--quiet", "--private-key-file", keys.get("private").getAbsolutePath()));
+        "--service-name", "test-service", "--cluster-name", "test-cluster", "--cluster-user", "whirr", "--identity",
+        "myusername", "--roles", CmCdhHdfsDataNodeHandler.ROLE, "--quiet", "--private-key-file", keys.get("private")
+            .getAbsolutePath()));
 
     assertThat(rc, is(0));
     verify(factory).create("test-service");
@@ -265,8 +268,9 @@ public class CmServerCommandTest extends BaseTestCommand {
 
     Map<String, File> keys = KeyPair.generateTemporaryFiles();
     int rc = clusterCommand.run(null, System.out, err, Lists.newArrayList("--instance-templates", "1 noop",
-        "--service-name", "test-service", "--cluster-name", "test-cluster", "--identity", "myusername", "--roles",
-        "some-fake-role", "--quiet", "--private-key-file", keys.get("private").getAbsolutePath()));
+        "--service-name", "test-service", "--cluster-name", "test-cluster", "--cluster-user", "whirr", "--identity",
+        "myusername", "--roles", "some-fake-role", "--quiet", "--private-key-file", keys.get("private")
+            .getAbsolutePath()));
 
     assertThat(rc, is(-1));
     assertThat(errBytes.toString(), containsString("Role filter does not include any appropriate roles."));

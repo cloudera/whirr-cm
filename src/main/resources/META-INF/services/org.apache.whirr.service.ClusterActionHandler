@@ -21,6 +21,7 @@ com.cloudera.whirr.cm.handler.CmServerHandler
 
 com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsNameNodeHandler
 com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsSecondaryNameNodeHandler
+com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsHttpFsHandler
 com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsDataNodeHandler
 
 com.cloudera.whirr.cm.handler.cdh.CmCdhMapReduceJobTrackerHandler

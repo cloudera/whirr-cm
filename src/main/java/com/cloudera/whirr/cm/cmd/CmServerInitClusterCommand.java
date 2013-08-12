@@ -46,11 +46,6 @@ public class CmServerInitClusterCommand extends BaseCommandCmServer {
   }
 
   @Override
-  public boolean isRoleFilterable() {
-    return false;
-  }
-
-  @Override
   public int run(ClusterSpec specification, Set<Instance> instances, CmServerCluster cluster,
       CmServerBuilder serverCommand) throws Exception {
     return serverCommand.command("initialise").executeBoolean() ? 0 : -1;

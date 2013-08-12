@@ -28,7 +28,7 @@ function install_mysql() {
       service mysql stop
       MYSQL_CONF="/etc/mysql/my.cnf"
     elif which rpm &> /dev/null; then
-      retry_yum install -y expect mysql-server mysql-connector-java
+    retry_yum install -y expect "mysql-server-5.1*" mysql-connector-java
       MYSQL_CONF="/etc/my.cnf"
     fi
     rm -rf /var/lib/mysql/ib_logfile*
@@ -79,6 +79,7 @@ pid_file=/var/run/mysqld/mysqld.pid
     elif which rpm &> /dev/null; then
       service mysqld start
     fi
+    sleep 20
     cat >> mysql_setup <<END
 #!/usr/bin/expect -f
 set timeout 5000

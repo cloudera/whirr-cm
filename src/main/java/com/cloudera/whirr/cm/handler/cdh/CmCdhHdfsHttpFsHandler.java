@@ -15,24 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.whirr.cm;
+package com.cloudera.whirr.cm.handler.cdh;
 
-public class BaseTestIntegrationStatus {
+import com.cloudera.whirr.cm.server.CmServerServiceType;
 
-  public static void main(String[] args) {
-    int returnValue = 0;
-    try {
-      if (BaseTestIntegration.clusterInitialised()) {
-        System.out.println("\n\nIntegration cluster available, CM Server at: http://"
-            + BaseTestIntegration.clusterTopology().getServer().getIp() + ":" + CmConstants.CM_PORT + "\n\n");
-      } else {
-        System.out.println("\n\nIntegration cluster not available\n\n");
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-      returnValue = 1;
-    }
-    System.exit(returnValue);
+public class CmCdhHdfsHttpFsHandler extends BaseHandlerCmCdh {
+
+  public static final String ROLE = "cm-cdh-httpfs";
+  public static final CmServerServiceType TYPE = CmServerServiceType.HDFS_HTTP_FS;
+
+  @Override
+  public String getRole() {
+    return ROLE;
+  }
+
+  @Override
+  public CmServerServiceType getType() {
+    return TYPE;
   }
 
 }

@@ -49,6 +49,10 @@ public class CmServerBuilder implements CmServerConstants {
     String name();
   }
 
+  private String version;
+  private String versionApi;
+  private String versionCdh;
+
   private String ip;
   private String ipInternal;
   private int port = 7180;
@@ -108,6 +112,27 @@ public class CmServerBuilder implements CmServerConstants {
     return this;
   }
 
+  @CmServerCommandMethod(name = "version")
+  public CmServerBuilder version(String version) throws CmServerException {
+    this.version = version;
+    this.server = null;
+    return this;
+  }
+
+  @CmServerCommandMethod(name = "versionApi")
+  public CmServerBuilder versionApi(String versionApi) throws CmServerException {
+    this.versionApi = versionApi;
+    this.server = null;
+    return this;
+  }
+
+  @CmServerCommandMethod(name = "versionCdh")
+  public CmServerBuilder versionCdh(String versionCdh) throws CmServerException {
+    this.versionCdh = versionCdh;
+    this.server = null;
+    return this;
+  }
+  
   @CmServerCommandMethod(name = "ip")
   public CmServerBuilder ip(String ip) throws CmServerException {
     if (ip == null || ip.equals("")) {
@@ -232,8 +257,8 @@ public class CmServerBuilder implements CmServerConstants {
       throw new CmServerException("Required paramater [command] not set");
     }
     if (server == null) {
-      server = factory.getCmServer(ip, ipInternal, port, user, password, new CmServerLog.CmServerLogSysOut(
-          LOG_TAG_CM_SERVER_API, false));
+      server = factory.getCmServer(version, versionApi, versionCdh, ip, ipInternal, port, user, password,
+          new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API, false));
     }
     List<Object> paramaters = new ArrayList<Object>();
     for (Class<?> clazz : COMMANDS.get(command).getParameterTypes()) {

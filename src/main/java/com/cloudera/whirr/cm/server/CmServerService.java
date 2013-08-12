@@ -49,7 +49,7 @@ public class CmServerService implements Comparable<CmServerService> {
     String qualifier = _getQualifier(name);
     CmServerServiceType type = _getType(name);
     if (tag == null || qualifier == null || type == null || !_getName(type, tag, qualifier).equals(name)) {
-      throw new IllegalArgumentException("Illgal argumnents passed to constructor");
+      throw new IllegalArgumentException("Illegal argumnents passed to constructor");
     }
     this.name = name;
     this.group = _getName(type, tag, NAME_QUALIFIER_GROUP);
@@ -66,7 +66,7 @@ public class CmServerService implements Comparable<CmServerService> {
       String ipInternal, CmServerServiceStatus status) {
     if (type == null || tag == null || tag.contains(NAME_TOKEN_DELIM) || qualifier == null
         || qualifier.contains(NAME_TOKEN_DELIM)) {
-      throw new IllegalArgumentException("Illgal argumnents passed to constructor");
+      throw new IllegalArgumentException("Illegal argumnents passed to constructor");
     }
     this.name = _getName(type, tag, qualifier);
     this.group = _getName(type, tag, NAME_QUALIFIER_GROUP);

@@ -22,13 +22,17 @@ import com.cloudera.whirr.cm.server.CmServerConstants;
 
 public interface CmConstants extends CmServerConstants {
 
-  public static final String PROPERTIES_FILE = "whirr-cm-default.properties";
+  public static final String CONFIG_WHIRR_DEFAULT_FILE = "whirr-cm-default.properties";
 
   public static final int CM_PORT = 7180;
   public static final String CM_USER = "admin";
   public static final String CM_PASSWORD = "admin";
 
   public static final String CM_LICENSE_FILE = "cm-license.txt";
+
+  public static final String CONFIG_WHIRR_CM_VERSION = "whirr.env.repocm";
+  public static final String CONFIG_WHIRR_CM_API_VERSION = "whirr.cm.api";
+  public static final String CONFIG_WHIRR_CM_CDH_VERSION = "whirr.cm.cdh";
 
   public static final String CONFIG_WHIRR_AUTO = "whirr.cm.auto";
   public static final String CONFIG_WHIRR_USE_PACKAGES = "whirr.cm.use.packages";

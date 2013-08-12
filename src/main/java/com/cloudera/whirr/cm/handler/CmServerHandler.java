@@ -73,7 +73,8 @@ public class CmServerHandler extends BaseHandlerCm {
     super.beforeBootstrap(event);
     try {
       CmServerClusterInstance.setIsStandaloneCommand(false);
-      CmServerClusterInstance.getCluster(event.getClusterSpec()).setServer(new CmServerServiceBuilder().ip(getInstanceId(event.getClusterSpec())).build());
+      CmServerClusterInstance.getCluster(event.getClusterSpec()).setServer(
+          new CmServerServiceBuilder().ip(getInstanceId(event.getClusterSpec())).build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
     }
@@ -86,11 +87,16 @@ public class CmServerHandler extends BaseHandlerCm {
       case NAVIGATOR:
         addStatement(
             event,
-            call("install_database", "-t", CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(),
-                getMounts(event), type.getId(), type.getParent() == null ? null : type.getParent().getId(),
-                CONFIG_CM_DB_SUFFIX_TYPE), "-d", CmServerClusterInstance.getClusterConfiguration(
-                event.getClusterSpec(), getMounts(event), type.getId(), type.getParent() == null ? null : type
-                    .getParent().getId(), "database_name")));
+            call(
+                "install_database",
+                "-t",
+                CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(),
+                    CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster()), type.getId(),
+                    type.getParent() == null ? null : type.getParent().getId(), CONFIG_CM_DB_SUFFIX_TYPE),
+                "-d",
+                CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(),
+                    CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster()), type.getId(),
+                    type.getParent() == null ? null : type.getParent().getId(), "database_name")));
         break;
       default:
         break;
@@ -114,7 +120,8 @@ public class CmServerHandler extends BaseHandlerCm {
     CmServerClusterInstance.logLineItemAsync(logger, "HostConfigureInit");
     super.beforeConfigure(event);
     URL licenceConfigUri = null;
-    if ((licenceConfigUri = Utils.urlForURI(CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(CONFIG_WHIRR_CM_LICENSE_URI))) != null) {
+    if ((licenceConfigUri = Utils.urlForURI(CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getString(
+        CONFIG_WHIRR_CM_LICENSE_URI))) != null) {
       addStatement(
           event,
           createOrOverwriteFile(
@@ -125,7 +132,8 @@ public class CmServerHandler extends BaseHandlerCm {
     addStatement(
         event,
         call("configure_cm_server", "-t", CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(),
-            getMounts(event), CmServerServiceTypeCms.CM.getId(), null, CONFIG_CM_DB_SUFFIX_TYPE)));
+            CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster()),
+            CmServerServiceTypeCms.CM.getId(), null, CONFIG_CM_DB_SUFFIX_TYPE)));
     CmServerClusterInstance.logLineItemFooterAsync(logger, "HostConfigureInit");
     CmServerClusterInstance.logLineItemAsync(logger, "HostConfigureExecute");
   }
@@ -228,12 +236,23 @@ public class CmServerHandler extends BaseHandlerCm {
           CmServerClusterInstance.logLineItem(logger, operation, "");
           CmServerClusterInstance.logLineItem(logger, operation);
           Instance serverInstance = event.getCluster().getInstanceMatching(role(ROLE));
-          CmServer server = CmServerClusterInstance.getFactory().getCmServer(serverInstance.getPublicIp(),
-              serverInstance.getPrivateIp(),
-              CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getInt(CONFIG_WHIRR_INTERNAL_PORT_WEB),
-              CM_USER, CM_PASSWORD, new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API, false));
+
           try {
-            cluster = command.execute(event, server, cluster);
+            cluster = command.execute(
+                event,
+                CmServerClusterInstance.getFactory()
+                    .getCmServer(
+                        CmServerClusterInstance.getVersion(CmServerClusterInstance.getConfiguration(event
+                            .getClusterSpec())),
+                        CmServerClusterInstance.getVersionApi(CmServerClusterInstance.getConfiguration(event
+                            .getClusterSpec())),
+                        CmServerClusterInstance.getVersionCdh(CmServerClusterInstance.getConfiguration(event
+                            .getClusterSpec())),
+                        serverInstance.getPublicIp(),
+                        serverInstance.getPrivateIp(),
+                        CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getInt(
+                            CONFIG_WHIRR_INTERNAL_PORT_WEB), CM_USER, CM_PASSWORD,
+                        new CmServerLog.CmServerLogSysOut(LOG_TAG_CM_SERVER_API, false)), cluster);
           } finally {
             CmServerClusterInstance.logLineItemFooter(logger, operation);
             CmServerClusterInstance.logLineItem(logger, operation, "");
@@ -258,10 +277,9 @@ public class CmServerHandler extends BaseHandlerCm {
   private CmServerCluster getCluster(ClusterActionEvent event, CmServerServiceStatus status) throws CmServerException,
       IOException, ConfigurationException {
     CmServerCluster clusterStale = CmServerClusterInstance.getCluster(event.getClusterSpec());
-    CmServerCluster cluster, clusterCurrent = cluster = CmServerClusterInstance.getCluster(
-        event.getClusterSpec(), CmServerClusterInstance.getConfiguration(event.getClusterSpec()),
-        event.getCluster().getInstances(),
-        getMounts(event));
+    CmServerCluster cluster, clusterCurrent = cluster = CmServerClusterInstance.getCluster(event.getClusterSpec(),
+        CmServerClusterInstance.getConfiguration(event.getClusterSpec()), event.getCluster().getInstances(),
+        CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster()));
     if (status != null) {
       CmServerCluster clusterFiltered = CmServerClusterInstance.getCluster(clusterCurrent);
       for (CmServerServiceType type : clusterStale.getServiceTypes()) {
@@ -280,7 +298,7 @@ public class CmServerHandler extends BaseHandlerCm {
       }
       cluster = clusterFiltered;
     }
-    CmServerClusterInstance.getCluster(event.getClusterSpec(),true);
+    CmServerClusterInstance.getCluster(event.getClusterSpec(), true);
     return cluster;
   }
 

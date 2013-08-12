@@ -34,11 +34,12 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.whirr.Cluster;
 import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.service.ClusterActionEvent;
+import org.apache.whirr.service.hadoop.VolumeManager;
 
-import com.cloudera.whirr.cm.Utils;
 import com.cloudera.whirr.cm.handler.CmAgentHandler;
 import com.cloudera.whirr.cm.handler.CmNodeHandler;
 import com.cloudera.whirr.cm.handler.CmServerHandler;
@@ -50,7 +51,6 @@ import com.cloudera.whirr.cm.server.CmServerServiceBuilder;
 import com.cloudera.whirr.cm.server.CmServerServiceType;
 import com.cloudera.whirr.cm.server.impl.CmServerFactory;
 import com.cloudera.whirr.cm.server.impl.CmServerLog;
-
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
@@ -95,10 +95,10 @@ public class CmServerClusterInstance implements CmConstants {
         configuration.addConfiguration(clusterSpec.getConfiguration());
       }
       configuration.addConfiguration(new PropertiesConfiguration(CmServerClusterInstance.class.getClassLoader()
-          .getResource(PROPERTIES_FILE)));
+          .getResource(CONFIG_WHIRR_DEFAULT_FILE)));
       return configuration;
     } catch (ConfigurationException e) {
-      throw new IOException("Error loading " + PROPERTIES_FILE, e);
+      throw new IOException("Error loading " + CONFIG_WHIRR_DEFAULT_FILE, e);
     }
   }
 
@@ -108,6 +108,28 @@ public class CmServerClusterInstance implements CmConstants {
 
   public static synchronized void setIsStandaloneCommand(boolean isStandaloneCommand) {
     CmServerClusterInstance.isStandaloneCommand = isStandaloneCommand;
+  }
+
+  public static String getVersion(Configuration configuration) throws IOException {
+    return getVersionSubstring(configuration, CONFIG_WHIRR_CM_VERSION, "cm");
+  }
+
+  public static String getVersionApi(Configuration configuration) throws IOException {
+    return getVersionSubstring(configuration, CONFIG_WHIRR_CM_API_VERSION, "v");
+  }
+
+  public static String getVersionCdh(Configuration configuration) throws IOException {
+    return getVersionSubstring(configuration, CONFIG_WHIRR_CM_CDH_VERSION, "cdh");
+  }
+
+  private static String getVersionSubstring(Configuration configuration, String property, String prefix)
+      throws IOException {
+    String version = configuration.getString(property);
+    if (version == null || !version.startsWith(prefix)) {
+      return null;
+    } else {
+      return version.substring(prefix.length());
+    }
   }
 
   public static synchronized Set<Integer> portsPush(ClusterActionEvent event, Set<String> ports) {
@@ -529,6 +551,37 @@ public class CmServerClusterInstance implements CmConstants {
       return Objects.toStringHelper(this).add("provider", provider).add("endpoint", identity).add("identity", identity)
           .add("clusterName", clusterName).add("version", version).toString();
     }
+  }
+
+  public static SortedSet<String> getMounts(ClusterSpec specification, Cluster cluster) throws IOException {
+    return getMounts(specification, cluster == null ? null : cluster.getInstances());
+  }
+
+  @SuppressWarnings("unchecked")
+  public static SortedSet<String> getMounts(ClusterSpec specification, Set<Instance> instances) throws IOException {
+    Configuration configuration = getConfiguration(specification);
+    SortedSet<String> mounts = new TreeSet<String>();
+    Set<String> deviceMappings = CmServerClusterInstance.getDeviceMappings(specification, instances).keySet();
+    if (!configuration.getList(CONFIG_WHIRR_DATA_DIRS_ROOT).isEmpty()) {
+      mounts.addAll(configuration.getList(CONFIG_WHIRR_DATA_DIRS_ROOT));
+    } else if (!deviceMappings.isEmpty()) {
+      mounts.addAll(deviceMappings);
+    } else {
+      mounts.add(configuration.getString(CONFIG_WHIRR_INTERNAL_DATA_DIRS_DEFAULT));
+    }
+    return mounts;
+  }
+
+  public static Map<String, String> getDeviceMappings(ClusterSpec specification, Cluster cluster) {
+    return getDeviceMappings(specification, cluster == null ? null : cluster.getInstances());
+  }
+
+  public static Map<String, String> getDeviceMappings(ClusterSpec specification, Set<Instance> instances) {
+    Map<String, String> deviceMappings = new HashMap<String, String>();
+    if (specification != null && instances != null && !instances.isEmpty()) {
+      deviceMappings.putAll(new VolumeManager().getDeviceMappings(specification, instances.iterator().next()));
+    }
+    return deviceMappings;
   }
 
 }

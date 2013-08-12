@@ -76,9 +76,9 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
       addStatement(
           event,
           call("install_database", "-t", CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(),
-              getMounts(event), getType().getId(),
+              CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster()), getType().getId(),
               getType().getParent() == null ? null : getType().getParent().getId(), CONFIG_CM_DB_SUFFIX_TYPE), "-d",
-              CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(), getMounts(event), getType()
+              CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(), CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster()), getType()
                   .getId(), getType().getParent() == null ? null : getType().getParent().getId(), "database_name")));
     }
     if (CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getBoolean(CONFIG_WHIRR_USE_PACKAGES, false)) {
@@ -109,7 +109,7 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
     addStatement(
         event,
         call("configure_cm_cdh", "-r", getRole(), "-d",
-            Joiner.on(',').join(Lists.transform(Lists.newArrayList(getMounts(event)), new Function<String, String>() {
+            Joiner.on(',').join(Lists.transform(Lists.newArrayList(CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster())), new Function<String, String>() {
               @Override
               public String apply(String input) {
                 return input;

@@ -96,7 +96,8 @@ public class CmServerCluster {
 
   public synchronized boolean setServer(CmServerService server) throws CmServerException {
     if (this.server != null) {
-      throw new CmServerException("Invalid cluster topology: Attempt to add multiple servers with existing server " + this.server + " and new server " + server);
+      throw new CmServerException("Invalid cluster topology: Attempt to add multiple servers with existing server "
+          + this.server + " and new server " + server);
     }
     return (this.server = server) != null;
   }
@@ -119,22 +120,42 @@ public class CmServerCluster {
     return new TreeSet<CmServerServiceType>(services.keySet());
   }
 
+  public synchronized Set<CmServerServiceType> getServiceTypes(int version) {
+    Set<CmServerServiceType> types = new TreeSet<CmServerServiceType>();
+    for (CmServerServiceType type : services.keySet()) {
+      if (version < 0 || type.getVersion() <= version) {
+        types.add(type);
+      }
+    }
+    return types;
+  }
+
   public synchronized Set<CmServerServiceType> getServiceTypes(CmServerServiceType type) {
+    return getServiceTypes(type, -1);
+  }
+
+  public synchronized Set<CmServerServiceType> getServiceTypes(CmServerServiceType type, int version) {
     Set<CmServerServiceType> types = new TreeSet<CmServerServiceType>();
     if (type.equals(CmServerServiceType.CLUSTER)) {
       for (CmServerServiceType serviceType : services.keySet()) {
         for (CmServerService service : services.get(serviceType)) {
-          types.add(service.getType());
+          if (version < 0 || service.getType().getVersion() <= version) {
+            types.add(service.getType());
+          }
         }
       }
     } else if (services.containsKey(type)) {
       for (CmServerService service : services.get(type)) {
-        types.add(service.getType());
+        if (version < 0 || service.getType().getVersion() <= version) {
+          types.add(service.getType());
+        }
       }
     } else if (services.containsKey(type.getParent())) {
       for (CmServerService service : services.get(type.getParent())) {
         if (service.getType().equals(type)) {
-          types.add(service.getType());
+          if (version < 0 || service.getType().getVersion() <= version) {
+            types.add(service.getType());
+          }
         }
       }
     }
@@ -142,22 +163,42 @@ public class CmServerCluster {
   }
 
   public synchronized CmServerService getService(CmServerServiceType type) {
-    Set<CmServerService> serviceCopy = getServices(type);
+    return getService(type, -1);
+  }
+
+  public synchronized CmServerService getService(CmServerServiceType type, int vesion) {
+    Set<CmServerService> serviceCopy = getServices(type, vesion);
     return serviceCopy.size() == 0 ? null : serviceCopy.iterator().next();
   }
 
   public synchronized Set<CmServerService> getServices(CmServerServiceType type) {
+    return getServices(type, -1);
+  }
+
+  public synchronized Set<CmServerService> getServices(CmServerServiceType type, int version) {
     Set<CmServerService> servicesCopy = new TreeSet<CmServerService>();
     if (type.equals(CmServerServiceType.CLUSTER)) {
       for (CmServerServiceType serviceType : services.keySet()) {
-        servicesCopy.addAll(services.get(serviceType));
+        if (version < 0 || serviceType.getVersion() <= version) {
+          for (CmServerService serviceTypeSub : services.get(serviceType)) {
+            if (version < 0 || serviceTypeSub.getType().getVersion() <= version) {
+              servicesCopy.add(serviceTypeSub);
+            }
+          }
+        }
       }
     } else if (services.containsKey(type)) {
-      servicesCopy.addAll(services.get(type));
+      for (CmServerService serviceTypeSub : services.get(type)) {
+        if (version < 0 || serviceTypeSub.getType().getVersion() <= version) {
+          servicesCopy.add(serviceTypeSub);
+        }
+      }
     } else if (services.containsKey(type.getParent())) {
       for (CmServerService service : services.get(type.getParent())) {
         if (service.getType().equals(type)) {
-          servicesCopy.add(service);
+          if (version < 0 || service.getType().getVersion() <= version) {
+            servicesCopy.add(service);
+          }
         }
       }
     }

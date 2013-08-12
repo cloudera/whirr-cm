@@ -24,6 +24,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.cloudera.whirr.cm.server.CmServerService.CmServerServiceStatus;
+import com.cloudera.whirr.cm.server.impl.CmServerFactory;
+import com.cloudera.whirr.cm.server.impl.CmServerImpl;
 
 public class CmServerClusterTest extends BaseTestServer {
 
@@ -50,6 +52,171 @@ public class CmServerClusterTest extends BaseTestServer {
         .qualifier("1").host("host-4").build());
     cluster.addService(new CmServerServiceBuilder().type(CmServerServiceType.IMPALA_DAEMON).tag(CLUSTER_TAG)
         .qualifier("1").host("host-4").build());
+  }
+
+  @Test
+  public void testVersion() throws CmServerException {
+    boolean caught = false;
+    Assert.assertNull(new CmServerFactory().getCmServer("", "", 7180, "", "", null).getVersion());
+    Assert.assertNull(new CmServerFactory().getCmServer(null, "", "", 7180, "", "", null).getVersion());
+    Assert.assertNull(new CmServerFactory().getCmServer("", "", "", 7180, "", "", null).getVersion());
+    Assert.assertEquals("4", new CmServerFactory().getCmServer("4", "", "", 7180, "", "", null).getVersion());
+    Assert.assertEquals("4.5", new CmServerFactory().getCmServer("4.5", "", "", 7180, "", "", null).getVersion());
+    Assert.assertEquals("4.6.0", new CmServerFactory().getCmServer("4.6.0", "", "", 7180, "", "", null).getVersion());
+    Assert.assertEquals("4.6.2", new CmServerFactory().getCmServer("4.6.2", "", "", 7180, "", "", null).getVersion());
+    caught = false;
+    try {
+      Assert.assertNull(new CmServerFactory().getCmServer("-1", "", "", 7180, "", "", null).getVersion());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertNull(new CmServerFactory().getCmServer("0", "", "", 7180, "", "", null).getVersion());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertNull(new CmServerFactory().getCmServer("3", "", "", 7180, "", "", null).getVersion());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertNull(new CmServerFactory().getCmServer("3.6", "", "", 7180, "", "", null).getVersion());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertNull(new CmServerFactory().getCmServer("4.0", "", "", 7180, "", "", null).getVersion());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertNull(new CmServerFactory().getCmServer("10", "", "", 7180, "", "", null).getVersion());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertNull(new CmServerFactory().getCmServer("ABC", "", "", 7180, "", "", null).getVersion());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+  }
+
+  @Test
+  public void testVersionApi() throws CmServerException {
+    boolean caught = false;
+    Assert.assertEquals(CmServerImpl.CM_VERSION_API_LATEST,
+        new CmServerFactory().getCmServer("", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(CmServerImpl.CM_VERSION_API_LATEST,
+        new CmServerFactory().getCmServer(null, "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(CmServerImpl.CM_VERSION_API_LATEST,
+        new CmServerFactory().getCmServer("", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(4, new CmServerFactory().getCmServer("4", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(3, new CmServerFactory().getCmServer("4.5", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(4, new CmServerFactory().getCmServer("4.6.0", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(4, new CmServerFactory().getCmServer("4.6.2", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(3, new CmServerFactory().getCmServer(null, "3", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(4, new CmServerFactory().getCmServer(null, "4", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(3, new CmServerFactory().getCmServer("", "3", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(4, new CmServerFactory().getCmServer("", "4", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(4, new CmServerFactory().getCmServer("4", "4", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(3, new CmServerFactory().getCmServer("4.5", "3", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(4, new CmServerFactory().getCmServer("4.6.0", "4", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(3, new CmServerFactory().getCmServer("4", "3", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(3, new CmServerFactory().getCmServer("4.5", "3", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(3, new CmServerFactory().getCmServer("4.6.0", "3", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(3, new CmServerFactory().getCmServer("4.6.2", "3", "", "", 7180, "", "", null).getVersionApi());
+    caught = false;
+    try {
+      Assert.assertEquals(4, new CmServerFactory().getCmServer("3", "", "", 7180, "", "", null).getVersionApi());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertEquals(4, new CmServerFactory().getCmServer("ABC", "", "", 7180, "", "", null).getVersionApi());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertEquals(4, new CmServerFactory().getCmServer("4.0", "4", "", "", 7180, "", "", null).getVersionApi());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertEquals(4, new CmServerFactory().getCmServer("4.5", "4", "", "", 7180, "", "", null).getVersionApi());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertEquals(4, new CmServerFactory().getCmServer("4", "10", "", "", 7180, "", "", null).getVersionApi());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertEquals(1, new CmServerFactory().getCmServer("4.6", "1", "", "", 7180, "", "", null).getVersionApi());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert
+          .assertEquals(1, new CmServerFactory().getCmServer("10.6", "4", "", "", 7180, "", "", null).getVersionApi());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+  }
+
+  @Test
+  public void testVersionCdh() throws CmServerException {
+    boolean caught = false;
+    Assert.assertEquals("CDH4", new CmServerFactory().getCmServer("", "", 7180, "", "", null).getVersionCdh());
+    Assert.assertEquals("CDH4", new CmServerFactory().getCmServer(null, null, null, "", "", 7180, "", "", null)
+        .getVersionCdh());
+    Assert.assertEquals("CDH4", new CmServerFactory().getCmServer(null, null, "", "", "", 7180, "", "", null)
+        .getVersionCdh());
+    Assert.assertEquals("CDH4", new CmServerFactory().getCmServer(null, null, "4", "", "", 7180, "", "", null)
+        .getVersionCdh());
+    caught = false;
+    try {
+      Assert.assertEquals("CDH3", new CmServerFactory().getCmServer(null, null, "3", "", "", 7180, "", "", null)
+          .getVersionCdh());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
+    caught = false;
+    try {
+      Assert.assertEquals("CDH10", new CmServerFactory().getCmServer(null, null, "10", "", "", 7180, "", "", null)
+          .getVersionCdh());
+    } catch (CmServerException e) {
+      caught = true;
+    }
+    Assert.assertTrue(caught);
   }
 
   @Test
@@ -184,6 +351,16 @@ public class CmServerClusterTest extends BaseTestServer {
     Assert.assertArrayEquals(new CmServerServiceType[] { CmServerServiceType.HDFS_NAMENODE,
         CmServerServiceType.HDFS_SECONDARY_NAMENODE, CmServerServiceType.HDFS_DATANODE },
         cluster.getServiceTypes(CmServerServiceType.HDFS).toArray());
+    Assert.assertArrayEquals(new CmServerServiceType[] { CmServerServiceType.HDFS_NAMENODE,
+        CmServerServiceType.HDFS_SECONDARY_NAMENODE, CmServerServiceType.HDFS_DATANODE },
+        cluster.getServiceTypes(CmServerServiceType.HDFS, 3).toArray());
+    Assert.assertArrayEquals(new CmServerServiceType[] { CmServerServiceType.HDFS_NAMENODE,
+        CmServerServiceType.HDFS_SECONDARY_NAMENODE, CmServerServiceType.HDFS_DATANODE },
+        cluster.getServiceTypes(CmServerServiceType.HDFS, 4).toArray());
+    Assert.assertArrayEquals(new CmServerServiceType[] {}, cluster.getServiceTypes(CmServerServiceType.HDFS, 0)
+        .toArray());
+    Assert.assertArrayEquals(new CmServerServiceType[] {}, cluster.getServiceTypes(CmServerServiceType.HDFS, 2)
+        .toArray());
   }
 
   @Test

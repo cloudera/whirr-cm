@@ -3,9 +3,27 @@
 Follow these instructions to start a cluster on Amazon EC2 running Cloudera Manager (CM),
 allowing you to install, run and manage a CDH cluster.
 
+## Requirements
+
+This plugin has dependencies on whirr and CM as per the pom, but remains backwards compatible with:
+
+* whirr 0.8+
+* CM 4.5+ (CM API 3+)
+
+The plugin has been tested extensively on RHEL and Debian derivatives and ships with integrations tests targeting:
+
+* CentOS 6.4
+* Ubuntu LTS 12.04
+
 ## Install Whirr
 
-Run the following commands from you local machine.
+Run the following commands from you local machine or edge node with access to your Cloud providers resources.
+Note that the latter is often preferable, providing a cluster client edge node for using your cluster, catering for:
+
+* network brownouts
+* minimial latency
+* private host/IP bindings
+
 
 ### Set your AWS credentials:
 ```bash
@@ -36,12 +54,12 @@ ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa_cm
 ## Install the Whirr Cloudera Manager Plugin (optional)
 
 As of CDH 4.2, whirr ships with the whirr CM plugin, but in the event that you would like to replace this, you can follow
-these instructions (take note of any files copied during the 'mvn dependency:copy-dependencies' command, this may indicate old versions remain and should be deleted from $WHIRR_HOME/lib)
+these instructions (take note of any files copied during the 'mvn dependency:copy-dependencies' command, this may indicate old and now stale versions remain and should be deleted from $WHIRR_HOME/lib)
 
 ```bash
 git clone https://github.com/cloudera/whirr-cm.git
 cd whirr-cm
-mvn clean install -Dmaven.test.skip=true -Dmaven.assembly.skip=true
+mvn clean install -DskipTests
 mvn dependency:copy-dependencies -DincludeScope=runtime -DoverWriteIfNewer=false -DoutputDirectory=$WHIRR_HOME/lib
 rm -rf $WHIRR_HOME/lib/whirr-cdh-* $WHIRR_HOME/lib/whirr-cm-*
 cp -rvf target/whirr-cm-*.jar $WHIRR_HOME/lib
@@ -49,7 +67,7 @@ cp -rvf target/whirr-cm-*.jar $WHIRR_HOME/lib
 
 ## Launch a Cloudera Manager Cluster
 
-A sample Whirr CM CDH EC2 config is available here: 
+A sample Whirr CM CDH EC2 config is available ([cm-ec2.properties](cm-ec2.properties)) which should be locally copied to your whirr client host: 
 
 ```bash
 curl -O https://raw.github.com/cloudera/whirr-cm/master/cm-ec2.properties
@@ -63,7 +81,7 @@ mv -v eval_acme_20120925_cloudera_enterprise_license.txt $WHIRR_HOME/conf/cm-lic
 ```
 
 The following command will start a cluster with 7 nodes, 1 CM server, 3 master and 3 slave nodes. To change the
-cluster topology, edit the [cm-ec2.properties](https://raw.github.com/cloudera/whirr-cm/master/cm-ec2.properties) file.
+cluster topology, edit the cm-ec2.properties file.
 
 ```bash
 whirr launch-cluster --config cm-ec2.properties
@@ -71,14 +89,14 @@ whirr launch-cluster --config cm-ec2.properties
 
 Whirr will report progress to the console as it runs and will exit once complete.
 
-During the various phases of execution, the Whirr CM plugin will report the CM Web Console URL, eg pre-provision
+During the various phases of execution, the Whirr CM plugin will report the CM Web Console URL, e.g. pre-provision
 
 ```bash
 Whirr Handler -----------------------------------------------------------------
 Whirr Handler [CMClusterProvision] 
 Whirr Handler -----------------------------------------------------------------
 Whirr Handler 
-Whirr Handler [CMClusterProvision] follow live at http://37.188.114.234:7180
+Whirr Handler [CMClusterProvision] follow live at http://ec2-50-112-89-152.us-west-2.compute.amazonaws.com:7180
 ```
 
 and post-provision:
@@ -90,7 +108,7 @@ Whirr Handler [CMClusterProvision]   ssh -o StrictHostKeyChecking=no -i /root/.s
 Whirr Handler [CMClusterProvision]   ssh -o StrictHostKeyChecking=no -i /root/.ssh/whirr whirr@37.188.114.225
 Whirr Handler [CMClusterProvision]   ssh -o StrictHostKeyChecking=no -i /root/.ssh/whirr whirr@37.188.114.234
 Whirr Handler [CMClusterProvision] CM SERVER
-Whirr Handler [CMClusterProvision]   http://ec2-54-216-175-183.eu-west-1.compute.amazonaws.com:7180
+Whirr Handler [CMClusterProvision]   http://ec2-50-112-89-152.us-west-2.compute.amazonaws.com:7180
 Whirr Handler [CMClusterProvision]   ssh -o StrictHostKeyChecking=no -i /root/.ssh/whirr whirr@37.188.114.234
 ```
 
@@ -105,22 +123,13 @@ Password: admin
 
 ## Manage the CDH cluster with CM
 
-The Whirr property 'whirr.cm.auto', as set in [cm-ec2.properties](https://raw.github.com/cloudera/whirr-cm/master/cm-ec2.properties):
-
-```bash
-# Switch to enable/disable the automatic setup of a cluster within Cloudera Manager,
-# its initialization and launch, defaults to true
-whirr.cm.auto=true
-```
-
+The Whirr property 'whirr.cm.auto', as set in [cm-ec2.properties](https://raw.github.com/cloudera/whirr-cm/master/cm-ec2.properties),
 determines whether the Whirr CM plugin provisions, initialises and starts a new CDH cluster (true)
 or merely provisions the CM Server and Agents to allow manual CDH cluster management through
 the CM Web Console (false).
 
 In either case, once Whirr has completed, the CM infrastructure will be deployed and ready to
-use, fully documented here:
-
-http://www.cloudera.com/content/support/en/documentation/manager-enterprise/cloudera-manager-enterprise-v4-latest.html
+use, as documented [here](http://www.cloudera.com/content/support/en/documentation/manager-enterprise/cloudera-manager-enterprise-v4-latest.html).
 
 Other Whirr properties can be used to affect the cluster provision process, refer to the example 
 [cm-ec2.properties](https://raw.github.com/cloudera/whirr-cm/master/cm-ec2.properties) for more details.
@@ -137,8 +146,7 @@ or query the Whirr CM plugin services:
 whirr list-services --config cm-ec2.properties
 ```
 
-As well as listing services via the 'list-services' command, the Whirr CM plugin supports the
-following commands:
+As well as supporting all the standard whirr commands, the Whirr CM plugin provides and or intergrates to the following additional commands:
 
 * init-cluster
 * download-config 
@@ -181,12 +189,7 @@ nodes (host,forward/reverse DNS) and has the same version of CDH installed (alth
 via the same means, eg parcels/RPMs/.debs etc).
 
 The 'whirr.client-cidrs' can be used to ensure the clients IP ranges are accepted through the cloud
-providers security controls and host firewalls.
-
-```bash
-# List of client IP ranges that can access the CM and CDH web console and client servers
-whirr.client-cidrs=0.0.0.0/0
-```
+providers security controls and host firewalls, see [cm-ec2.properties](cm-ec2.properties).
 
 To download the CDH cluster client config to the whirr cluster working directory ($HOME/.whirr/whirr)
 
@@ -214,45 +217,57 @@ whirr destroy-cluster --config cm-ec2.properties
 
 ## Unit and Integration Tests
 
-This project includes a full suit of unit tests, launchable via:
+This project includes a full suite of unit tests, launchable via:
 
 ```bash
-mvn test -Dmaven.assembly.skip=true
+mvn clean test
 ```
 
-The smoke integration test can be launched against Amazon EC2 via:
+Integration tests that run against Amazon EC2 are also available, run as so:
 
 ```bash
-mvn test -Pintegration -Dtest=CmServerSmokeTest#testCleanClusterLifecycle -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
+mvn clean verify -DskipUTs -DskipITs=false -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
 ```
 
-The full set of integration tests can be laucnhed against Amazon EC2 via:
+Be wary though, these tests will take some time to execute, so it is advisable to use individual test cases for iterative testing, eg:
 
 ```bash
-mvn integration-test -Pintegration -Dmaven.test.skip=true -Dmaven.assembly.skip=true -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
+mvn clean test -Dtest=CmServerCommandIT#testCreateServices -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
+mvn clean test -Dtest=CmServerCommandIT#testStartServices -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
+mvn clean test -Dtest=CmServerCommandIT#testServiceLifecycle -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
 ```
 
-You can optionally specifiy a target platform (Unbuntu and CentOS currently supported) by providing the 'test.platform' property:
+You can optionally specify a target platform, CM, CM API and CDH version via the following system properties (defaulting to the parameters defined in the example configuration [cm-ec2.properties](cm-ec2.properties) and or the latest versions available):
+
+* whirr.test.platform (centos | ubuntu)
+* whirr.test.cm.version (cm$MAJOR_VERSION.$MINOR_VERSION.$INCREMENTAL_VERSION)
+* whirr.test.cm.api.version (v$MAJOR_VERSION)
+* whirr.test.cm.cdh.version (cdh$MAJOR_VERSION)
+
+For example:
 
 ```bash
-mvn integration-test -Pintegration -Dmaven.test.skip=true -Dmaven.assembly.skip=true -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dtest.platform=centos
+mvn clean test -Dtest=CmServerCommandIT#testCreateServices -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dwhirr.test.platform=centos
+mvn clean test -Dtest=CmServerCommandIT#testCreateServices -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dwhirr.test.cm.version=cm4.5.0
+mvn clean test -Dtest=CmServerCommandIT#testCreateServices -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dwhirr.test.platform=centos -Dwhirr.test.cm.version=cm4.6.2 -Dwhirr.test.cm.api.version=v4 -Dwhirr.test.cm.cdh.version=cdh4
 ```
 
-The integration tests setup and teardown a cluster automatically, if you would like to launch and persist a cluster between integration tests for iterative testing minus the cluster bootstrap costs, a cluster can be launched via:
+Note that 'whirr.test.cm.cdh.version' specifies only the major CDH version, both the minor and incremental versions are defaulted to the latest available from the list of parcel repos defined by 'whirr.cm.config.cm.remote_parcel_repo_urls', which defaults to the latest available.
+
+The [CmServerSmokeSuiteIT](src/test/java/com/cloudera/whirr/cm/integration/CmServerSmokeSuiteIT.java) leverages a matrix of platforms and component versions to test all supported permutations, it ignores the command line switches.
 
 ```bash
-mvn exec:java -Dexec.mainClass=com.cloudera.whirr.cm.BaseTestIntegrationBoostrap -Dexec.classpathScope=test -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
+mvn clean test -Dtest=CmServerSmokeSuiteIT -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
+```
+
+The integration test frameworks sets up and tears down a cluster automatically as necessary, if you would like to launch and persist a cluster between integration tests for iterative testing sans the cluster bootstrap costs, a cluster can be launched as so (above platform and version system properties are also supported):
+
+```bash
+mvn exec:java -Dexec.mainClass="com.cloudera.whirr.cm.integration.BaseITServer\$ClusterBoostrap" -Dexec.classpathScope="test" -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties -Dwhirr.test.platform=centos
 ```
 
 and then destroyed via:
 
 ```bash
-mvn exec:java -Dexec.mainClass=com.cloudera.whirr.cm.BaseTestIntegrationDestroy -Dexec.classpathScope=test -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
-```
-
-The status of the standalone launched cluster can be queried via:
-
-
-```bash
-mvn exec:java -Dexec.mainClass=com.cloudera.whirr.cm.BaseTestIntegrationStatus -Dexec.classpathScope=test -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
+mvn exec:java -Dexec.mainClass="com.cloudera.whirr.cm.integration.BaseITServer\$ClusterDestroy" -Dexec.classpathScope="test" -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
 ```

@@ -22,6 +22,12 @@ import java.util.List;
 
 public interface CmServer {
 
+  public String getVersion();
+
+  public int getVersionApi();
+  
+  public String getVersionCdh();
+
   public boolean getServiceConfigs(CmServerCluster cluster, File path) throws CmServerException;
 
   public List<CmServerService> getServiceHosts() throws CmServerException;

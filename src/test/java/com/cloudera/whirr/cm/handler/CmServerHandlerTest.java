@@ -37,6 +37,7 @@ import com.cloudera.whirr.cm.handler.cdh.CmCdhFlumeAgentHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHBaseMasterHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHBaseRegionServerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsDataNodeHandler;
+import com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsHttpFsHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsNameNodeHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHdfsSecondaryNameNodeHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhHiveHCatalogHandler;
@@ -65,10 +66,11 @@ public class CmServerHandlerTest extends BaseTestHandler {
       CmCdhHdfsSecondaryNameNodeHandler.ROLE, CmCdhHueServerHandler.ROLE, CmCdhHueBeeswaxServerHandler.ROLE,
       CmCdhMapReduceJobTrackerHandler.ROLE, CmCdhHBaseMasterHandler.ROLE, CmCdhHiveMetaStoreHandler.ROLE,
       CmCdhImpalaStateStoreHandler.ROLE, CmCdhOozieServerHandler.ROLE, CmCdhHiveServer2Handler.ROLE,
-      CmCdhHiveHCatalogHandler.ROLE, CmCdhSqoopServerHandler.ROLE, CmCdhSolrServerHandler.ROLE };
+      CmCdhHiveHCatalogHandler.ROLE, CmCdhSqoopServerHandler.ROLE, CmCdhSolrServerHandler.ROLE,
+      CmCdhHdfsHttpFsHandler.ROLE };
   private static final String[] WHIRR_INSTANCE_TEMPLATE_ROLES_SLAVES = { CmCdhHdfsDataNodeHandler.ROLE,
       CmCdhMapReduceTaskTrackerHandler.ROLE, CmCdhZookeeperServerHandler.ROLE, CmCdhHBaseRegionServerHandler.ROLE,
-      CmCdhImpalaDaemonHandler.ROLE, CmCdhFlumeAgentHandler.ROLE };
+      CmCdhImpalaDaemonHandler.ROLE, CmCdhFlumeAgentHandler.ROLE, CmCdhHdfsHttpFsHandler.ROLE };
   private static final int WHIRR_INSTANCE_TEMPLATE_NUM_ROLES = WHIRR_INSTANCE_TEMPLATE_ROLES_MASTER.length
       + WHIRR_INSTANCE_TEMPLATE_NUM_SLAVES * WHIRR_INSTANCE_TEMPLATE_ROLES_SLAVES.length;
   private static String WHIRR_INSTANCE_TEMPLATE_ALL = "1 " + CmServerHandler.ROLE + "+" + CmAgentHandler.ROLE + ",1 "
@@ -414,11 +416,11 @@ public class CmServerHandlerTest extends BaseTestHandler {
     Assert.assertTrue(countersAssertAndReset(WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, WHIRR_INSTANCE_TEMPLATE_NUM_ROLES,
         WHIRR_INSTANCE_TEMPLATE_NUM_ROLES, 0));
     Assert.assertNotNull(controller.startServices(clusterSpec, cluster, roles, new TreeSet<String>()));
-    Assert.assertTrue(countersAssertAndReset(0, 0, 5, 0));
+    Assert.assertTrue(countersAssertAndReset(0, 0, 9, 0));
     Assert.assertNotNull(controller.stopServices(clusterSpec, cluster, roles, new TreeSet<String>()));
-    Assert.assertTrue(countersAssertAndReset(0, 0, 0, 5));
+    Assert.assertTrue(countersAssertAndReset(0, 0, 0, 9));
     Assert.assertNotNull(controller.stopServices(clusterSpec, cluster, roles, new TreeSet<String>()));
-    Assert.assertTrue(countersAssertAndReset(0, 0, 0, 5));
+    Assert.assertTrue(countersAssertAndReset(0, 0, 0, 9));
   }
 
   @Test
@@ -430,8 +432,7 @@ public class CmServerHandlerTest extends BaseTestHandler {
   @Test
   public void testNodesAndAgentsAndClusterFirewall() throws Exception {
     Assert.assertNotNull(launchWithClusterSpec(newClusterSpecForProperties(ImmutableMap.of("whirr.instance-templates",
-        WHIRR_INSTANCE_TEMPLATE_ALL, CONFIG_WHIRR_AUTO, Boolean.FALSE.toString(), CONFIG_WHIRR_FIREWALL_ENABLE,
-        Boolean.TRUE.toString()))));
+        WHIRR_INSTANCE_TEMPLATE_ALL, CONFIG_WHIRR_AUTO, Boolean.FALSE.toString()))));
   }
 
   @Test
