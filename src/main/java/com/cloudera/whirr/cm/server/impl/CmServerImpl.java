@@ -1117,7 +1117,7 @@ public class CmServerImpl implements CmServer {
       break;
     case OOZIE:
       execute(apiResourceRootV3.getClustersResource().getServicesResource(getName(cluster))
-          .installOozieShareLib(cluster.getServiceName(CmServerServiceType.OOZIE)));
+          .installOozieShareLib(cluster.getServiceName(CmServerServiceType.OOZIE)), false);
       execute(
           apiResourceRootV3.getClustersResource().getServicesResource(getName(cluster))
               .createOozieDb(cluster.getServiceName(CmServerServiceType.OOZIE)), false);

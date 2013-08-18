@@ -208,8 +208,8 @@ public abstract class BaseTestHandler extends BaseServiceDryRunTest implements B
     ClusterSpec clusterSpec = super.newClusterSpecForProperties(ImmutableMap.<String, String> builder()
         .putAll(properties).put(ClusterSpec.Property.CLUSTER_USER.getConfigName(), CLUSTER_USER)
         .put(ClusterSpec.Property.CLUSTER_NAME.getConfigName(), CONFIG_WHIRR_NAME_DEFAULT).build());
-    clusterSpec.setPrivateKey(FILE_KEY_PRIVATE);
-    clusterSpec.setPublicKey(FILE_KEY_PUBLIC);
+    clusterSpec.setPrivateKey(TEST_FILE_KEY_PRIVATE);
+    clusterSpec.setPublicKey(TEST_FILE_KEY_PUBLIC);
     return clusterSpec;
   }
 

@@ -260,7 +260,7 @@ The [CmServerSmokeSuiteIT](src/test/java/com/cloudera/whirr/cm/integration/CmSer
 mvn clean test -Dtest=CmServerSmokeSuiteIT -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY
 ```
 
-The integration test frameworks sets up and tears down a cluster automatically as necessary, if you would like to launch and persist a cluster between integration tests for iterative testing sans the cluster bootstrap costs, a cluster can be launched as so (above platform and version system properties are also supported):
+The integration test frameworks sets up and tears down a cluster automatically as necessary, the latter conditional on the 'whirr.test.platform.destroy' system property. If you would like to launch and persist a cluster between integration tests for iterative testing sans the cluster bootstrap costs, a cluster can be launched as so (above platform and version system properties are also supported):
 
 ```bash
 mvn exec:java -Dexec.mainClass="com.cloudera.whirr.cm.integration.BaseITServer\$ClusterBoostrap" -Dexec.classpathScope="test" -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties -Dwhirr.test.platform=centos
@@ -271,3 +271,8 @@ and then destroyed via:
 ```bash
 mvn exec:java -Dexec.mainClass="com.cloudera.whirr.cm.integration.BaseITServer\$ClusterDestroy" -Dexec.classpathScope="test" -Dwhirr.test.identity=$AWS_ACCESS_KEY -Dwhirr.test.credential=$AWS_SECRET_KEY -Dlog4j.configuration=file:./target/test-classes/log4j.properties
 ```
+
+As a convenience (especially for running within an IDE) the integration tests source the [cm-test.properties](cm-test.properties) as 
+system and whirr properties prior to execution, absolving the need to specify these properties in less convenient forms (eg command line switches, maven properties, IDE properties etc).
+
+
