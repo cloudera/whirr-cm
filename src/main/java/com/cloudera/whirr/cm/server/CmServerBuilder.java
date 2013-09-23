@@ -132,7 +132,7 @@ public class CmServerBuilder implements CmServerConstants {
     this.server = null;
     return this;
   }
-  
+
   @CmServerCommandMethod(name = "ip")
   public CmServerBuilder ip(String ip) throws CmServerException {
     if (ip == null || ip.equals("")) {

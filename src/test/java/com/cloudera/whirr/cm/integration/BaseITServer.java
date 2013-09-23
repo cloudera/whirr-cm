@@ -182,7 +182,7 @@ public abstract class BaseITServer implements BaseTest {
         + WordUtils.capitalize(System.getProperty(TEST_CM_API_VERSION))
         + WordUtils.capitalize(System.getProperty(TEST_CM_CDH_VERSION))
         + WordUtils.capitalize(System.getProperty(TEST_PLATFORM));
-    return WordUtils.capitalize(test.getMethodName()) + (qualifier.equals("") ? "" : ("-" + qualifier));
+    return WordUtils.capitalize(test.getMethodName()) + (qualifier.equals("") ? "" : "-" + qualifier);
   }
 
   protected boolean isClusterBootstrappedStatically() {

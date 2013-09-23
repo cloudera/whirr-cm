@@ -61,9 +61,9 @@ public abstract class CmServerLog {
 
   public void logOperation(String operation, String message) {
     if (!quiet) {
-      logMessage((operation == null ? "" : (tag == null ? "" : (tag + " ")))
-          + (operation == null || operation.equals("") ? "" : (((tag == null ? "" : "[") + operation
-              + (tag == null ? "" : "]") + " "))) + (message == null ? "" : message));
+      logMessage((operation == null ? "" : tag == null ? "" : tag + " ")
+          + (operation == null || operation.equals("") ? "" : (tag == null ? "" : "[") + operation
+              + (tag == null ? "" : "]") + " ") + (message == null ? "" : message));
     }
   }
 
@@ -73,9 +73,9 @@ public abstract class CmServerLog {
 
   public void logOperationIntermediate(String operation, String message) {
     if (!quiet) {
-      logMessageIntermediate((operation == null ? "" : (tag == null ? "" : (tag + " ")))
-          + (operation == null || operation.equals("") ? "" : (((tag == null ? "" : "[") + operation
-              + (tag == null ? "" : "]") + " "))) + (message == null ? "" : message));
+      logMessageIntermediate((operation == null ? "" : tag == null ? "" : tag + " ")
+          + (operation == null || operation.equals("") ? "" : (tag == null ? "" : "[") + operation
+              + (tag == null ? "" : "]") + " ") + (message == null ? "" : message));
     }
   }
 
@@ -233,7 +233,7 @@ public abstract class CmServerLog {
         failed = true;
         logOperation(operation, "Unexpected error executing command");
       }
-      logOperation(operation, (failed ? "failed" : "finished"));
+      logOperation(operation, failed ? "failed" : "finished");
     }
 
     @Override

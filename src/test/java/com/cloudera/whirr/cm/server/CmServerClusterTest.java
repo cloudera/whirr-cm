@@ -124,7 +124,7 @@ public class CmServerClusterTest extends BaseTestServer {
         new CmServerFactory().getCmServer(null, "", "", 7180, "", "", null).getVersionApi());
     Assert.assertEquals(CmServerImpl.CM_VERSION_API_LATEST,
         new CmServerFactory().getCmServer("", "", "", 7180, "", "", null).getVersionApi());
-    Assert.assertEquals(4, new CmServerFactory().getCmServer("4", "", "", 7180, "", "", null).getVersionApi());
+    Assert.assertEquals(5, new CmServerFactory().getCmServer("4", "", "", 7180, "", "", null).getVersionApi());
     Assert.assertEquals(3, new CmServerFactory().getCmServer("4.5", "", "", 7180, "", "", null).getVersionApi());
     Assert.assertEquals(4, new CmServerFactory().getCmServer("4.6.0", "", "", 7180, "", "", null).getVersionApi());
     Assert.assertEquals(4, new CmServerFactory().getCmServer("4.6.2", "", "", 7180, "", "", null).getVersionApi());
@@ -217,6 +217,35 @@ public class CmServerClusterTest extends BaseTestServer {
       caught = true;
     }
     Assert.assertTrue(caught);
+  }
+
+  @Test
+  public void testConfiguration() throws CmServerException {
+    CmServerCluster cluster = new CmServerCluster();
+    cluster.addServiceConfiguration("3", CmServerServiceType.HDFS_NAMENODE.getId(), "some-setting-3", "some-value-3");
+    cluster.addServiceConfiguration("4", CmServerServiceType.HDFS_NAMENODE.getId(), "some-setting-4", "some-value-4");
+    Assert
+        .assertEquals(
+            "some-value-3",
+            cluster.getServiceConfiguration().get("3").get(CmServerServiceType.HDFS_NAMENODE.getId())
+                .get("some-setting-3"));
+    Assert
+        .assertEquals(
+            "some-value-4",
+            cluster.getServiceConfiguration().get("4").get(CmServerServiceType.HDFS_NAMENODE.getId())
+                .get("some-setting-4"));
+    Assert.assertEquals("some-value-3",
+        cluster.getServiceConfiguration(3).get(CmServerServiceType.HDFS_NAMENODE.getId()).get("some-setting-3"));
+    Assert.assertEquals(null,
+        cluster.getServiceConfiguration(3).get(CmServerServiceType.HDFS_NAMENODE.getId()).get("some-setting-4"));
+    Assert.assertEquals("some-value-3",
+        cluster.getServiceConfiguration(4).get(CmServerServiceType.HDFS_NAMENODE.getId()).get("some-setting-3"));
+    Assert.assertEquals("some-value-4",
+        cluster.getServiceConfiguration(4).get(CmServerServiceType.HDFS_NAMENODE.getId()).get("some-setting-4"));
+    Assert.assertEquals("some-value-3",
+        cluster.getServiceConfiguration(10).get(CmServerServiceType.HDFS_NAMENODE.getId()).get("some-setting-3"));
+    Assert.assertEquals("some-value-4",
+        cluster.getServiceConfiguration(10).get(CmServerServiceType.HDFS_NAMENODE.getId()).get("some-setting-4"));
   }
 
   @Test

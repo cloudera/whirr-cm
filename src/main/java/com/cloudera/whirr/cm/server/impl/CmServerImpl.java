@@ -37,6 +37,7 @@ import java.util.zip.ZipInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 import org.apache.cxf.jaxrs.client.ServerWebApplicationException;
+import org.apache.cxf.jaxrs.ext.multipart.InputStreamDataSource;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 
@@ -65,6 +66,7 @@ import com.cloudera.api.model.ApiServiceState;
 import com.cloudera.api.v3.ParcelResource;
 import com.cloudera.api.v3.RootResourceV3;
 import com.cloudera.api.v4.RootResourceV4;
+import com.cloudera.api.v5.RootResourceV5;
 import com.cloudera.whirr.cm.server.CmServer;
 import com.cloudera.whirr.cm.server.CmServerBuilder.CmServerCommandMethod;
 import com.cloudera.whirr.cm.server.CmServerCluster;
@@ -82,7 +84,10 @@ import com.google.common.collect.Lists;
 
 public class CmServerImpl implements CmServer {
 
-  public static Map<String, Integer> CM_VERSION_API_MATRIX = ImmutableMap.of("4.5.0", 3, "4.6.0", 4);
+  // CM Version Matrix, of form {CM_VERSION=CM_API_VERSION}
+  // Entry for the latest CM minor version for each API upgrade, from baseline 4.5.0
+  public static Map<String, Integer> CM_VERSION_API_MATRIX = ImmutableMap.of("4.5.0", 3, "4.5.3", 3, "4.6.3", 4,
+      "4.7.0", 5);
   public static String CM_VERSION_EARLIEST = CM_VERSION_API_MATRIX.keySet().toArray(
       new String[CM_VERSION_API_MATRIX.size()])[0];
   public static String CM_VERSION_LATEST = CM_VERSION_API_MATRIX.keySet().toArray(
@@ -111,6 +116,8 @@ public class CmServerImpl implements CmServer {
 
   final private RootResourceV3 apiResourceRootV3;
   final private RootResourceV4 apiResourceRootV4;
+  @SuppressWarnings("unused")
+  final private RootResourceV5 apiResourceRootV5;
 
   private boolean isFirstStartRequired = true;
 
@@ -124,11 +131,8 @@ public class CmServerImpl implements CmServer {
     ApiRootResource apiResource = new ClouderaManagerClientBuilder().withHost(ip).withPort(port)
         .withUsernamePassword(user, password).build();
     this.apiResourceRootV3 = apiResource.getRootV3();
-    if (this.versionApi >= 4) {
-      this.apiResourceRootV4 = apiResource.getRootV4();
-    } else {
-      this.apiResourceRootV4 = null;
-    }
+    this.apiResourceRootV4 = this.versionApi >= 4 ? apiResource.getRootV4() : null;
+    this.apiResourceRootV5 = this.versionApi >= 5 ? apiResource.getRootV5() : null;
   }
 
   protected String getVersion(String version) throws CmServerException {
@@ -227,44 +231,43 @@ public class CmServerImpl implements CmServer {
           public void execute() throws IOException {
             for (ApiService apiService : apiResourceRootV3.getClustersResource().getServicesResource(getName(cluster))
                 .readServices(DataView.SUMMARY)) {
-              switch (CmServerServiceType.valueOfId(apiService.getType())) {
-              case HDFS:
-              case MAPREDUCE:
-              case HIVE:
-              case HBASE:
-                ZipInputStream configInput = null;
+              CmServerServiceType type = CmServerServiceType.valueOfId(apiService.getType());
+              if (type.equals(CmServerServiceType.HDFS) || type.equals(CmServerServiceType.MAPREDUCE)
+                  || type.equals(CmServerServiceType.HBASE) || versionApi >= 4 && type.equals(CmServerServiceType.HIVE)
+                  || versionApi >= 5 && type.equals(CmServerServiceType.SOLR)) {
+                ZipInputStream configInputZip = null;
                 try {
-                  configInput = new ZipInputStream(apiResourceRootV3.getClustersResource()
-                      .getServicesResource(getName(cluster)).getClientConfig(apiService.getName()).getInputStream());
-                  ZipEntry configInputZipEntry = null;
-                  while ((configInputZipEntry = configInput.getNextEntry()) != null) {
-                    String configFile = configInputZipEntry.getName();
-                    if (configFile.contains(File.separator)) {
-                      configFile = configFile.substring(configFile.lastIndexOf(File.separator), configFile.length());
-                    }
-                    directory.mkdirs();
-                    BufferedWriter configOutput = null;
-                    try {
-                      int read;
-                      configOutput = new BufferedWriter(new FileWriter(new File(directory, configFile)));
-                      while (configInput.available() > 0) {
-                        if ((read = configInput.read()) != -1) {
-                          configOutput.write(read);
-                        }
+                  InputStreamDataSource configInput = apiResourceRootV3.getClustersResource()
+                      .getServicesResource(getName(cluster)).getClientConfig(apiService.getName());
+                  if (configInput != null) {
+                    configInputZip = new ZipInputStream(configInput.getInputStream());
+                    ZipEntry configInputZipEntry = null;
+                    while ((configInputZipEntry = configInputZip.getNextEntry()) != null) {
+                      String configFile = configInputZipEntry.getName();
+                      if (configFile.contains(File.separator)) {
+                        configFile = configFile.substring(configFile.lastIndexOf(File.separator), configFile.length());
                       }
-                    } finally {
-                      configOutput.close();
+                      directory.mkdirs();
+                      BufferedWriter configOutput = null;
+                      try {
+                        int read;
+                        configOutput = new BufferedWriter(new FileWriter(new File(directory, configFile)));
+                        while (configInputZip.available() > 0) {
+                          if ((read = configInputZip.read()) != -1) {
+                            configOutput.write(read);
+                          }
+                        }
+                      } finally {
+                        configOutput.close();
+                      }
                     }
                   }
                 } finally {
-                  if (configInput != null) {
-                    configInput.close();
+                  if (configInputZip != null) {
+                    configInputZip.close();
                   }
                 }
                 executed.set(true);
-                break;
-              default:
-                break;
               }
             }
           }
@@ -316,13 +319,13 @@ public class CmServerImpl implements CmServer {
     CmServerService serviceFound = null;
     try {
       for (CmServerService serviceTmp : services) {
-        if ((service.getHost() != null && service.getHost().equals(serviceTmp.getHost()))
-            || (service.getHost() != null && service.getHost().equals(serviceTmp.getIp()))
-            || (service.getHost() != null && service.getHost().equals(serviceTmp.getIpInternal()))
-            || (service.getIp() != null && service.getIp().equals(serviceTmp.getIp()))
-            || (service.getIp() != null && service.getIp().equals(serviceTmp.getIpInternal()))
-            || (service.getIpInternal() != null && service.getIpInternal().equals(serviceTmp.getIp()))
-            || (service.getIpInternal() != null && service.getIpInternal().equals(serviceTmp.getIpInternal()))) {
+        if (service.getHost() != null && service.getHost().equals(serviceTmp.getHost()) || service.getHost() != null
+            && service.getHost().equals(serviceTmp.getIp()) || service.getHost() != null
+            && service.getHost().equals(serviceTmp.getIpInternal()) || service.getIp() != null
+            && service.getIp().equals(serviceTmp.getIp()) || service.getIp() != null
+            && service.getIp().equals(serviceTmp.getIpInternal()) || service.getIpInternal() != null
+            && service.getIpInternal().equals(serviceTmp.getIp()) || service.getIpInternal() != null
+            && service.getIpInternal().equals(serviceTmp.getIpInternal())) {
           serviceFound = serviceTmp;
           break;
         }
@@ -542,7 +545,8 @@ public class CmServerImpl implements CmServer {
 
       logger.logOperationStartedSync("ClusterInitialise");
 
-      Map<String, String> configuration = cluster.getServiceConfiguration().get(CmServerServiceTypeCms.CM.getId());
+      Map<String, String> configuration = cluster.getServiceConfiguration(versionApi).get(
+          CmServerServiceTypeCms.CM.getId());
       configuration.remove("cm_database_name");
       configuration.remove("cm_database_type");
       executed = CmServerServiceTypeCms.CM.getId() != null
@@ -834,9 +838,9 @@ public class CmServerImpl implements CmServer {
                 if (!type.getEnterprise() || enterpriseDeployed) {
                   ApiRoleConfigGroup cmsRoleConfigGroupApiNew = new ApiRoleConfigGroup();
                   ApiServiceConfig cmsServiceConfigApi = new ApiServiceConfig();
-                  if (cluster.getServiceConfiguration().get(type.getId()) != null) {
-                    for (String setting : cluster.getServiceConfiguration().get(type.getId()).keySet()) {
-                      cmsServiceConfigApi.add(new ApiConfig(setting, cluster.getServiceConfiguration()
+                  if (cluster.getServiceConfiguration(versionApi).get(type.getId()) != null) {
+                    for (String setting : cluster.getServiceConfiguration(versionApi).get(type.getId()).keySet()) {
+                      cmsServiceConfigApi.add(new ApiConfig(setting, cluster.getServiceConfiguration(versionApi)
                           .get(type.getId()).get(setting)));
                     }
                   }
@@ -964,9 +968,9 @@ public class CmServerImpl implements CmServer {
           apiService.setName(cluster.getServiceName(type));
 
           ApiServiceConfig apiServiceConfig = new ApiServiceConfig();
-          if (cluster.getServiceConfiguration().get(type.getId()) != null) {
-            for (String setting : cluster.getServiceConfiguration().get(type.getId()).keySet()) {
-              apiServiceConfig.add(new ApiConfig(setting, cluster.getServiceConfiguration().get(type.getId())
+          if (cluster.getServiceConfiguration(versionApi).get(type.getId()) != null) {
+            for (String setting : cluster.getServiceConfiguration(versionApi).get(type.getId()).keySet()) {
+              apiServiceConfig.add(new ApiConfig(setting, cluster.getServiceConfiguration(versionApi).get(type.getId())
                   .get(setting)));
             }
           }
@@ -983,6 +987,10 @@ public class CmServerImpl implements CmServer {
             apiServiceConfig.add(new ApiConfig("hdfs_service", cluster.getServiceName(CmServerServiceType.HDFS)));
             apiServiceConfig.add(new ApiConfig("zookeeper_service", cluster
                 .getServiceName(CmServerServiceType.ZOOKEEPER)));
+            break;
+          case SOLR_INDEXER:
+            apiServiceConfig.add(new ApiConfig("hbase_service", cluster.getServiceName(CmServerServiceType.HBASE)));
+            apiServiceConfig.add(new ApiConfig("solr_service", cluster.getServiceName(CmServerServiceType.HBASE)));
             break;
           case HUE:
             apiServiceConfig.add(new ApiConfig("hue_webhdfs", cluster.getServiceName(CmServerServiceType.HDFS_NAMENODE)));
@@ -1061,7 +1069,7 @@ public class CmServerImpl implements CmServer {
               }
             }
             if (roleConfigGroupType != null) {
-              Map<String, String> config = cluster.getServiceConfiguration().get(roleConfigGroupType.getId());
+              Map<String, String> config = cluster.getServiceConfiguration(versionApi).get(roleConfigGroupType.getId());
               if (config != null) {
                 for (String setting : config.keySet()) {
                   apiConfigList.add(new ApiConfig(setting, config.get(setting)));
@@ -1116,8 +1124,9 @@ public class CmServerImpl implements CmServer {
           .hiveCreateMetastoreDatabaseTablesCommand(cluster.getServiceName(CmServerServiceType.HIVE)));
       break;
     case OOZIE:
-      execute(apiResourceRootV3.getClustersResource().getServicesResource(getName(cluster))
-          .installOozieShareLib(cluster.getServiceName(CmServerServiceType.OOZIE)), false);
+      execute(
+          apiResourceRootV3.getClustersResource().getServicesResource(getName(cluster))
+              .installOozieShareLib(cluster.getServiceName(CmServerServiceType.OOZIE)), false);
       execute(
           apiResourceRootV3.getClustersResource().getServicesResource(getName(cluster))
               .createOozieDb(cluster.getServiceName(CmServerServiceType.OOZIE)), false);
@@ -1132,6 +1141,8 @@ public class CmServerImpl implements CmServer {
       break;
     case SOLR:
       if (versionApi >= 4) {
+        execute(apiResourceRootV4.getClustersResource().getServicesResource(getName(cluster))
+            .initSolrCommand(cluster.getServiceName(CmServerServiceType.SOLR)));
         execute(apiResourceRootV4.getClustersResource().getServicesResource(getName(cluster))
             .createSolrHdfsHomeDirCommand(cluster.getServiceName(CmServerServiceType.SOLR)));
       }

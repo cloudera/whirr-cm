@@ -48,7 +48,7 @@ export PATH=$WHIRR_HOME/bin:$PATH
 ### Create a password-less SSH keypair for Whirr to use:
 
 ```bash
-ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa_cm
+ssh-keygen -t rsa -P '' -f ~/.ssh/whirr
 ```
 
 ## Install the Whirr Cloudera Manager Plugin (optional)
@@ -213,6 +213,22 @@ that all data and state stored on the cluster will be lost.
 
 ```bash
 whirr destroy-cluster --config cm-ec2.properties
+```
+
+## Troubleshooting a failed Cluster launch
+
+During launch, errors will be printed to the console indicating root cause, halting operation and cleaning up any cluster resources that were provisioned. In some rare cases, Whirr can block for an extended time without an error message (eg node disk space exhaustion, network partition etc) in which case you can investigate the issue by looking at the client side whirr.log in the current dir, cloud web console, the nodes via SSH or Cloudera Manager depending upon which stage Whirr has got to. 
+
+If the host bootstrap has failed, you should investigate the image you are using, manually creating an instance from it and attempting connection via the whirr.bootstrap-user (ec2-user) by SSH and troubleshooting.  If this is successful, you should attempt to connect to the nodes provisioned by Whirr, by using the hosts specified in the cloud web console, the whirr.cluster-user (whirr) and the whirr.private-key-file (~/.ssh/whirr). If the connections succeed, it is likely Whirr is still running or blocking and the scripts and logs Whirr stages to /tmp on each node should help to determine the root cause:
+
+```bash
+ssh -o StrictHostKeyChecking=no -i ~/.ssh/whirr whirr@ec2-54-212-158-37.us-west-2.compute.amazonaws.com "ls -la /tmp/bootstrap* /tmp/configure*"
+```
+
+If you destroy the instances Whirr has created outside of Whirr (ie through the cloud web console) you will have to clean up the Whirr instance store before re-running:
+
+```bash
+rm -rf ~/.whirr/mycluster
 ```
 
 ## Unit and Integration Tests

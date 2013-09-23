@@ -25,7 +25,7 @@ public interface CmServer {
   public String getVersion();
 
   public int getVersionApi();
-  
+
   public String getVersionCdh();
 
   public boolean getServiceConfigs(CmServerCluster cluster, File path) throws CmServerException;

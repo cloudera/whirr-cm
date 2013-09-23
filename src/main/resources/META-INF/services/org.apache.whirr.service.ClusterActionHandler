@@ -40,6 +40,8 @@ com.cloudera.whirr.cm.handler.cdh.CmCdhHBaseRegionServerHandler
 
 com.cloudera.whirr.cm.handler.cdh.CmCdhSolrServerHandler
 
+com.cloudera.whirr.cm.handler.cdh.CmCdhSolrIndexerHBaseHandler
+
 com.cloudera.whirr.cm.handler.cdh.CmCdhImpalaDaemonHandler
 com.cloudera.whirr.cm.handler.cdh.CmCdhImpalaStateStoreHandler
 

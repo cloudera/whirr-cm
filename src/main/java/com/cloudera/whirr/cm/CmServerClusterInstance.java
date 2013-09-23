@@ -34,6 +34,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.lang.StringUtils;
 import org.apache.whirr.Cluster;
 import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.ClusterSpec;
@@ -50,6 +51,7 @@ import com.cloudera.whirr.cm.server.CmServerService;
 import com.cloudera.whirr.cm.server.CmServerServiceBuilder;
 import com.cloudera.whirr.cm.server.CmServerServiceType;
 import com.cloudera.whirr.cm.server.impl.CmServerFactory;
+import com.cloudera.whirr.cm.server.impl.CmServerImpl;
 import com.cloudera.whirr.cm.server.impl.CmServerLog;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -60,6 +62,8 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 
 public class CmServerClusterInstance implements CmConstants {
+
+  public static String CM_API_BASE_VERSION = "" + CmServerImpl.CM_VERSION_API_EARLIEST;
 
   private static CmServerFactory factory;
   private static boolean isStandaloneCommand = true;
@@ -240,7 +244,8 @@ public class CmServerClusterInstance implements CmConstants {
   public static String getClusterConfiguration(Configuration configuration, SortedSet<String> mounts, String type,
       String typeParent, String settingSuffix) throws IOException {
     String databaseSettingValue = null;
-    Map<String, Map<String, String>> clusterConfiguration = getClusterConfiguration(configuration, mounts);
+    Map<String, Map<String, String>> clusterConfiguration = getClusterConfiguration(configuration, mounts).get(
+        CM_API_BASE_VERSION);
     if (clusterConfiguration.get(type) != null) {
       for (String setting : clusterConfiguration.get(type).keySet()) {
         if (setting.endsWith(settingSuffix)) {
@@ -264,31 +269,48 @@ public class CmServerClusterInstance implements CmConstants {
     return databaseSettingValue;
   }
 
-  public static Map<String, Map<String, String>> getClusterConfiguration(ClusterSpec clusterSpec,
-      SortedSet<String> mounts) throws IOException {
-    return getClusterConfiguration(getConfiguration(clusterSpec), mounts);
+  private static String[] getClusterConfigurationKeyTokens(
+      Map<String, Map<String, Map<String, String>>> clusterConfiguration, String key, String prefix) throws IOException {
+    String[] keyTokens = key.substring(prefix.length(), key.length()).split("\\.");
+    if (keyTokens == null || keyTokens.length < 2 || keyTokens.length > 3) {
+      throw new IOException("Invalid key [" + key + "], expected to be of format [" + prefix + "<role>.<setting>] or ["
+          + prefix + "<version>.<role>.<setting>]");
+    }
+    String keyTokensValidated[] = new String[3];
+    if (keyTokens.length == 2) {
+      keyTokensValidated[0] = CM_API_BASE_VERSION;
+      keyTokensValidated[1] = keyTokens[0].toUpperCase();
+      keyTokensValidated[2] = keyTokens[1];
+    } else {
+      if (!StringUtils.isNumeric(keyTokens[0])) {
+        throw new IOException("Invalid key [" + key + "], expected to be of format [" + prefix
+            + "<version>.<role>.<setting>]");
+      }
+      keyTokensValidated[0] = keyTokens[0];
+      keyTokensValidated[1] = keyTokens[1].toUpperCase();
+      keyTokensValidated[2] = keyTokens[2];
+    }
+    if (clusterConfiguration.get(keyTokensValidated[0]) == null) {
+      clusterConfiguration.put(keyTokensValidated[0], new HashMap<String, Map<String, String>>());
+    }
+    if (clusterConfiguration.get(keyTokensValidated[0]).get(keyTokensValidated[1]) == null) {
+      clusterConfiguration.get(keyTokensValidated[0]).put(keyTokensValidated[1], new HashMap<String, String>());
+    }
+    return keyTokensValidated;
   }
 
   @SuppressWarnings("unchecked")
-  public static Map<String, Map<String, String>> getClusterConfiguration(final Configuration configuration,
-      SortedSet<String> mounts) throws IOException {
+  public static Map<String, Map<String, Map<String, String>>> getClusterConfiguration(
+      final Configuration configuration, SortedSet<String> mounts) throws IOException {
 
-    Map<String, Map<String, String>> clusterConfiguration = new HashMap<String, Map<String, String>>();
+    Map<String, Map<String, Map<String, String>>> clusterConfiguration = new HashMap<String, Map<String, Map<String, String>>>();
 
     Iterator<String> keys = configuration.getKeys();
     while (keys.hasNext()) {
       String key = keys.next();
       if (key.startsWith(CONFIG_WHIRR_CM_CONFIG_PREFIX)) {
-        String[] keyTokens = key.substring(CONFIG_WHIRR_CM_CONFIG_PREFIX.length(), key.length()).split("\\.");
-        if (keyTokens == null || keyTokens.length != 2) {
-          throw new IOException("Invalid key [" + key + "], expected to be of format [" + CONFIG_WHIRR_CM_CONFIG_PREFIX
-              + "<role>.<setting>]");
-        }
-        keyTokens[0] = keyTokens[0].toUpperCase();
-        if (clusterConfiguration.get(keyTokens[0]) == null) {
-          clusterConfiguration.put(keyTokens[0], new HashMap<String, String>());
-        }
-        clusterConfiguration.get(keyTokens[0]).put(keyTokens[1], configuration.getString(key));
+        String[] keyTokens = getClusterConfigurationKeyTokens(clusterConfiguration, key, CONFIG_WHIRR_CM_CONFIG_PREFIX);
+        clusterConfiguration.get(keyTokens[0]).get(keyTokens[1]).put(keyTokens[2], configuration.getString(key));
       }
     }
 
@@ -296,30 +318,28 @@ public class CmServerClusterInstance implements CmConstants {
     while (keys.hasNext()) {
       final String key = keys.next();
       if (key.startsWith(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX)) {
-        String[] keyTokens = key.substring(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX.length(), key.length())
-            .split("\\.");
-        if (keyTokens == null || keyTokens.length != 2) {
-          throw new IOException("Invalid key [" + key + "], expected to be of format ["
-              + CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX + "<role>.<setting>]");
-        }
-        keyTokens[0] = keyTokens[0].toUpperCase();
-        if (configuration.getString(CONFIG_WHIRR_CM_CONFIG_PREFIX + keyTokens[0].toLowerCase() + "." + keyTokens[1]) == null) {
-          if (clusterConfiguration.get(keyTokens[0]) == null) {
-            clusterConfiguration.put(keyTokens[0], new HashMap<String, String>());
-          }
-          if (keyTokens[1].endsWith(CONFIG_CM_DIR_SUFFIX_LIST) && !mounts.isEmpty()) {
-            clusterConfiguration.get(keyTokens[0]).put(keyTokens[1],
-                Joiner.on(',').join(Lists.transform(Lists.newArrayList(mounts), new Function<String, String>() {
-                  @Override
-                  public String apply(String input) {
-                    return input + configuration.getString(key);
-                  }
-                })));
+        String[] keyTokens = getClusterConfigurationKeyTokens(clusterConfiguration, key,
+            CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX);
+        if (configuration.getString(CONFIG_WHIRR_CM_CONFIG_PREFIX + keyTokens[1].toLowerCase() + "." + keyTokens[2]) == null) {
+          if (keyTokens[2].endsWith(CONFIG_CM_DIR_SUFFIX_LIST) && !mounts.isEmpty()) {
+            clusterConfiguration
+                .get(keyTokens[0])
+                .get(keyTokens[1])
+                .put(keyTokens[2],
+                    Joiner.on(',').join(Lists.transform(Lists.newArrayList(mounts), new Function<String, String>() {
+                      @Override
+                      public String apply(String input) {
+                        return input + configuration.getString(key);
+                      }
+                    })));
           } else {
-            clusterConfiguration.get(keyTokens[0]).put(
-                keyTokens[1],
-                (mounts.isEmpty() ? configuration.getString(CONFIG_WHIRR_INTERNAL_DATA_DIRS_DEFAULT) : mounts
-                    .iterator().next()) + configuration.getString(key));
+            clusterConfiguration
+                .get(keyTokens[0])
+                .get(keyTokens[1])
+                .put(
+                    keyTokens[2],
+                    (mounts.isEmpty() ? configuration.getString(CONFIG_WHIRR_INTERNAL_DATA_DIRS_DEFAULT) : mounts
+                        .iterator().next()) + configuration.getString(key));
           }
         }
       }
@@ -329,54 +349,63 @@ public class CmServerClusterInstance implements CmConstants {
     while (keys.hasNext()) {
       final String key = keys.next();
       if (key.startsWith(CONFIG_WHIRR_CM_CONFIG_PREFIX) && key.endsWith(CONFIG_CM_DB_SUFFIX_TYPE)) {
-        String[] keyTokens = key.substring(CONFIG_WHIRR_CM_CONFIG_PREFIX.length(), key.length()).split("\\.");
-        if (keyTokens == null || keyTokens.length != 2) {
-          throw new IOException("Invalid key [" + key + "], expected to be of format ["
-              + CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX + "<role>.<setting>]");
-        }
-        keyTokens[0] = keyTokens[0].toUpperCase();
+        String[] keyTokens = getClusterConfigurationKeyTokens(clusterConfiguration, key, CONFIG_WHIRR_CM_CONFIG_PREFIX);
         if (configuration.getString(key) != null && configuration.getString(key).length() == 0) {
-          clusterConfiguration.get(keyTokens[0]).put(keyTokens[1], configuration.getString(CONFIG_WHIRR_DB_TYPE));
+          clusterConfiguration.get(keyTokens[0]).get(keyTokens[1])
+              .put(keyTokens[2], configuration.getString(CONFIG_WHIRR_DB_TYPE));
           if (configuration.getString(key.replace(CONFIG_CM_DB_SUFFIX_TYPE, CONFIG_CM_DB_SUFFIX_PORT)) != null
               && configuration.getString(key.replace(CONFIG_CM_DB_SUFFIX_TYPE, CONFIG_CM_DB_SUFFIX_PORT)).length() == 0) {
-            clusterConfiguration.get(keyTokens[0]).put(
-                keyTokens[1].replace(CONFIG_CM_DB_SUFFIX_TYPE, CONFIG_CM_DB_SUFFIX_PORT),
-                configuration.getString(CONFIG_WHIRR_INTERNAL_PORTS_DB_PREFIX
-                    + configuration.getString(CONFIG_WHIRR_DB_TYPE)));
+            clusterConfiguration
+                .get(keyTokens[0])
+                .get(keyTokens[1])
+                .put(
+                    keyTokens[2].replace(CONFIG_CM_DB_SUFFIX_TYPE, CONFIG_CM_DB_SUFFIX_PORT),
+                    configuration.getString(CONFIG_WHIRR_INTERNAL_PORTS_DB_PREFIX
+                        + configuration.getString(CONFIG_WHIRR_DB_TYPE)));
           } else if (configuration.getString(key.replace(CONFIG_CM_DB_SUFFIX_TYPE, CONFIG_CM_DB_SUFFIX_HOST)) != null
               && !configuration.getString(key.replace(CONFIG_CM_DB_SUFFIX_TYPE, CONFIG_CM_DB_SUFFIX_HOST))
                   .contains(":")) {
-            clusterConfiguration.get(keyTokens[0]).put(
-                keyTokens[1].replace(CONFIG_CM_DB_SUFFIX_TYPE, CONFIG_CM_DB_SUFFIX_HOST),
-                configuration.getString(key.replace(CONFIG_CM_DB_SUFFIX_TYPE, CONFIG_CM_DB_SUFFIX_HOST))
-                    + ":"
-                    + configuration.getString(CONFIG_WHIRR_INTERNAL_PORTS_DB_PREFIX
-                        + configuration.getString(CONFIG_WHIRR_DB_TYPE)));
+            clusterConfiguration
+                .get(keyTokens[0])
+                .get(keyTokens[1])
+                .put(
+                    keyTokens[2].replace(CONFIG_CM_DB_SUFFIX_TYPE, CONFIG_CM_DB_SUFFIX_HOST),
+                    configuration.getString(key.replace(CONFIG_CM_DB_SUFFIX_TYPE, CONFIG_CM_DB_SUFFIX_HOST))
+                        + ":"
+                        + configuration.getString(CONFIG_WHIRR_INTERNAL_PORTS_DB_PREFIX
+                            + configuration.getString(CONFIG_WHIRR_DB_TYPE)));
           }
         }
       }
     }
 
-    if (clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()) == null) {
-      clusterConfiguration.put(CmServerServiceType.CLUSTER.getId(), new HashMap<String, String>());
+    if (clusterConfiguration.get(CM_API_BASE_VERSION) == null) {
+      clusterConfiguration.put(CM_API_BASE_VERSION, new HashMap<String, Map<String, String>>());
     }
-    if (clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()).get(CONFIG_CM_LICENSE_PROVIDED) == null) {
+    if (clusterConfiguration.get(CM_API_BASE_VERSION).get(CmServerServiceType.CLUSTER.getId()) == null) {
+      clusterConfiguration.get(CM_API_BASE_VERSION).put(CmServerServiceType.CLUSTER.getId(),
+          new HashMap<String, String>());
+    }
+
+    if (clusterConfiguration.get(CM_API_BASE_VERSION).get(CmServerServiceType.CLUSTER.getId())
+        .get(CONFIG_CM_LICENSE_PROVIDED) == null) {
       if (Utils.urlForURI(configuration.getString(CONFIG_WHIRR_CM_LICENSE_URI)) != null) {
-        clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()).put(CONFIG_CM_LICENSE_PROVIDED,
-            Boolean.TRUE.toString());
+        clusterConfiguration.get(CM_API_BASE_VERSION).get(CmServerServiceType.CLUSTER.getId())
+            .put(CONFIG_CM_LICENSE_PROVIDED, Boolean.TRUE.toString());
       } else {
-        clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()).put(CONFIG_CM_LICENSE_PROVIDED,
-            Boolean.FALSE.toString());
+        clusterConfiguration.get(CM_API_BASE_VERSION).get(CmServerServiceType.CLUSTER.getId())
+            .put(CONFIG_CM_LICENSE_PROVIDED, Boolean.FALSE.toString());
       }
     }
 
-    if (clusterConfiguration.get(CmServerServiceType.CLUSTER.getId()).get(CONFIG_CM_LICENSE_PROVIDED)
-        .equals(Boolean.TRUE.toString())) {
-      if (clusterConfiguration.get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()) == null) {
-        clusterConfiguration.put(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId(), new HashMap<String, String>());
+    if (clusterConfiguration.get(CM_API_BASE_VERSION).get(CmServerServiceType.CLUSTER.getId())
+        .get(CONFIG_CM_LICENSE_PROVIDED).equals(Boolean.TRUE.toString())) {
+      if (clusterConfiguration.get(CM_API_BASE_VERSION).get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()) == null) {
+        clusterConfiguration.get(CM_API_BASE_VERSION).put(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId(),
+            new HashMap<String, String>());
       }
-      clusterConfiguration.get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()).put(
-          CONFIG_CM_TASKTRACKER_INSTRUMENTATION, "org.apache.hadoop.mapred.TaskTrackerCmonInst");
+      clusterConfiguration.get(CM_API_BASE_VERSION).get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId())
+          .put(CONFIG_CM_TASKTRACKER_INSTRUMENTATION, "org.apache.hadoop.mapred.TaskTrackerCmonInst");
     }
 
     return clusterConfiguration;

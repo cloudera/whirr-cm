@@ -58,6 +58,10 @@ public enum CmServerServiceType {
   SOLR(CLUSTER, "SOLR", 4, CmServerServiceTypeRepo.SOLR), SOLR_SERVER(SOLR, "SOLR_SERVER", 4,
       CmServerServiceTypeRepo.SOLR),
 
+  // Solr Indexers
+  SOLR_INDEXER(CLUSTER, "KS_INDEXER", 5, CmServerServiceTypeRepo.SOLR), SOLR_INDEXER_HBASE(SOLR_INDEXER,
+      "HBASE_INDEXER", 5, CmServerServiceTypeRepo.SOLR),
+
   // Sqoop
   SQOOP(CLUSTER, "SQOOP", 4, CmServerServiceTypeRepo.CDH), SQOOP_SERVER(SQOOP, "SQOOP_SERVER", 4,
       CmServerServiceTypeRepo.CDH),

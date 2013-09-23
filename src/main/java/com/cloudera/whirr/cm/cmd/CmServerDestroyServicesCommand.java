@@ -49,7 +49,7 @@ public class CmServerDestroyServicesCommand extends BaseCommandCmServer {
   public boolean isRoleFilterable() {
     return true;
   }
-  
+
   @Override
   public int run(ClusterSpec specification, Set<Instance> instances, CmServerCluster cluster,
       CmServerBuilder serverCommand) throws Exception {

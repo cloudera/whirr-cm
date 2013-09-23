@@ -66,7 +66,8 @@ public class CmAgentHandler extends CmNodeHandler {
     } catch (Exception exception) {
     }
     if (cmServerInstance != null) {
-      String firstMount = CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster()).iterator().next();
+      String firstMount = CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster()).iterator()
+          .next();
       addStatement(
           event,
           call(

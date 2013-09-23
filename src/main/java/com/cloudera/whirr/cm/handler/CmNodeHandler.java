@@ -55,7 +55,8 @@ public class CmNodeHandler extends BaseHandlerCm {
   protected void beforeBootstrap(ClusterActionEvent event) throws IOException, InterruptedException {
     super.beforeBootstrap(event);
     try {
-      CmServerClusterInstance.getCluster(event.getClusterSpec()).addNode(new CmServerServiceBuilder().host(getInstanceId(event.getClusterSpec())).build());
+      CmServerClusterInstance.getCluster(event.getClusterSpec()).addNode(
+          new CmServerServiceBuilder().host(getInstanceId(event.getClusterSpec())).build());
     } catch (CmServerException e) {
       throw new IOException("Unexpected error building cluster", e);
     }

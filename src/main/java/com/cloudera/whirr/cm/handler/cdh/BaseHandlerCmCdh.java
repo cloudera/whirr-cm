@@ -78,8 +78,9 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
           call("install_database", "-t", CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(),
               CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster()), getType().getId(),
               getType().getParent() == null ? null : getType().getParent().getId(), CONFIG_CM_DB_SUFFIX_TYPE), "-d",
-              CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(), CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster()), getType()
-                  .getId(), getType().getParent() == null ? null : getType().getParent().getId(), "database_name")));
+              CmServerClusterInstance.getClusterConfiguration(event.getClusterSpec(),
+                  CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster()), getType().getId(),
+                  getType().getParent() == null ? null : getType().getParent().getId(), "database_name")));
     }
     if (CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getBoolean(CONFIG_WHIRR_USE_PACKAGES, false)) {
       addStatement(event, call("register_cdh_repo"));
@@ -108,13 +109,20 @@ public abstract class BaseHandlerCmCdh extends BaseHandler {
     super.beforeConfigure(event);
     addStatement(
         event,
-        call("configure_cm_cdh", "-r", getRole(), "-d",
-            Joiner.on(',').join(Lists.transform(Lists.newArrayList(CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster())), new Function<String, String>() {
-              @Override
-              public String apply(String input) {
-                return input;
-              }
-            }))));
+        call(
+            "configure_cm_cdh",
+            "-r",
+            getRole(),
+            "-d",
+            Joiner.on(',').join(
+                Lists.transform(
+                    Lists.newArrayList(CmServerClusterInstance.getMounts(event.getClusterSpec(), event.getCluster())),
+                    new Function<String, String>() {
+                      @Override
+                      public String apply(String input) {
+                        return input;
+                      }
+                    }))));
   }
 
   @Override

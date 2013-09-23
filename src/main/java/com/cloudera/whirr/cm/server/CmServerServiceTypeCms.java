@@ -42,7 +42,7 @@ public enum CmServerServiceTypeCms {
 
   // Reports Manager
   REPORTSMANAGER(MANAGEMENT, "REPORTSMANAGER", true),
-  
+
   // Navigator
   NAVIGATOR(MANAGEMENT, "NAVIGATOR", true);
 
@@ -63,14 +63,14 @@ public enum CmServerServiceTypeCms {
   public String getId() {
     return id;
   }
-  
+
   public boolean getEnterprise() {
     return enterprise;
   }
 
   public String getName() {
     return MANAGEMENT.getId().toLowerCase()
-        + (getParent() != null ? (CmServerService.NAME_TOKEN_DELIM + getId().toLowerCase()) : "");
+        + (getParent() != null ? CmServerService.NAME_TOKEN_DELIM + getId().toLowerCase() : "");
   }
 
 }

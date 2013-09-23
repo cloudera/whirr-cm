@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.commons.lang.StringUtils;
+
 public class CmServerCluster {
 
   private String name;
@@ -31,7 +33,7 @@ public class CmServerCluster {
   private CmServerService server;
   private Set<CmServerService> agents = new HashSet<CmServerService>();
   private Set<CmServerService> nodes = new HashSet<CmServerService>();
-  private Map<String, Map<String, String>> configuration = new HashMap<String, Map<String, String>>();
+  private Map<String, Map<String, Map<String, String>>> configuration = new HashMap<String, Map<String, Map<String, String>>>();
   private Map<CmServerServiceType, Set<CmServerService>> services = new HashMap<CmServerServiceType, Set<CmServerService>>();
 
   public CmServerCluster() {
@@ -40,7 +42,7 @@ public class CmServerCluster {
   public synchronized boolean isEmpty() {
     for (CmServerServiceType type : services.keySet()) {
       if (!services.get(type).isEmpty()) {
-        return server == null || (agents.isEmpty() && nodes.isEmpty());
+        return server == null || agents.isEmpty() && nodes.isEmpty();
       }
     }
     return true;
@@ -50,18 +52,24 @@ public class CmServerCluster {
     return this.name = name;
   }
 
-  public synchronized void addServiceConfiguration(String group, String setting, String value) throws CmServerException {
-    if (configuration.get(group) == null) {
-      configuration.put(group, new HashMap<String, String>());
+  public synchronized void addServiceConfiguration(String version, String group, String setting, String value)
+      throws CmServerException {
+    if (configuration.get(version) == null) {
+      configuration.put(version, new HashMap<String, Map<String, String>>());
     }
-    configuration.get(group).put(setting, value);
+    if (configuration.get(version).get(group) == null) {
+      configuration.get(version).put(group, new HashMap<String, String>());
+    }
+    configuration.get(version).get(group).put(setting, value);
   }
 
-  public synchronized void addServiceConfigurationAll(Map<String, Map<String, String>> configuration)
+  public synchronized void addServiceConfigurationAll(Map<String, Map<String, Map<String, String>>> configuration)
       throws CmServerException {
-    for (String group : configuration.keySet()) {
-      for (String setting : configuration.get(group).keySet()) {
-        addServiceConfiguration(group, setting, configuration.get(group).get(setting));
+    for (String version : configuration.keySet()) {
+      for (String group : configuration.get(version).keySet()) {
+        for (String setting : configuration.get(version).get(group).keySet()) {
+          addServiceConfiguration(version, group, setting, configuration.get(version).get(group).get(setting));
+        }
       }
     }
   }
@@ -237,10 +245,26 @@ public class CmServerCluster {
     return new HashSet<CmServerService>(nodes);
   }
 
-  public synchronized Map<String, Map<String, String>> getServiceConfiguration() {
+  public synchronized Map<String, Map<String, Map<String, String>>> getServiceConfiguration() {
+    return configuration;
+  }
+
+  public synchronized Map<String, Map<String, String>> getServiceConfiguration(int version) {
     Map<String, Map<String, String>> configuration = new HashMap<String, Map<String, String>>();
-    for (String key : this.configuration.keySet()) {
-      configuration.put(key, new HashMap<String, String>(this.configuration.get(key)));
+    for (String configVersion : this.configuration.keySet()) {
+      for (String configGroup : this.configuration.get(configVersion).keySet()) {
+        for (String configSetting : this.configuration.get(configVersion).get(configGroup).keySet()) {
+          if (StringUtils.isNumeric(configVersion)) {
+            if (version < 0 || Integer.parseInt(configVersion) <= version) {
+              if (configuration.get(configGroup) == null) {
+                configuration.put(configGroup, new HashMap<String, String>());
+              }
+              configuration.get(configGroup).put(configSetting,
+                  this.configuration.get(configVersion).get(configGroup).get(configSetting));
+            }
+          }
+        }
+      }
     }
     return configuration;
   }

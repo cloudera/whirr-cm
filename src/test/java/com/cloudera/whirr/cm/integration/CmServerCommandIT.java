@@ -10,6 +10,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.cloudera.whirr.cm.cmd.BaseCommandCmServer;
+import com.cloudera.whirr.cm.cmd.CmServerCleanClusterCommand;
 import com.cloudera.whirr.cm.cmd.CmServerCreateServicesCommand;
 import com.cloudera.whirr.cm.cmd.CmServerDestroyServicesCommand;
 import com.cloudera.whirr.cm.cmd.CmServerDownloadConfigCommand;
@@ -99,13 +100,12 @@ public class CmServerCommandIT extends CmServerClusterIT {
 
   @Test
   public void testCleanCluster() throws Exception {
-    // TODO: Re-enable once OPSAPS-14933 is addressed
-    // Assert.assertEquals(0, new CmServerCleanClusterCommand().run(specification, controller, OPTIONS_EMPTY));
-    // Assert.assertFalse(serverTestBootstrap.isProvisioned(cluster));
-    // Assert.assertFalse(serverTestBootstrap.isConfigured(cluster));
-    // Assert.assertFalse(serverTestBootstrap.isStarted(cluster));
-    // Assert.assertTrue(serverTestBootstrap.isStopped(cluster));
-    // Assert.assertEquals(0, serverTestBootstrap.getServices(cluster).getServiceTypes().size());
+    Assert.assertEquals(0, new CmServerCleanClusterCommand().run(specification, controller, OPTIONS_EMPTY));
+    Assert.assertFalse(serverTestBootstrap.isProvisioned(cluster));
+    Assert.assertFalse(serverTestBootstrap.isConfigured(cluster));
+    Assert.assertFalse(serverTestBootstrap.isStarted(cluster));
+    Assert.assertTrue(serverTestBootstrap.isStopped(cluster));
+    Assert.assertEquals(0, serverTestBootstrap.getServices(cluster).getServiceTypes().size());
   }
 
   @Test

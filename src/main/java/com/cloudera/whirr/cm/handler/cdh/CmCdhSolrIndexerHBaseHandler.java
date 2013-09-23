@@ -15,22 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.whirr.cm;
+package com.cloudera.whirr.cm.handler.cdh;
 
-import java.io.File;
+import com.cloudera.whirr.cm.server.CmServerServiceType;
 
-import org.junit.Assert;
-import org.junit.Test;
+public class CmCdhSolrIndexerHBaseHandler extends BaseHandlerCmCdh {
 
-public class UtilsTest implements BaseTest {
+  public static final String ROLE = "cm-cdh-solr-hbase-indexer";
+  public static final CmServerServiceType TYPE = CmServerServiceType.SOLR_INDEXER_HBASE;
 
-  @Test
-  public void testUrlForURI() throws Exception {
-    Assert.assertNull(Utils.urlForURI("classpath:///file-that-does-not-exist-we-hope"));
-    Assert.assertNull(Utils.urlForURI("http://www.exmaple.com/non-existant-url"));
-    Assert.assertEquals(Utils.urlForURI("classpath:///" + CONFIG_WHIRR_DEFAULT_FILE), UtilsTest.class.getClassLoader()
-        .getResource(CONFIG_WHIRR_DEFAULT_FILE));
-    File pom = new File("pom.xml");
-    Assert.assertEquals(Utils.urlForURI("file://" + pom.getAbsolutePath()), pom.toURI().toURL());
+  @Override
+  public String getRole() {
+    return ROLE;
   }
+
+  @Override
+  public CmServerServiceType getType() {
+    return TYPE;
+  }
+
 }

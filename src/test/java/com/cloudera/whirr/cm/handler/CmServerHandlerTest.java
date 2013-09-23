@@ -50,6 +50,7 @@ import com.cloudera.whirr.cm.handler.cdh.CmCdhImpalaStateStoreHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhMapReduceJobTrackerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhMapReduceTaskTrackerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhOozieServerHandler;
+import com.cloudera.whirr.cm.handler.cdh.CmCdhSolrIndexerHBaseHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhSolrServerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhSqoopServerHandler;
 import com.cloudera.whirr.cm.handler.cdh.CmCdhZookeeperServerHandler;
@@ -70,18 +71,19 @@ public class CmServerHandlerTest extends BaseTestHandler {
       CmCdhHdfsHttpFsHandler.ROLE };
   private static final String[] WHIRR_INSTANCE_TEMPLATE_ROLES_SLAVES = { CmCdhHdfsDataNodeHandler.ROLE,
       CmCdhMapReduceTaskTrackerHandler.ROLE, CmCdhZookeeperServerHandler.ROLE, CmCdhHBaseRegionServerHandler.ROLE,
-      CmCdhImpalaDaemonHandler.ROLE, CmCdhFlumeAgentHandler.ROLE, CmCdhHdfsHttpFsHandler.ROLE };
+      CmCdhImpalaDaemonHandler.ROLE, CmCdhFlumeAgentHandler.ROLE, CmCdhSolrIndexerHBaseHandler.ROLE,
+      CmCdhHdfsHttpFsHandler.ROLE };
   private static final int WHIRR_INSTANCE_TEMPLATE_NUM_ROLES = WHIRR_INSTANCE_TEMPLATE_ROLES_MASTER.length
       + WHIRR_INSTANCE_TEMPLATE_NUM_SLAVES * WHIRR_INSTANCE_TEMPLATE_ROLES_SLAVES.length;
   private static String WHIRR_INSTANCE_TEMPLATE_ALL = "1 " + CmServerHandler.ROLE + "+" + CmAgentHandler.ROLE + ",1 "
       + CmAgentHandler.ROLE;
   static {
     for (String role : WHIRR_INSTANCE_TEMPLATE_ROLES_MASTER) {
-      WHIRR_INSTANCE_TEMPLATE_ALL += ("+" + role);
+      WHIRR_INSTANCE_TEMPLATE_ALL += "+" + role;
     }
-    WHIRR_INSTANCE_TEMPLATE_ALL += ("," + WHIRR_INSTANCE_TEMPLATE_NUM_SLAVES + " " + CmAgentHandler.ROLE);
+    WHIRR_INSTANCE_TEMPLATE_ALL += "," + WHIRR_INSTANCE_TEMPLATE_NUM_SLAVES + " " + CmAgentHandler.ROLE;
     for (String role : WHIRR_INSTANCE_TEMPLATE_ROLES_SLAVES) {
-      WHIRR_INSTANCE_TEMPLATE_ALL += ("+" + role);
+      WHIRR_INSTANCE_TEMPLATE_ALL += "+" + role;
     }
   }
 
@@ -116,7 +118,7 @@ public class CmServerHandlerTest extends BaseTestHandler {
         CmServerClusterInstance.getConfiguration(newClusterSpecForProperties(Collections.<String, String> emptyMap()))
             .getString(CONFIG_WHIRR_INTERNAL_AGENT_LOG_FILE));
     Assert.assertEquals(
-        "100000",
+        "500000",
         configuration.getString(CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceTypeCms.CM.getId().toLowerCase()
             + ".parcel_distribute_rate_limit_kbs_per_second"));
 
@@ -173,21 +175,24 @@ public class CmServerHandlerTest extends BaseTestHandler {
     Assert.assertEquals(
         configuration.getString(CONFIG_WHIRR_INTERNAL_DATA_DIRS_DEFAULT)
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
-                + CmServerServiceTypeCms.NAVIGATOR.getId().toLowerCase() + ".mgmt_log_dir"), CmServerClusterInstance
-            .getClusterConfiguration(configuration, new TreeSet<String>())
-            .get(CmServerServiceTypeCms.NAVIGATOR.getId()).get("mgmt_log_dir"));
+                + CmServerServiceTypeCms.NAVIGATOR.getId().toLowerCase() + ".mgmt_log_dir"),
+        CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>())
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceTypeCms.NAVIGATOR.getId())
+            .get("mgmt_log_dir"));
     Assert.assertEquals(
         configuration.getString(CONFIG_WHIRR_INTERNAL_DATA_DIRS_DEFAULT)
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceType.HDFS_NAMENODE.getId().toLowerCase() + ".dfs_name_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>())
-            .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_NAMENODE.getId())
+            .get("dfs_name_dir_list"));
     Assert.assertEquals(
         "/mnt/1"
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceType.HDFS_NAMENODE.getId().toLowerCase() + ".dfs_name_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1"))
-            .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_NAMENODE.getId())
+            .get("dfs_name_dir_list"));
     Assert.assertEquals(
         "/mnt/1"
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
@@ -197,10 +202,12 @@ public class CmServerHandlerTest extends BaseTestHandler {
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceType.HDFS_NAMENODE.getId().toLowerCase() + ".dfs_name_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
-            .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_NAMENODE.getId())
+            .get("dfs_name_dir_list"));
     Assert.assertNull(CmServerClusterInstance
         .getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
-        .get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()).get(CONFIG_CM_TASKTRACKER_INSTRUMENTATION));
+        .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId())
+        .get(CONFIG_CM_TASKTRACKER_INSTRUMENTATION));
 
     configuration = CmServerClusterInstance.getConfiguration(newClusterSpecForProperties(ImmutableMap.of(
         "whirr.instance-templates", "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE,
@@ -215,7 +222,8 @@ public class CmServerHandlerTest extends BaseTestHandler {
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceTypeCms.NAVIGATOR.getId().toLowerCase() + ".mgmt_log_dir"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/data1", "/data2"))
-            .get(CmServerServiceTypeCms.NAVIGATOR.getId()).get("mgmt_log_dir"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceTypeCms.NAVIGATOR.getId())
+            .get("mgmt_log_dir"));
     Assert.assertEquals(
         "/data1"
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
@@ -224,26 +232,29 @@ public class CmServerHandlerTest extends BaseTestHandler {
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceType.HDFS_NAMENODE.getId().toLowerCase() + ".dfs_name_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/data1", "/data2"))
-            .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_NAMENODE.getId())
+            .get("dfs_name_dir_list"));
     Assert.assertEquals(
         "org.apache.hadoop.mapred.TaskTrackerCmonInst",
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
-            .get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()).get(CONFIG_CM_TASKTRACKER_INSTRUMENTATION));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId())
+            .get(CONFIG_CM_TASKTRACKER_INSTRUMENTATION));
 
-    configuration = CmServerClusterInstance.getConfiguration(newClusterSpecForProperties(ImmutableMap
-        .of("whirr.instance-templates", "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE,
-            CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceTypeCms.CM.getId().toLowerCase() + "."
-                + CONFIG_CM_DB_SUFFIX_NAME, "cman", CONFIG_WHIRR_CM_CONFIG_PREFIX
-                + CmServerServiceTypeCms.CM.getId().toLowerCase() + "." + CONFIG_CM_DB_SUFFIX_TYPE, "postgres",
-            CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceType.HIVE.getId().toLowerCase() + ".hive_metastore_"
-                + CONFIG_CM_DB_SUFFIX_PORT, "9999", CONFIG_WHIRR_CM_LICENSE_URI,
-            "classpath:///whirr-cm-default.properties")));
+    configuration = CmServerClusterInstance.getConfiguration(newClusterSpecForProperties(ImmutableMap.of(
+        "whirr.instance-templates", "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE,
+        CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceTypeCms.CM.getId().toLowerCase() + "."
+            + CONFIG_CM_DB_SUFFIX_NAME, "cman", CONFIG_WHIRR_CM_CONFIG_PREFIX
+            + CmServerServiceTypeCms.CM.getId().toLowerCase() + "." + CONFIG_CM_DB_SUFFIX_TYPE, "postgres",
+        CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceType.HIVE.getId().toLowerCase() + ".hive_metastore_"
+            + CONFIG_CM_DB_SUFFIX_PORT, "9999", CONFIG_WHIRR_CM_LICENSE_URI, "classpath:///"
+            + CONFIG_WHIRR_DEFAULT_FILE)));
     Assert.assertEquals(
         "/data1"
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceTypeCms.NAVIGATOR.getId().toLowerCase() + ".mgmt_log_dir"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/data1", "/data2"))
-            .get(CmServerServiceTypeCms.NAVIGATOR.getId()).get("mgmt_log_dir"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceTypeCms.NAVIGATOR.getId())
+            .get("mgmt_log_dir"));
     Assert.assertEquals(
         "/data1"
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
@@ -252,12 +263,14 @@ public class CmServerHandlerTest extends BaseTestHandler {
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceType.HDFS_NAMENODE.getId().toLowerCase() + ".dfs_name_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/data1", "/data2"))
-            .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_NAMENODE.getId())
+            .get("dfs_name_dir_list"));
     Assert.assertEquals(
         "org.apache.hadoop.mapred.TaskTrackerCmonInst",
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
-            .get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId()).get(CONFIG_CM_TASKTRACKER_INSTRUMENTATION));
-    Assert.assertEquals("classpath:///whirr-cm-default.properties",
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.MAPREDUCE_TASK_TRACKER.getId())
+            .get(CONFIG_CM_TASKTRACKER_INSTRUMENTATION));
+    Assert.assertEquals("classpath:///" + CONFIG_WHIRR_DEFAULT_FILE,
         configuration.getString(CONFIG_WHIRR_CM_LICENSE_URI));
 
     configuration = CmServerClusterInstance.getConfiguration(newClusterSpecForProperties(ImmutableMap.of(
@@ -272,13 +285,15 @@ public class CmServerHandlerTest extends BaseTestHandler {
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceTypeCms.NAVIGATOR.getId().toLowerCase() + ".mgmt_log_dir"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/tmp"))
-            .get(CmServerServiceTypeCms.NAVIGATOR.getId()).get("mgmt_log_dir"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceTypeCms.NAVIGATOR.getId())
+            .get("mgmt_log_dir"));
     Assert.assertEquals(
         "/tmp"
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceType.HDFS_NAMENODE.getId().toLowerCase() + ".dfs_name_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/tmp"))
-            .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_NAMENODE.getId())
+            .get("dfs_name_dir_list"));
     Assert.assertEquals(
         "/mnt/1"
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
@@ -287,7 +302,8 @@ public class CmServerHandlerTest extends BaseTestHandler {
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceType.HDFS_NAMENODE.getId().toLowerCase() + ".dfs_name_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
-            .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_NAMENODE.getId())
+            .get("dfs_name_dir_list"));
     Assert.assertEquals("postgres", CmServerClusterInstance.getClusterConfiguration(configuration,
         ImmutableSortedSet.of("/tmp"), CmServerServiceTypeCms.CM.getId(), null, CONFIG_CM_DB_SUFFIX_TYPE));
     Assert.assertEquals("mysql", CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>(),
@@ -312,36 +328,59 @@ public class CmServerHandlerTest extends BaseTestHandler {
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceTypeCms.NAVIGATOR.getId().toLowerCase() + ".mgmt_log_dir"),
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
-            .get(CmServerServiceTypeCms.NAVIGATOR.getId()).get("mgmt_log_dir"));
-    Assert.assertEquals("/mynn", CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>())
-        .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceTypeCms.NAVIGATOR.getId())
+            .get("mgmt_log_dir"));
+    Assert.assertEquals(
+        "/mynn",
+        CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>())
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_NAMENODE.getId())
+            .get("dfs_name_dir_list"));
     Assert.assertEquals(
         "/mynn",
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
-            .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_NAMENODE.getId())
+            .get("dfs_name_dir_list"));
     Assert.assertEquals(
         configuration.getString(CONFIG_WHIRR_INTERNAL_DATA_DIRS_DEFAULT)
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceType.HDFS_SECONDARY_NAMENODE.getId().toLowerCase() + ".fs_checkpoint_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>())
-            .get(CmServerServiceType.HDFS_SECONDARY_NAMENODE.getId()).get("fs_checkpoint_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_SECONDARY_NAMENODE.getId())
+            .get("fs_checkpoint_dir_list"));
 
     configuration = CmServerClusterInstance.getConfiguration(newClusterSpecForProperties(ImmutableMap.of(
         "whirr.instance-templates", "1 " + CmServerHandler.ROLE + ",2 " + CmNodeHandler.ROLE,
         CONFIG_WHIRR_CM_CONFIG_PREFIX + CmServerServiceType.HDFS_NAMENODE.getId().toLowerCase() + ".dfs_name_dir_list",
         "/mynn", CONFIG_WHIRR_DATA_DIRS_ROOT, "/tmp")));
-    Assert.assertEquals("/mynn", CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>())
-        .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+    Assert.assertEquals(
+        "/mynn",
+        CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>())
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_NAMENODE.getId())
+            .get("dfs_name_dir_list"));
     Assert.assertEquals(
         "/mynn",
         CmServerClusterInstance.getClusterConfiguration(configuration, ImmutableSortedSet.of("/mnt/1", "/mnt/2"))
-            .get(CmServerServiceType.HDFS_NAMENODE.getId()).get("dfs_name_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_NAMENODE.getId())
+            .get("dfs_name_dir_list"));
     Assert.assertEquals(
         "/data0"
             + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX
                 + CmServerServiceType.HDFS_SECONDARY_NAMENODE.getId().toLowerCase() + ".fs_checkpoint_dir_list"),
         CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>())
-            .get(CmServerServiceType.HDFS_SECONDARY_NAMENODE.getId()).get("fs_checkpoint_dir_list"));
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.HDFS_SECONDARY_NAMENODE.getId())
+            .get("fs_checkpoint_dir_list"));
+
+    Assert.assertEquals(
+        null,
+        CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>())
+            .get(CmServerClusterInstance.CM_API_BASE_VERSION).get(CmServerServiceType.IMPALA_DAEMON.getId())
+            .get("audit_event_log_dir"));
+    Assert.assertEquals(
+        "/data0"
+            + configuration.getString(CONFIG_WHIRR_INTERNAL_CM_CONFIG_DEFAULT_PREFIX + "5."
+                + CmServerServiceType.IMPALA_DAEMON.getId().toLowerCase() + ".audit_event_log_dir"),
+        CmServerClusterInstance.getClusterConfiguration(configuration, new TreeSet<String>()).get("5")
+            .get(CmServerServiceType.IMPALA_DAEMON.getId()).get("audit_event_log_dir"));
 
   }
 

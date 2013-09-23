@@ -27,28 +27,26 @@ import com.google.common.io.Resources;
 
 public class Utils {
 
-    public static URL urlForURI(String inputStr) {
-        try {
-            if (inputStr == null) {
-                return null;
-            }
-            URI input = new URI(inputStr).normalize();
-            if (input.getScheme() != null && input.getScheme().equals("classpath")) {
-                return Utils.class.getResource(input.getPath());
-            }
-            if (Resources.toString(input.toURL(), Charsets.UTF_8) != null) {
-                return input.toURL();
-            } else {
-                return null;
-            }
-      } catch (IOException e) {
-            // Swallow the exception for now and just return null - this could probably be better.
-            return null;
-      } catch (URISyntaxException e) {
-            // Swallow the exception for now and just return null - this could probably be better.
-            return null;
+  public static URL urlForURI(String inputStr) {
+    try {
+      if (inputStr == null) {
+        return null;
       }
-   }
+      URI input = new URI(inputStr).normalize();
+      if (input.getScheme() != null && input.getScheme().equals("classpath")) {
+        return Utils.class.getResource(input.getPath());
+      }
+      if (Resources.toString(input.toURL(), Charsets.UTF_8) != null) {
+        return input.toURL();
+      } else {
+        return null;
+      }
+    } catch (IOException e) {
+      // Swallow the exception for now and just return null - this could probably be better.
+      return null;
+    } catch (URISyntaxException e) {
+      // Swallow the exception for now and just return null - this could probably be better.
+      return null;
+    }
+  }
 }
-
-    

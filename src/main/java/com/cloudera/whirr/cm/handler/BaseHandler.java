@@ -66,8 +66,8 @@ public abstract class BaseHandler extends ClusterActionHandlerSupport implements
           call(
               "prepare_all_disks",
               "'"
-                  + VolumeManager.asString(CmServerClusterInstance.getDeviceMappings(event.getClusterSpec(), event.getCluster()))
-                  + "'"));
+                  + VolumeManager.asString(CmServerClusterInstance.getDeviceMappings(event.getClusterSpec(),
+                      event.getCluster())) + "'"));
     }
     if (CmServerClusterInstance.getConfiguration(event.getClusterSpec()).getBoolean(CONFIG_WHIRR_FIREWALL_ENABLE, true)) {
       Set<Integer> ports = CmServerClusterInstance.portsPush(event, getPortsClient(event));
