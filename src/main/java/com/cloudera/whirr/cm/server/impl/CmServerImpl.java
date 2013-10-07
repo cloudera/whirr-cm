@@ -1141,8 +1141,9 @@ public class CmServerImpl implements CmServer {
       break;
     case SOLR:
       if (versionApi >= 4) {
-        execute(apiResourceRootV4.getClustersResource().getServicesResource(getName(cluster))
-            .initSolrCommand(cluster.getServiceName(CmServerServiceType.SOLR)));
+        execute(
+            apiResourceRootV4.getClustersResource().getServicesResource(getName(cluster))
+                .initSolrCommand(cluster.getServiceName(CmServerServiceType.SOLR)), false);
         execute(apiResourceRootV4.getClustersResource().getServicesResource(getName(cluster))
             .createSolrHdfsHomeDirCommand(cluster.getServiceName(CmServerServiceType.SOLR)));
       }

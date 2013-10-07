@@ -89,8 +89,9 @@ public abstract class BaseCommandCmServer extends BaseCommand {
     }
 
     Set<Instance> instances = clusterController.getInstances(specification, createClusterStateStore(specification));
-    CmServerCluster cluster = CmServerClusterInstance.getCluster(specification, specification.getConfiguration(),
-        instances, CmServerClusterInstance.getMounts(specification, instances), roles);
+    CmServerCluster cluster = CmServerClusterInstance.getCluster(specification,
+        CmServerClusterInstance.getConfiguration(specification), instances,
+        CmServerClusterInstance.getMounts(specification, instances), roles);
 
     if (optionSet.hasArgument(OPTION_CLUSTER_NAME)) {
       cluster.setName((String) optionSet.valueOf(OPTION_CLUSTER_NAME));

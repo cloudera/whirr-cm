@@ -46,8 +46,6 @@ public class CmServerCommandIT extends CmServerClusterIT {
     Assert.assertTrue(serverTestBootstrap.isConfigured(cluster));
     Assert.assertFalse(serverTestBootstrap.isStarted(cluster));
     Assert.assertTrue(serverTestBootstrap.isStopped(cluster));
-    Assert.assertEquals(cluster.getServiceTypes().size(), serverTestBootstrap.getServices(cluster).getServiceTypes()
-        .size());
   }
 
   @Test
@@ -71,8 +69,6 @@ public class CmServerCommandIT extends CmServerClusterIT {
     Assert.assertTrue(serverTestBootstrap.isConfigured(cluster));
     Assert.assertTrue(serverTestBootstrap.isStarted(cluster));
     Assert.assertFalse(serverTestBootstrap.isStopped(cluster));
-    Assert.assertEquals(cluster.getServiceTypes().size(), serverTestBootstrap.getServices(cluster).getServiceTypes()
-        .size());
   }
 
   @Test
@@ -83,8 +79,6 @@ public class CmServerCommandIT extends CmServerClusterIT {
     Assert.assertTrue(serverTestBootstrap.isConfigured(cluster));
     Assert.assertFalse(serverTestBootstrap.isStarted(cluster));
     Assert.assertTrue(serverTestBootstrap.isStopped(cluster));
-    Assert.assertEquals(cluster.getServiceTypes().size(), serverTestBootstrap.getServices(cluster).getServiceTypes()
-        .size());
   }
 
   @Test
